@@ -1,3 +1,12 @@
-[submodule "secp256k1"]
-	path = secp256k1
+[submodule "Core/secp256k1"]
+	path = Core/secp256k1
 	url = https://github.com/bitcoin-core/secp256k1.git
+[submodule "Include/spdlog"]
+	path = Include/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "Include/nlohmann"]
+	path = Include/nlohmann
+	url = https://github.com/nlohmann/json.git
+[submodule "Include/Catch2"]
+	path = Include/Catch2
+	url = https://github.com/catchorg/Catch2.git
