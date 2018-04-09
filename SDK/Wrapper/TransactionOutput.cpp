@@ -24,6 +24,7 @@ namespace Elastos {
         void TransactionOutput::setAmount(
                 uint64_t amount) {
             _output->amount = amount;
+
         }
 
         Script TransactionOutput::getScript() const {

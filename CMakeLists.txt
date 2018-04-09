@@ -79,7 +79,7 @@ set( SPV_INSTALL_PREFIX ${SPV_INSTALL_PREFIX} CACHE
 	PATH "Install prefix prepended to target to create install location" )
 set( CMAKE_INSTALL_PREFIX "${SPV_INSTALL_PREFIX}" CACHE INTERNAL "Prefix jprepended to install directories if target destination is not absolute, immutable" FORCE )
 
-option_with_default( SPV_BUILD_SHARED_LIB "Build shared SPV libs" ON )
+option_with_default( SPV_BUILD_SHARED_LIB "Build shared SPV libs" OFF )
 
 if( SPV_BUILD_SHARED_LIB )
 	set( SPV_LIBRARY_TYPE SHARED )
