@@ -12,21 +12,36 @@
 
 #include "Wrapper.h"
 
+#include "ByteData.h"
+
 namespace Elastos {
 	namespace SDK {
 
 		class Address :
-				public Wrapper<BRAddress> {
+				public Wrapper<BRAddress *> {
 		public:
-			Address();
+			Address(std::string address);
 
-			virtual std::string toString() const;
+			Address(boost::shared_ptr<BRAddress> address);
 
-			virtual BRAddress getRaw() const;
+			static Address *createAddress(std::string address);
+
+			static Address *fromScriptPubKey(ByteData script);
+
+			static Address *fromScriptSignature(ByteData script);
 
 			std::string stringify() const;
 
+			bool isValid();
+
+			ByteData getPubKeyScript();
+
+			virtual std::string toString() const;
+
+			virtual BRAddress* getRaw() const;
 			//todo complete me
+		private:
+			boost::shared_ptr<BRAddress> _address;
 		};
 
 		typedef boost::shared_ptr<Address> AddressPtr;

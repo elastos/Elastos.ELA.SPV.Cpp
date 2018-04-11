@@ -44,6 +44,10 @@ extern "C" {
 #define BITCOIN_PUBKEY_ADDRESS_TEST 111
 #define BITCOIN_SCRIPT_ADDRESS_TEST 196
 
+#define ELA_PUBKEY_ADDRESS          33
+#define ELA_MULTISIG_ADDRESS        18
+#define ELA_CROSSCHAIN_ADDRESS      75
+
 #define ELA_STANDARD                0xAC
 #define ELA_MULTISIG                0xAE
 #define ELA_CROSSCHAIN              0xAF
