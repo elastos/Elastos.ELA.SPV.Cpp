@@ -8,10 +8,10 @@
 namespace Elastos {
 	namespace SDK {
 
-		DatabaseManager::DatabaseManager(boost::filesystem::path path) :
+		DatabaseManager::DatabaseManager(const boost::filesystem::path &path) :
 			_sqlite(path),
-			_dataStorePeer(),
-			_dataStoreTransaction() {
+			_peerDataSource(&_sqlite),
+			_transactionDataStore(&_sqlite) {
 
 		}
 
@@ -24,14 +24,9 @@ namespace Elastos {
 
 		}
 
-		bool DatabaseManager::putTransaction(std::string iso, BRTransactionEntity& transactionEntity) {
-			if (!_sqlite.isValid()) {
-				return false;
-			}
-
-			return _dataStoreTransaction.putTransaction(_sqlite, iso, transactionEntity);
+		bool DatabaseManager::putTransaction(const std::string &iso, const TransactionEntity &tx) {
+			return _transactionDataStore.putTransaction(iso, tx);
 		}
-
 
 	}
 }
