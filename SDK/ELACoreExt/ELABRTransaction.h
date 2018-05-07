@@ -13,13 +13,15 @@
 namespace Elastos {
 	namespace SDK {
 
-		typedef struct {
+		typedef struct _ELABRTransaction {
 			BRTransaction raw;
 			uint8_t  type;
 			uint8_t payloadVersion;
 			ByteData payloadData;
 			std::vector<ByteData> attributeData;
 			std::vector<ByteData> programData;
+
+			_ELABRTransaction &operator = (const _ELABRTransaction &ebt);
 
 		} ELABRTransaction;
 
