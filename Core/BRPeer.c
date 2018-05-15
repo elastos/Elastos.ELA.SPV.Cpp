@@ -266,7 +266,7 @@ static void *_peerThreadRoutine(void *arg)
                     error = EPROTO;
                 }
                 else {
-                    peer_log(peer, "start read head: prot %d", (int)peer->port);
+                    peer_log(peer, "start read head: port %d", (int)peer->port);
                     if (msgLen > payloadLen) payload = realloc(payload, (payloadLen = msgLen));
                     assert(payload != NULL);
                     len = 0;
@@ -570,7 +570,7 @@ void BRPeerSendMessage(BRPeer *peer, const uint8_t *msg, size_t msgLen, const ch
         UInt32SetLE(&buf[off], (uint32_t)msgLen);
         off += sizeof(uint32_t);
         BRSHA256_2(hash, msg, msgLen);
-        memcpy(&buf[off], hash, sizeof(uint32_t));
+        memcpy(&buf[off], hash, sizeof(uint32_t));// why is it that sizeof(hash) is not used?
         off += sizeof(uint32_t);
         memcpy(&buf[off], msg, msgLen);
         peer_log(peer, "sending %s", type);
