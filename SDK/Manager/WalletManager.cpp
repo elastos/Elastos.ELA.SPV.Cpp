@@ -2,6 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <BRTransaction.h>
+#include <ELACoreExt/ELABRTxOutput.h>
 #include "WalletManager.h"
 #include "Utils.h"
 #include "Log.h"
@@ -16,24 +18,24 @@ namespace Elastos {
 	namespace SDK {
 
 		WalletManager::WalletManager(const ChainParams &chainParams) :
-				_executor(BACKGROUND_THREAD_COUNT),
-				_databaseManager(DATABASE_PATH) {
+			_executor(BACKGROUND_THREAD_COUNT),
+			_databaseManager(DATABASE_PATH) {
 
 			uint32_t earliestPeerTime = 0; //todo get peer time from WALLET_STORE_FILE later
 			_masterPubKey = MasterPubKeyPtr(
-					new MasterPubKey); //todo check if this can be initialized by WALLET_STORE_FILE
+				new MasterPubKey); //todo check if this can be initialized by WALLET_STORE_FILE
 			//todo init _phraseData
 
 			CoreWalletManager::init(_masterPubKey, chainParams, earliestPeerTime);
 		}
 
 		WalletManager::WalletManager(const std::string &phrase, const ChainParams &chainParams) :
-				_executor(BACKGROUND_THREAD_COUNT),
-				_databaseManager(DATABASE_PATH) {
+			_executor(BACKGROUND_THREAD_COUNT),
+			_databaseManager(DATABASE_PATH) {
 
 			uint32_t earliestPeerTime = 0; //todo get peer time from WALLET_STORE_FILE later
 			_masterPubKey = MasterPubKeyPtr(
-					new MasterPubKey(phrase)); //todo check if this can be initialized by WALLET_STORE_FILE
+				new MasterPubKey(phrase)); //todo check if this can be initialized by WALLET_STORE_FILE
 			//todo init _phraseData from phrase
 
 			init(_masterPubKey, chainParams, earliestPeerTime);
@@ -57,19 +59,37 @@ namespace Elastos {
 		}
 
 		SharedWrapperList<Transaction, BRTransaction *> WalletManager::getTransactions(
-				const boost::function<bool(const TransactionPtr &)> filter) const {
+			const boost::function<bool(const TransactionPtr &)> filter) const {
 			SharedWrapperList<Transaction, BRTransaction *> txs;
 
 			std::vector<TransactionEntity> txsEntity = _databaseManager.getAllTransactions(ISO);
 
 			for (size_t i = 0; i < txsEntity.size(); ++i) {
 				TransactionPtr transaction(new Transaction(
-						txsEntity[i].buff, txsEntity[i].blockHeight, txsEntity[i].timeStamp));
+					txsEntity[i].buff, txsEntity[i].blockHeight, txsEntity[i].timeStamp));
 				if (filter(transaction)) {
 					txs.push_back(transaction);
 				}
 			}
 			return txs;
+		}
+
+		TransactionPtr WalletManager::createTransaction(std::string toAddress,
+														uint64_t amount, uint64_t feeTx, UInt256 assetId,
+														Transaction::Type type) {
+
+			BRTransaction *tmp = BRWalletCreateTransaction(this->getWallet()->getRaw(), amount, toAddress.c_str());
+			if (!tmp) return nullptr;
+
+			TransactionPtr ptr(new Transaction(tmp));
+			ptr->setTransactionType(type);
+			SharedWrapperList<TransactionOutput, BRTxOutput *> outList = ptr->getOutputs();
+			for (SharedWrapperList<TransactionOutput, BRTxOutput *>::iterator it = outList.begin();
+				 it != outList.end(); ++it) {
+				((ELABRTxOutput *) (*it)->getRaw())->assetId = assetId;
+			}
+
+			return ptr;
 		}
 
 		//override Wallet listener
@@ -94,7 +114,7 @@ namespace Elastos {
 		void WalletManager::onTxUpdated(const std::string &hash, uint32_t blockHeight, uint32_t timeStamp) {
 			TransactionEntity txEntity;
 
-			txEntity.buff = ByteData(nullptr, 0);
+			txEntity.buff.Clear();
 			txEntity.blockHeight = blockHeight;
 			txEntity.timeStamp = timeStamp;
 			txEntity.txHash = hash;
@@ -194,7 +214,7 @@ namespace Elastos {
 
 			for (size_t i = 0; i < txsEntity.size(); ++i) {
 				txs.push_back(TransactionPtr(
-						new Transaction(txsEntity[i].buff, txsEntity[i].blockHeight, txsEntity[i].timeStamp)));
+					new Transaction(txsEntity[i].buff, txsEntity[i].blockHeight, txsEntity[i].timeStamp)));
 			}
 
 			return txs;
@@ -208,7 +228,7 @@ namespace Elastos {
 			for (size_t i = 0; i < blocksEntity.size(); ++i) {
 				MerkleBlock *block = new MerkleBlock;
 				ByteStream stream;
-				stream.putBytes(blocksEntity[i].blockBytes.data, blocksEntity[i].blockBytes.length);
+				stream.putBytes(blocksEntity[i].blockBytes, blocksEntity[i].blockBytes.GetSize());
 				block->setHeight(blocksEntity[i].blockHeight);
 				block->Deserialize(stream);
 				blocks.push_back(MerkleBlockPtr(block));
