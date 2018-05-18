@@ -10,12 +10,14 @@
 #include "CoreWalletManager.h"
 #include "DatabaseManager.h"
 #include "BackgroundExecutor.h"
+#include "Transaction.h"
+#include "c_util.h"
 
 namespace Elastos {
 	namespace SDK {
 
 		class WalletManager :
-				public CoreWalletManager {
+			public CoreWalletManager {
 		public:
 			WalletManager(const ChainParams &chainParams = ChainParams::mainNet());
 
@@ -29,8 +31,11 @@ namespace Elastos {
 
 			UInt256 signAndPublishTransaction(const TransactionPtr &transaction);
 
+			TransactionPtr createTransaction(std::string toAddress, uint64_t amount, uint64_t feeTx, UInt256 assetId,
+											 Transaction::Type type);
+
 			SharedWrapperList<Transaction, BRTransaction *> getTransactions(
-					const boost::function<bool(const TransactionPtr &)> filter) const;
+				const boost::function<bool(const TransactionPtr &)> filter) const;
 
 			void registerWalletListener(Wallet::Listener *listener);
 
@@ -48,6 +53,7 @@ namespace Elastos {
 
 			// func txDeleted(_ txHash: UInt256, notifyUser: Bool, recommendRescan: Bool)
 			virtual void onTxDeleted(const std::string &hash, bool notifyUser, bool recommendRescan);
+
 		public:
 			// func syncStarted()
 			virtual void syncStarted();
@@ -87,7 +93,7 @@ namespace Elastos {
 			DatabaseManager _databaseManager;
 			BackgroundExecutor _executor;
 			MasterPubKeyPtr _masterPubKey;
-			ByteData _phraseData;
+			CMBlock _phraseData;
 
 			std::vector<Wallet::Listener *> _walletListeners;
 			std::vector<PeerManager::Listener *> _peerManagerListeners;
