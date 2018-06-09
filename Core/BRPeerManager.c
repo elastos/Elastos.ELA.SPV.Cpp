@@ -782,8 +782,7 @@ static void _peerDisconnected(void *info, int error)
     int willSave = 0, willReconnect = 0, txError = 0;
     size_t txCount = 0;
 
-
-	peer_log(peer, "_peerDisconnected !!!!!!!!!!!!!!!!!!!!!!!!!!! error %d", error);
+    peer_log(peer, "_peerDisconnected !!!!!!!!!!!!!!!!!!!!!!!!!!! error %d", error);
 
     //free(info);
     pthread_mutex_lock(&manager->lock);
