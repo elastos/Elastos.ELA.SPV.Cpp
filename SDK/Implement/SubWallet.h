@@ -138,6 +138,8 @@ namespace Elastos {
 
 			void recover(int limitGap);
 
+			nlohmann::json readPeerConfig();
+
 			virtual void verifyRawTransaction(const TransactionPtr &transaction);
 
 			virtual void completeTransaction(const TransactionPtr &transaction);

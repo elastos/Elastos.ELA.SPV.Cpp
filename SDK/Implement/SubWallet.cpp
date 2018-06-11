@@ -19,11 +19,11 @@
 #include "Utils.h"
 #include "Log.h"
 #include "TransactionOutput.h"
+#include "ElaPeerConfig.h"
 
 namespace fs = boost::filesystem;
 
 #define DB_FILE_EXTENSION ".db"
-#define PEER_CONFIG_EXTENSION "_PeerConnection.json"
 
 namespace Elastos {
 	namespace SDK {
@@ -38,8 +38,7 @@ namespace Elastos {
 			fs::path subWalletDbPath = Enviroment::GetRootPath();
 			subWalletDbPath /= info.getChainId() + DB_FILE_EXTENSION;
 
-			fs::path peerConnectionPath = Enviroment::GetRootPath();
-			peerConnectionPath /= info.getChainId() + PEER_CONFIG_EXTENSION;
+			nlohmann::json peerConfig = info.getWalletType() == Mainchain ? ElaPeerConfig : readPeerConfig();
 
 			if(!payPassword.empty()) {
 				BRKey key;
@@ -48,7 +47,7 @@ namespace Elastos {
 				MasterPubKeyPtr masterPubKey(new MasterPubKey(key, chainCode));
 
 				_walletManager = WalletManagerPtr(
-						new WalletManager(masterPubKey, subWalletDbPath, peerConnectionPath,
+						new WalletManager(masterPubKey, subWalletDbPath, peerConfig,
 										  _info.getEarliestPeerTime(),
 										  _info.getSingleAddress(), _info.getForkId(), chainParams));
 				_walletManager->registerWalletListener(this);
@@ -477,6 +476,11 @@ namespace Elastos {
 						  [&txid, &status, &desc, confirms](ISubWalletCallback *callback) {
 							  callback->OnTransactionStatusChanged(txid, status, desc, confirms);
 						  });
+		}
+
+		nlohmann::json SubWallet::readPeerConfig() {
+			//todo read from main chain(ela)
+			return nlohmann::json();
 		}
 
 	}
