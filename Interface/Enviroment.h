@@ -29,6 +29,8 @@ namespace Elastos {
 			static IMasterWalletManager *GetMasterWalletManager();
 
 		private:
+			static void CheckRootPath();
+
 			static std::string _rootPath;
 			static IMasterWalletManager *_manager;
 		};

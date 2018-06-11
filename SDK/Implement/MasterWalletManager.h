@@ -14,9 +14,9 @@ namespace Elastos {
 
 		class MasterWalletManager : public IMasterWalletManager {
 		public:
-			MasterWalletManager() noexcept;
+			MasterWalletManager();
 
-			virtual ~MasterWalletManager() noexcept;
+			virtual ~MasterWalletManager();
 
 			/**
 			 * Create an new master wallet, an random seed will be generated combined with phrase password to create
@@ -100,6 +100,12 @@ namespace Elastos {
 					const std::string &payPassword);
 
 		private:
+			void initMasterWallets();
+
+			void storeMasterWallets();
+
+		private:
+
 			typedef std::map<std::string, IMasterWallet *> MasterWalletMap;
 			MasterWalletMap _masterWalletMap;
 		};

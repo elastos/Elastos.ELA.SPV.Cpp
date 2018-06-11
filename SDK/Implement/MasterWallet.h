@@ -96,6 +96,8 @@ namespace Elastos {
 
 			typedef std::map<std::string, ISubWallet *> WalletMap;
 
+			MasterWallet(const boost::filesystem::path &localStore);
+
 			MasterWallet(const std::string &id,
 						 const std::string &language);
 
@@ -150,10 +152,6 @@ namespace Elastos {
 		protected:
 			bool _initialized;
 			WalletMap _createdWallets;
-
-			CMBlock _encryptedKey;
-			CMBlock _encryptedMnemonic;
-			CMBlock _encryptedPhrasePass;
 
 			MasterWalletStore _localStore;
 			KeyStore _keyStore;

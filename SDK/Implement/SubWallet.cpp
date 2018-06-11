@@ -208,8 +208,8 @@ namespace Elastos {
 			_confirmingTxs[Utils::UInt256ToString(transaction->getHash())] = transaction;
 
 			fireTransactionStatusChanged(Utils::UInt256ToString(transaction->getHash()),
-										 SubWalletCallback::convertToString(SubWalletCallback::Added), nlohmann::json(),
-										 0);
+										 SubWalletCallback::convertToString(SubWalletCallback::Added),
+										 transaction->toJson(), 0);
 		}
 
 		void SubWallet::onTxUpdated(const std::string &hash, uint32_t blockHeight, uint32_t timeStamp) {
@@ -219,7 +219,7 @@ namespace Elastos {
 
 			uint32_t confirm = blockHeight - _confirmingTxs[hash]->getBlockHeight();
 			fireTransactionStatusChanged(hash, SubWalletCallback::convertToString(SubWalletCallback::Updated),
-										 nlohmann::json(), confirm);
+										 _confirmingTxs[hash]->toJson(), confirm);
 		}
 
 		void SubWallet::onTxDeleted(const std::string &hash, bool notifyUser, bool recommendRescan) {
@@ -460,7 +460,7 @@ namespace Elastos {
 		void SubWallet::blockHeightIncreased(uint32_t blockHeight) {
 			for (TransactionMap::iterator it = _confirmingTxs.begin(); it != _confirmingTxs.end(); ++it) {
 				fireTransactionStatusChanged(it->first, SubWalletCallback::convertToString(SubWalletCallback::Updated),
-											 nlohmann::json(), blockHeight - it->second->getBlockHeight());
+											 it->second->toJson(), blockHeight - it->second->getBlockHeight());
 			}
 
 			for (TransactionMap::iterator it = _confirmingTxs.begin(); it != _confirmingTxs.end();) {
