@@ -32,6 +32,8 @@ namespace Elastos {
 
 			bool Initialized() const;
 
+			void Save();
+
 		public: //override from IMasterWallet
 
 			virtual std::string GetId() const;

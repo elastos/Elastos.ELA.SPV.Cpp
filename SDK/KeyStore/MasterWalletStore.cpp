@@ -92,6 +92,7 @@ namespace Elastos {
 			j["Key"] = Utils::encodeHex(p.GetEncrpytedKey());
 			j["Mmemonic"] = Utils::encodeHex(p.GetEncryptedMnemonic());
 			j["PhrasePasword"] = Utils::encodeHex(p.GetEncrptedPhrasePassword());
+			j["Language"] = p.GetLanguage();
 			j["IdAgent"] = p.GetIdAgentInfo();
 			std::vector<nlohmann::json> subWallets;
 			for (size_t i = 0; i < p.GetSubWalletInfoList().size(); i++) {
@@ -104,6 +105,7 @@ namespace Elastos {
 			p.SetEncryptedKey(Utils::decodeHex(j["Key"].get<std::string>()));
 			p.SetEncryptedMnemonic(Utils::decodeHex(j["Mmemonic"].get<std::string>()));
 			p.SetEncryptedPhrasePassword(Utils::decodeHex(j["PhrasePasword"].get<std::string>()));
+			p.SetLanguage(j["Language"].get<std::string>());
 			p.SetIdAgentInfo(j["IdAgent"]);
 
 			std::vector<CoinInfo> coinInfoList;
@@ -111,6 +113,14 @@ namespace Elastos {
 			for (size_t i = 0; i < subWallets.size(); i++) {
 				coinInfoList.push_back(subWallets[i]);
 			}
+		}
+
+		const std::string &MasterWalletStore::GetLanguage() const {
+			return _language;
+		}
+
+		void MasterWalletStore::SetLanguage(const std::string &language) {
+			_language = language;
 		}
 
 	}

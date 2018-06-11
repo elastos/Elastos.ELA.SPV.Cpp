@@ -43,6 +43,13 @@ namespace Elastos {
 
 		}
 
+		void MasterWalletManager::SaveConfigs() {
+			std::for_each(_masterWalletMap.begin(), _masterWalletMap.end(), [](const MasterWalletMap::value_type &item){
+				MasterWallet *masterWallet = static_cast<MasterWallet *>(item.second);
+				masterWallet->Save();
+			});
+		}
+
 		IMasterWallet *MasterWalletManager::CreateMasterWallet(const std::string &masterWalletId,
 															   const std::string &phrasePassword,
 															   const std::string &payPassword,

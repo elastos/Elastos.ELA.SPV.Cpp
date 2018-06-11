@@ -18,6 +18,8 @@ namespace Elastos {
 
 			virtual ~MasterWalletManager();
 
+			void SaveConfigs();
+
 			/**
 			 * Create an new master wallet, an random seed will be generated combined with phrase password to create
 			 * 	root key and chain code.

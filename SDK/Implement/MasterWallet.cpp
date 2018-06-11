@@ -77,6 +77,18 @@ namespace Elastos {
 		}
 
 		MasterWallet::~MasterWallet() {
+			Save();
+		}
+
+		void MasterWallet::Save() {
+
+			std::vector<CoinInfo> coinInfos;
+			for (WalletMap::iterator it = _createdWallets.begin(); it != _createdWallets.end(); ++it) {
+				SubWallet *subWallet = dynamic_cast<SubWallet *>(it->second);
+				if (subWallet == nullptr) continue;
+				coinInfos.push_back(subWallet->_info);
+			}
+			_localStore.SetSubWalletInfoList(coinInfos);
 
 			boost::filesystem::path path = Enviroment::GetRootPath();
 			path /= GetId();
@@ -121,9 +133,11 @@ namespace Elastos {
 
 			CoinInfo info;
 			info.setEaliestPeerTime(0);
+
 			//todo find type and index info from mainchain through chainId
-//			info.setWalletType(type);
-//			info.setIndex(coinTypeIndex);
+			info.setWalletType(Normal);
+			info.setIndex(0);
+
 			info.setSingleAddress(singleAddress);
 			info.setUsedMaxAddressIndex(0);
 			info.setChainId(chainID);

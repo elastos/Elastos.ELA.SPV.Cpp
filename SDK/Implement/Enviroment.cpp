@@ -33,6 +33,11 @@ namespace Elastos {
 			return _manager;
 		}
 
+		void Enviroment::SaveConfigs() {
+			MasterWalletManager *manager = static_cast<MasterWalletManager *>(_manager);
+			manager->SaveConfigs();
+		}
+
 		void Enviroment::CheckRootPath() {
 			boost::filesystem::path path = _rootPath;
 			if(!boost::filesystem::exists(path) || !boost::filesystem::is_directory(path))

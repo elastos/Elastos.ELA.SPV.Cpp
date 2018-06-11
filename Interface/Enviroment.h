@@ -28,6 +28,8 @@ namespace Elastos {
 
 			static IMasterWalletManager *GetMasterWalletManager();
 
+			static void SaveConfigs();
+
 		private:
 			static void CheckRootPath();
 
