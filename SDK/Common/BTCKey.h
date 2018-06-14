@@ -17,8 +17,6 @@ namespace Elastos {
 			static bool generateKey(CMemBlock<uint8_t> &privKey, CMemBlock<uint8_t> &pubKey, int nid = NID_secp256k1);
 			static CMemBlock<uint8_t> getPubKeyFromPrivKey(CMemBlock<uint8_t> privKey, int nid = NID_secp256k1);
 			static bool PublickeyIsValid(CMemBlock<uint8_t> pubKey, int nid = NID_secp256k1);
-			//static bool PublickeyAdd(CMemBlock<uint8_t> pubkey, UInt256 ui);
-			//static
 		};
 	}
 }

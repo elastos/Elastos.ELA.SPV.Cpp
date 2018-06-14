@@ -149,28 +149,28 @@ TEST_CASE ("enctrypt/decrept content without nothing and password with "" ", "[a
 }
 
 TEST_CASE("uint256 string", "[Utils]") {
-	CMemBlock<uint8_t> mbrand = WalletTool::GenerateSeed256();
+	CMemBlock<uint8_t> mbRand = WalletTool::GenerateSeed256();
 	UInt256 u256 = {0};
-	UInt256Get(&u256, (const void *) mbrand);
+	UInt256Get(&u256, (const void *) mbRand);
 
 	std::string strUI256 = Utils::UInt256ToString(u256);
-	UInt256 u256_recov = Utils::UInt256FromString(strUI256);
+	UInt256 u256Recov = Utils::UInt256FromString(strUI256);
 
-	REQUIRE(1 == UInt256Eq(&u256_recov, &u256));
+	REQUIRE(1 == UInt256Eq(&u256Recov, &u256));
 }
 
 TEST_CASE("uint168 string", "[Utils]") {
-	CMemBlock<uint8_t> mbrand(21);
+	CMemBlock<uint8_t> mbRand(21);
 	for (size_t i = 0; i < 21; i++) {
-		mbrand[i] = Utils::getRandomByte();
+		mbRand[i] = Utils::getRandomByte();
 	}
 	UInt168 u168 = {0};
-	UInt168Get(&u168, (const void *) mbrand);
+	UInt168Get(&u168, (const void *) mbRand);
 
 	std::string strUI168 = Utils::UInt168ToString(u168);
-	UInt168 u168_recov = Utils::UInt168FromString(strUI168);
+	UInt168 u168Recov = Utils::UInt168FromString(strUI168);
 
-	REQUIRE(1 == UInt168Eq(&u168_recov, &u168));
+	REQUIRE(1 == UInt168Eq(&u168Recov, &u168));
 }
 
 TEST_CASE("uint128 string", "[Utils]") {
@@ -179,20 +179,20 @@ TEST_CASE("uint128 string", "[Utils]") {
 	UInt128Get(&u128, (const void *) mbrand);
 
 	std::string strUI128 = Utils::UInt128ToString(u128);
-	UInt128 u128recov = Utils::UInt128FromString(strUI128);
+	UInt128 u128Recov = Utils::UInt128FromString(strUI128);
 
-	REQUIRE(1 == UInt128Eq(&u128recov, &u128));
+	REQUIRE(1 == UInt128Eq(&u128Recov, &u128));
 }
 
 TEST_CASE("mem string", "[Utils]") {
 	CMemBlock<uint8_t, uint64_t> block;
-	CMemBlock<uint8_t> mbrand256 = WalletTool::GenerateSeed256();
-	block.SetMemFixed(mbrand256, (uint64_t)mbrand256.GetSize());
+	CMemBlock<uint8_t> mbRand256 = WalletTool::GenerateSeed256();
+	block.SetMemFixed(mbRand256, (uint64_t)mbRand256.GetSize());
 
-	std::string strrand256 = Utils::convertToString<uint8_t>(block);
+	std::string strRand256 = Utils::convertToString<uint8_t>(block);
 
-	CMemBlock<uint8_t, uint64_t> mbrand256recov = Utils::convertToMemBlock<uint8_t>(strrand256);
+	CMemBlock<uint8_t, uint64_t> mbRand256recov = Utils::convertToMemBlock<uint8_t>(strRand256);
 
-	REQUIRE(block.GetSize() == mbrand256recov.GetSize());
-	REQUIRE(0 == memcmp(mbrand256recov, block, block.GetSize()));
+	REQUIRE(block.GetSize() == mbRand256recov.GetSize());
+	REQUIRE(0 == memcmp(mbRand256recov, block, block.GetSize()));
 }
