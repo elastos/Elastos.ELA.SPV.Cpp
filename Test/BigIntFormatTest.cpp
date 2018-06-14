@@ -11,33 +11,33 @@ using namespace Elastos::SDK;
 
 TEST_CASE("tesing Normal", "[BigIntFormatTest.cpp]") {
 	uint8_t block[] = {0xBF, 0xCE, 0x24, 0x45, 0x67, 0xA6};
-	CMemBlock<uint8_t> mb_src;
-	mb_src.SetMemFixed(block, sizeof(block));
+	CMemBlock<uint8_t> mbsrc;
+	mbsrc.SetMemFixed(block, sizeof(block));
 
-	CMemBlock<char> mb_dest = Hex2Str(mb_src);
+	CMemBlock<char> mbdest = Hex2Str(mbsrc);
 
-	std::string str_dest = "BFCE244567A6";
-	REQUIRE(str_dest == (const char *) mb_dest);
+	std::string strdest = "BFCE244567A6";
+	REQUIRE(strdest == (const char *) mbdest);
 
 	uint8_t block1[] = {165, 226, 33};
-	CMemBlock<uint8_t>mb_src1;
-	mb_src1.SetMemFixed(block1, sizeof(block1));
-	CMemBlock<char> mb_dest1 = Dec2Str(mb_src1);
+	CMemBlock<uint8_t>mbsrc1;
+	mbsrc1.SetMemFixed(block1, sizeof(block1));
+	CMemBlock<char> mbdest1 = Dec2Str(mbsrc1);
 
-	std::string str_dest1 = (const char *) mb_dest1;
-	REQUIRE(str_dest1 == (const char *) mb_dest1);
+	std::string strdest1 = (const char *) mbdest1;
+	REQUIRE(strdest1 == (const char *) mbdest1);
 
-	CMemBlock<uint8_t> mb_src1_recov = Str2Dec(mb_dest1);
-	REQUIRE(0 == memcmp(mb_src1_recov, block1, sizeof(block1)));
+	CMemBlock<uint8_t> mbsrc1recov = Str2Dec(mbdest1);
+	REQUIRE(0 == memcmp(mbsrc1recov, block1, sizeof(block1)));
 }
 
 TEST_CASE("tesing None Normal", "[BigIntFormatTest.cpp]") {
-	CMemBlock<uint8_t> mb_src;
+	CMemBlock<uint8_t> mbsrc;
 
-	CMemBlock<char> mb_dest = Hex2Str(mb_src);
+	CMemBlock<char> mbdest = Hex2Str(mbsrc);
 
-	REQUIRE((const void *) mb_dest == (const void *) mb_src);
+	REQUIRE((const void *) mbdest == (const void *) mbsrc);
 
-	CMemBlock<uint8_t> mb_src_recov = Str2Hex(mb_dest);
-	REQUIRE((const void *) mb_src_recov == (const void *) mb_src);
+	CMemBlock<uint8_t> mbsrcrecov = Str2Hex(mbdest);
+	REQUIRE((const void *) mbsrcrecov == (const void *) mbsrc);
 }

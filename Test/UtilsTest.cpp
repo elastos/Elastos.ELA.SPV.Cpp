@@ -149,9 +149,9 @@ TEST_CASE ("enctrypt/decrept content without nothing and password with "" ", "[a
 }
 
 TEST_CASE("uint256 string", "[Utils]") {
-	CMemBlock<uint8_t> mb_rand = WalletTool::GenerateSeed256();
+	CMemBlock<uint8_t> mbrand = WalletTool::GenerateSeed256();
 	UInt256 u256 = {0};
-	UInt256Get(&u256, (const void *) mb_rand);
+	UInt256Get(&u256, (const void *) mbrand);
 
 	std::string strUI256 = Utils::UInt256ToString(u256);
 	UInt256 u256_recov = Utils::UInt256FromString(strUI256);
@@ -160,12 +160,12 @@ TEST_CASE("uint256 string", "[Utils]") {
 }
 
 TEST_CASE("uint168 string", "[Utils]") {
-	CMemBlock<uint8_t> mb_rand(21);
+	CMemBlock<uint8_t> mbrand(21);
 	for (size_t i = 0; i < 21; i++) {
-		mb_rand[i] = Utils::getRandomByte();
+		mbrand[i] = Utils::getRandomByte();
 	}
 	UInt168 u168 = {0};
-	UInt168Get(&u168, (const void *) mb_rand);
+	UInt168Get(&u168, (const void *) mbrand);
 
 	std::string strUI168 = Utils::UInt168ToString(u168);
 	UInt168 u168_recov = Utils::UInt168FromString(strUI168);
@@ -174,12 +174,25 @@ TEST_CASE("uint168 string", "[Utils]") {
 }
 
 TEST_CASE("uint128 string", "[Utils]") {
-	CMemBlock<uint8_t> mb_rand = WalletTool::GenerateSeed128();
+	CMemBlock<uint8_t> mbrand = WalletTool::GenerateSeed128();
 	UInt128 u128 = {0};
-	UInt128Get(&u128, (const void *) mb_rand);
+	UInt128Get(&u128, (const void *) mbrand);
 
 	std::string strUI128 = Utils::UInt128ToString(u128);
-	UInt128 u128_recov = Utils::UInt128FromString(strUI128);
+	UInt128 u128recov = Utils::UInt128FromString(strUI128);
 
-	REQUIRE(1 == UInt128Eq(&u128_recov, &u128));
+	REQUIRE(1 == UInt128Eq(&u128recov, &u128));
+}
+
+TEST_CASE("mem string", "[Utils]") {
+	CMemBlock<uint8_t, uint64_t> block;
+	CMemBlock<uint8_t> mbrand256 = WalletTool::GenerateSeed256();
+	block.SetMemFixed(mbrand256, (uint64_t)mbrand256.GetSize());
+
+	std::string strrand256 = Utils::convertToString<uint8_t>(block);
+
+	CMemBlock<uint8_t, uint64_t> mbrand256recov = Utils::convertToMemBlock<uint8_t>(strrand256);
+
+	REQUIRE(block.GetSize() == mbrand256recov.GetSize());
+	REQUIRE(0 == memcmp(mbrand256recov, block, block.GetSize()));
 }
