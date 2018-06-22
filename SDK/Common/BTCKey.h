@@ -7,6 +7,8 @@
 
 //Add * accorded with breadwallet by zhangcl 791398105@qq.com
 
+#define BIP32_SEED_KEY "ELA SEED"
+
 #include <boost/filesystem.hpp>
 #include <openssl/obj_mac.h>
 #include <BRInt.h>
@@ -14,8 +16,6 @@
 
 #include "BRBIP32Sequence.h"
 #include "CMemBlock.h"
-
-#define BIP32_SEED_KEY "ELA SEED"
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -163,6 +163,18 @@ namespace Elastos {
 			getDerivePrivKey(const CMBlock &seed, const uint32_t &chain, const uint32_t &index, UInt256 &chainCode,
 							 const bool useChainCode = false, const int nid = NID_secp256k1);
 
+			/** Get Derived PrivateKey from seed for ECDSA.
+ 			 *  \param  seed varied from getPrivKeySeed.
+ 			 *  \param  chainCode UInt256 recommended to use default when haves none chainCode
+ 			 *  \param  useChainCode bool recommended to use false.
+ 			 * 	\param  nid int for style of ECDSA.
+ 			 * 	\param  depth int for Derive deep.
+ 			 *  \return DerivedPrivateKey CMemBlock.
+ 			 */
+			static CMBlock
+			getDerivePrivKey_depth(const CMBlock &seed, UInt256 &chainCode, const bool useChainCode, const int nid,
+								   const int depth, ...);
+
 			/** Get Derived PrivateKey list from seed for ECDSA.
 			 *  \param  privKeys std::vector<CMBlock > initials to size equal to
 			 *                   sizeof(indexes)/sizeof(uint32_t) for returned Childs' PrivateKey(Derived keys).
@@ -190,6 +202,17 @@ namespace Elastos {
 			static CMBlock
 			getDerivePrivKey_Secret(const CMBlock &privKey, const uint32_t &chain, const uint32_t &index,
 									UInt256 chainCode = UINT256_ZERO, const int nid = NID_secp256k1);
+
+			/** Get Derived PrivateKey from MasterPrivateKey for ECDSA.
+ 			 *  \param  privKey CMemBlock on behalf of MasterPrivateKey varied from getMasterPrivkey/generateKey.
+ 			 *  \param  chainCode UInt256 recommended to use default when has none chainCode.
+ 			 * 	\param  nid int for style of ECDSA.
+ 			 * 	\param  depth int for Derive deep.
+ 			 *  \return DerivedPrivateKey CMemBlock.
+ 			 */
+			static CMBlock
+			getDerivePrivKey_Secret_depth(const CMBlock &privKey, UInt256 chainCode, const bool useChainCode,
+										  const int nid, const int depth, ...);
 
 			/** Get Derived PrivateKey list from MasterPrivateKey for ECDSA.
 			 *  \param  privKeys std::vector<CMBlock > initials to size equal to
