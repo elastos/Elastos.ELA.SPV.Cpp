@@ -104,7 +104,7 @@ public:
 	}
 
 	CMemBlock(const size_type size) {
-		__glibcxx_requires_subscript(size);
+//		__glibcxx_requires_subscript(size);
 		pValue = new Value(size);
 		pValue->AddRef();
 	}
@@ -306,12 +306,12 @@ public:
 	}
 
 	T *operator+(const size_type off) const {
-		__glibcxx_requires_subscript(off);
+//		__glibcxx_requires_subscript(off);
 		return nullptr != pValue ? pValue->data + off : 0;
 	}
 
 	T *operator+(const size_type off) {
-		__glibcxx_requires_subscript(off);
+//		__glibcxx_requires_subscript(off);
 		return nullptr != pValue ? pValue->data + off : 0;
 	}
 
@@ -324,12 +324,12 @@ public:
 	}
 
 	T &operator[](const size_type off) const {
-		__glibcxx_requires_subscript(off);
+//		__glibcxx_requires_subscript(off);
 		return nullptr != pValue->data ? pValue->data[off] : (*this)[0];
 	}
 
 	T &operator[](const size_type off) {
-		__glibcxx_requires_subscript(off);
+//		__glibcxx_requires_subscript(off);
 		return nullptr != pValue->data ? pValue->data[off] : (*this)[0];
 	}
 

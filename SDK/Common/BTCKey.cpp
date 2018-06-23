@@ -405,35 +405,28 @@ namespace Elastos {
 					_pubkey = BN_bin2bn((const unsigned char *) (uint8_t *) pubKey, (int) pubKey.GetSize(), nullptr);
 					EC_KEY *key = EC_KEY_new_by_curve_name(nid);
 					if (nullptr != _pubkey && nullptr != key) {
-						const EC_GROUP *curve = EC_KEY_get0_group(key);
-						EC_POINT *ec_p = EC_POINT_bn2point(curve, _pubkey, nullptr, nullptr);
-						if (nullptr != ec_p) {
-							if (1 == EC_KEY_set_public_key(key, ec_p)) {
-								UInt256 md;
-								BRSHA256(&md, data, data.GetSize());
-								const uint8_t *p64 = &signedData[1];
-								ECDSA_SIG *sig = ECDSA_SIG_new();
-								if (nullptr != sig) {
-									BIGNUM *r = BN_bin2bn(&p64[0], 32, nullptr);
-									BIGNUM *s = BN_bin2bn(&p64[32], 32, nullptr);
-									ECDSA_SIG_set0(sig, r, s);
-									if (1 ==
-										_ECDSA_SIG_recover_key_GFp(key, sig, (unsigned char *) &md, sizeof(md), recid,
-																   0)) {
-										int nSize = i2o_ECPublicKey(key, nullptr);
-										assert(nSize);
-										assert(nSize <= 65);
-										unsigned char c[65];
-										unsigned char *pbegin = c;
-										nSize = i2o_ECPublicKey(key, &pbegin);
-										if (0 == memcmp(c, pubKey, nSize)) {
-											out = true;
-										}
-									}
-									ECDSA_SIG_free(sig);
+						UInt256 md;
+						BRSHA256(&md, data, data.GetSize());
+						const uint8_t *p64 = &signedData[1];
+						ECDSA_SIG *sig = ECDSA_SIG_new();
+						if (nullptr != sig) {
+							BIGNUM *r = BN_bin2bn(&p64[0], 32, nullptr);
+							BIGNUM *s = BN_bin2bn(&p64[32], 32, nullptr);
+							ECDSA_SIG_set0(sig, r, s);
+							if (1 ==
+								_ECDSA_SIG_recover_key_GFp(key, sig, (unsigned char *) &md, sizeof(md), recid,
+														   0)) {
+								int nSize = i2o_ECPublicKey(key, nullptr);
+								assert(nSize);
+								assert(nSize <= 65);
+								unsigned char c[65];
+								unsigned char *pbegin = c;
+								nSize = i2o_ECPublicKey(key, &pbegin);
+								if (0 == memcmp(c, pubKey, nSize)) {
+									out = true;
 								}
 							}
-							EC_POINT_free(ec_p);
+							ECDSA_SIG_free(sig);
 						}
 						EC_KEY_free(key);
 						BN_free(_pubkey);
@@ -549,33 +542,27 @@ namespace Elastos {
 					EC_KEY *key = EC_KEY_new_by_curve_name(nid);
 					if (nullptr != _pubkey && nullptr != key) {
 						const EC_GROUP *curve = EC_KEY_get0_group(key);
-						EC_POINT *ec_p = EC_POINT_bn2point(curve, _pubkey, nullptr, nullptr);
-						if (nullptr != ec_p) {
-							if (1 == EC_KEY_set_public_key(key, ec_p)) {
-								const uint8_t *p64 = &signedData[1];
-								ECDSA_SIG *sig = ECDSA_SIG_new();
-								if (nullptr != sig) {
-									BIGNUM *r = BN_bin2bn(&p64[0], 32, nullptr);
-									BIGNUM *s = BN_bin2bn(&p64[32], 32, nullptr);
-									ECDSA_SIG_set0(sig, r, s);
-									if (1 ==
-										_ECDSA_SIG_recover_key_GFp(key, sig, (unsigned char *) &md, sizeof(md), recid,
-																   0)) {
-										EC_KEY_set_conv_form(key, POINT_CONVERSION_COMPRESSED);
-										int nSize = i2o_ECPublicKey(key, nullptr);
-										assert(nSize);
-										assert(nSize <= 65);
-										unsigned char c[65];
-										unsigned char *pbegin = c;
-										nSize = i2o_ECPublicKey(key, &pbegin);
-										if (0 == memcmp(c, pubKey, nSize)) {
-											out = true;
-										}
-									}
-									ECDSA_SIG_free(sig);
+						const uint8_t *p64 = &signedData[1];
+						ECDSA_SIG *sig = ECDSA_SIG_new();
+						if (nullptr != sig) {
+							BIGNUM *r = BN_bin2bn(&p64[0], 32, nullptr);
+							BIGNUM *s = BN_bin2bn(&p64[32], 32, nullptr);
+							ECDSA_SIG_set0(sig, r, s);
+							if (1 ==
+								_ECDSA_SIG_recover_key_GFp(key, sig, (unsigned char *) &md, sizeof(md), recid,
+														   0)) {
+								EC_KEY_set_conv_form(key, POINT_CONVERSION_COMPRESSED);
+								int nSize = i2o_ECPublicKey(key, nullptr);
+								assert(nSize);
+								assert(nSize <= 65);
+								unsigned char c[65];
+								unsigned char *pbegin = c;
+								nSize = i2o_ECPublicKey(key, &pbegin);
+								if (0 == memcmp(c, pubKey, nSize)) {
+									out = true;
 								}
 							}
-							EC_POINT_free(ec_p);
+							ECDSA_SIG_free(sig);
 						}
 						EC_KEY_free(key);
 						BN_free(_pubkey);
