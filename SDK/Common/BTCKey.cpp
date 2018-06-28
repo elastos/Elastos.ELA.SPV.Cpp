@@ -23,9 +23,14 @@
 #include "BTCBase58.h"
 #include "WalletTool.h"
 
+#define OCUPY_SPARETIME usleep(1000);
+#define OCUPY_ASSIST_SPARETIME usleep(5000);
+#define OCUPY_MAIN_SPARETIME usleep(50000);
+
 namespace Elastos {
 	namespace ElaWallet {
 		bool BTCKey::generateKey(CMBlock &privKey, CMBlock &pubKey, int nid) {
+			OCUPY_ASSIST_SPARETIME
 			bool out = false;
 			EC_GROUP *curve = nullptr;
 			if (nullptr != (curve = EC_GROUP_new_by_curve_name(nid))) {
@@ -65,7 +70,7 @@ namespace Elastos {
 		}
 
 		int _ECDSA_SIG_recover_key_GFp(EC_KEY *eckey, ECDSA_SIG *ecsig, const uint8_t *msg, size_t msglen,
-										  size_t recid, size_t check) {
+									   size_t recid, size_t check) {
 			if (!eckey) {
 				return 0;
 			}
@@ -199,6 +204,7 @@ namespace Elastos {
 			if (32 != privKey.GetSize() && 0 == data.GetSize()) {
 				return out;
 			}
+			OCUPY_ASSIST_SPARETIME
 			if (nid == NID_secp256k1) {
 				BRKey key;
 				if (1 == BRKeySetSecret(&key, (UInt256 *) (void *) privKey, 1)) {
@@ -253,6 +259,7 @@ namespace Elastos {
 			if (33 != pubKey.GetSize() || 0 == data.GetSize() || 0 == signedData.GetSize()) {
 				return out;
 			}
+			OCUPY_ASSIST_SPARETIME
 			if (nid == NID_secp256k1) {
 				BRKey key;
 				if (1 == BRKeySetPubKey(&key, pubKey, pubKey.GetSize())) {
@@ -308,6 +315,7 @@ namespace Elastos {
 			if (32 != privKey.GetSize() || 0 == data.GetSize()) {
 				return out;
 			}
+			OCUPY_ASSIST_SPARETIME
 			if (nid == NID_secp256k1) {
 				BRKey key;
 				if (1 == BRKeySetSecret(&key, (UInt256 *) (void *) privKey, 1)) {
@@ -386,6 +394,7 @@ namespace Elastos {
 			if (33 != pubKey.GetSize() || 0 == data.GetSize() || 65 != signedData.GetSize()) {
 				return out;
 			}
+			OCUPY_MAIN_SPARETIME
 			if (nid == NID_secp256k1) {
 				BRKey key;
 				UInt256 md = UINT256_ZERO;
@@ -455,6 +464,7 @@ namespace Elastos {
 			if (32 != privKey.GetSize()) {
 				return out;
 			}
+			OCUPY_ASSIST_SPARETIME
 			if (nid == NID_secp256k1) {
 				BRKey key;
 				if (1 == BRKeySetSecret(&key, (UInt256 *) (void *) privKey, 1)) {
@@ -530,6 +540,7 @@ namespace Elastos {
 			if (33 != pubKey.GetSize() || 65 != signedData.GetSize()) {
 				return out;
 			}
+			OCUPY_MAIN_SPARETIME
 			if (nid == NID_secp256k1) {
 				BRKey key;
 				if (1 == BRKeyRecoverPubKey(&key, md, signedData, signedData.GetSize())) {
@@ -663,6 +674,7 @@ namespace Elastos {
 
 		CMBlock BTCKey::getPubKeyFromPrivKey(const CMBlock &privKey, int nid) {
 			CMBlock out;
+			OCUPY_SPARETIME
 			BIGNUM *_privkey = nullptr;
 			if (32 != privKey.GetSize()) {
 				return out;
@@ -700,6 +712,7 @@ namespace Elastos {
 			if (0 == pubKey.GetSize()) {
 				return out;
 			}
+			OCUPY_ASSIST_SPARETIME
 			EC_KEY *key = EC_KEY_new_by_curve_name(nid);
 			if (nullptr != key) {
 				BIGNUM *_pubkey = BN_bin2bn((const unsigned char *) (uint8_t *) pubKey, (int) pubKey.GetSize(),
@@ -727,6 +740,7 @@ namespace Elastos {
 			if (32 != privKey.GetSize() || 33 != pubKey.GetSize()) {
 				return out;
 			}
+			OCUPY_ASSIST_SPARETIME
 			EC_KEY *key = EC_KEY_new_by_curve_name(nid);
 			if (nullptr != key) {
 				BIGNUM *pubkey = BN_bin2bn((const unsigned char *) (uint8_t *) pubKey, (int) pubKey.GetSize(),
@@ -848,6 +862,7 @@ namespace Elastos {
 				33 != pubKey.GetSize() || !(chain == SEQUENCE_EXTERNAL_CHAIN || chain == SEQUENCE_INTERNAL_CHAIN)) {
 				return out;
 			}
+			OCUPY_SPARETIME
 			BRECPoint ecPoint;
 			memcpy(ecPoint.p, pubKey, sizeof(ecPoint.p));
 			_CKDpub(&ecPoint, &chainCode, chain, nid);
@@ -1004,6 +1019,7 @@ namespace Elastos {
 			if (0 == seed.GetSize() || !(chain == SEQUENCE_EXTERNAL_CHAIN || chain == SEQUENCE_INTERNAL_CHAIN)) {
 				return out;
 			}
+			OCUPY_SPARETIME
 			BRKey key;
 			_BRBIP32PrivKey(&key, nid, false, chainCode, useChainCode, seed, seed.GetSize(), chain, index);
 			out.Resize(sizeof(key.secret));
@@ -1018,6 +1034,7 @@ namespace Elastos {
 			if (0 == seed.GetSize()) {
 				return out;
 			}
+			OCUPY_SPARETIME
 			BRKey key;
 			va_list ap;
 			va_start(ap, depth);
@@ -1030,11 +1047,12 @@ namespace Elastos {
 
 		CMBlock
 		BTCKey::getDerivePrivKey_depth(const CMBlock &seed, UInt256 &chainCode, bool useChainCode, int nid,
-							   int depth, va_list ap) {
+									   int depth, va_list ap) {
 			CMBlock out;
 			if (0 == seed.GetSize()) {
 				return out;
 			}
+			OCUPY_SPARETIME
 			BRKey key;
 			_BRBIP32vPrivKeyPath(&key, nid, false, chainCode, useChainCode, seed, seed.GetSize(), depth, ap);
 			out.Resize(sizeof(key.secret));
@@ -1049,6 +1067,7 @@ namespace Elastos {
 			if (32 != privKey.GetSize() || !(chain == SEQUENCE_EXTERNAL_CHAIN || chain == SEQUENCE_INTERNAL_CHAIN)) {
 				return out;
 			}
+			OCUPY_SPARETIME
 			BRKey key;
 			_BRBIP32PrivKey(&key, nid, true, chainCode, true, privKey, privKey.GetSize(), chain, index);
 			out.Resize(sizeof(key.secret));
@@ -1063,6 +1082,7 @@ namespace Elastos {
 			if (32 != privKey.GetSize()) {
 				return out;
 			}
+			OCUPY_SPARETIME
 			BRKey key;
 			va_list ap;
 			va_start(ap, depth);
@@ -1075,11 +1095,12 @@ namespace Elastos {
 
 		CMBlock
 		BTCKey::getDerivePrivKey_Secret_depth(const CMBlock &privKey, UInt256 chainCode, bool useChainCode,
-									  int nid, int depth, va_list ap) {
+											  int nid, int depth, va_list ap) {
 			CMBlock out;
 			if (32 != privKey.GetSize()) {
 				return out;
 			}
+			OCUPY_SPARETIME
 			BRKey key;
 			_BRBIP32vPrivKeyPath(&key, nid, true, chainCode, useChainCode, privKey, privKey.GetSize(), depth, ap);
 			out.Resize(sizeof(key.secret));
@@ -1140,6 +1161,7 @@ namespace Elastos {
 				!(chain == SEQUENCE_EXTERNAL_CHAIN || chain == SEQUENCE_INTERNAL_CHAIN) || !indexes) {
 				return;
 			}
+			OCUPY_SPARETIME
 			size_t keysCount = privKeys.size();
 			BRKey keys[keysCount];
 			memset(keys, 0, sizeof(keys));
@@ -1161,6 +1183,7 @@ namespace Elastos {
 				!(chain == SEQUENCE_EXTERNAL_CHAIN || chain == SEQUENCE_INTERNAL_CHAIN) || !indexes) {
 				return;
 			}
+			OCUPY_SPARETIME
 			size_t keysCount = privKeys.size();
 			BRKey keys[keysCount];
 			memset(keys, 0, sizeof(keys));
@@ -1196,6 +1219,11 @@ namespace Elastos {
 				memcpy(out, &key.secret, sizeof(key.secret));
 			}
 			return out;
+		}
+
+
+		void BTCKey::test() {
+
 		}
 	}
 }
