@@ -255,6 +255,8 @@ namespace Elastos {
 			getDerivePrivKey_Secret(std::vector<CMBlock> &privKeys, const CMBlock &privKey,
 									uint32_t chain, const uint32_t indexes[], UInt256 chainCode = UINT256_ZERO,
 									int nid = NID_secp256k1);
+
+			static void test();
 		};
 	}
 }
