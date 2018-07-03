@@ -592,5 +592,22 @@ namespace Elastos {
 						  });
 		}
 
+		bool
+		MasterWallet::TryDownCastMainchainSubWallet(ISubWallet *subWallet, IMainchainSubWallet *&mainchainSubWallet) {
+			mainchainSubWallet = dynamic_cast<IMainchainSubWallet *>(subWallet);
+			return mainchainSubWallet != nullptr;
+		}
+
+		bool
+		MasterWallet::TryDownCastSidechainSubWallet(ISubWallet *subWallet, ISidechainSubWallet *&sidechainSubWallet) {
+			sidechainSubWallet = dynamic_cast<ISidechainSubWallet *>(subWallet);
+			return sidechainSubWallet != nullptr;
+		}
+
+		bool MasterWallet::TryDownCastMainchainSubWallet(ISubWallet *subWallet, IIdChainSubWallet *&idChainSubWallet) {
+			idChainSubWallet = dynamic_cast<IIdChainSubWallet *>(subWallet);
+			return idChainSubWallet != nullptr;
+		}
+
 	}
 }

@@ -79,6 +79,15 @@ namespace Elastos {
 
 			virtual void ResetAddressCache(const std::string &payPassword);
 
+			virtual bool
+			TryDownCastMainchainSubWallet(ISubWallet *subWallet, IMainchainSubWallet *&mainchainSubWallet);
+
+			virtual bool
+			TryDownCastSidechainSubWallet(ISubWallet *subWallet, ISidechainSubWallet *&sidechainSubWallet);
+
+			virtual bool
+			TryDownCastMainchainSubWallet(ISubWallet *subWallet, IIdChainSubWallet *&idChainSubWallet);
+
 		public: //override from IIdAgent
 			virtual std::string DeriveIdAndKeyForPurpose(
 					uint32_t purpose,
