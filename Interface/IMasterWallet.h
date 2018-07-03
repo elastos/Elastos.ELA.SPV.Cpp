@@ -6,6 +6,9 @@
 #define __ELASTOS_SDK_IMASTERWALLET_H__
 
 #include "ISubWallet.h"
+#include "IMainchainSubWallet.h"
+#include "ISidechainSubWallet.h"
+#include "IIdChainSubWallet.h"
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -104,6 +107,15 @@ namespace Elastos {
 			virtual void ChangePassword(const std::string &oldPassword, const std::string &newPassword) = 0;
 
 			virtual void ResetAddressCache(const std::string &payPassword) = 0;
+
+			virtual bool
+			TryDownCastMainchainSubWallet(ISubWallet *subWallet, IMainchainSubWallet *&mainchainSubWallet) = 0;
+
+			virtual bool
+			TryDownCastSidechainSubWallet(ISubWallet *subWallet, ISidechainSubWallet *&sidechainSubWallet) = 0;
+
+			virtual bool
+			TryDownCastMainchainSubWallet(ISubWallet *subWallet, IIdChainSubWallet *&idChainSubWallet) = 0;
 		};
 
 	}
