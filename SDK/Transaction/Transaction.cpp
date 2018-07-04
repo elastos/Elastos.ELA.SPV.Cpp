@@ -249,19 +249,32 @@ namespace Elastos {
 			Log::getLogger()->info("Transaction transactionSign input sign begin.");
 			size_t size = _transaction->raw.inCount;
 			for (i = 0; i < size; i++) {
+				Program *program = new Program();
 				BRTxInput *input = &_transaction->raw.inputs[i];
-				if (i >= _transaction->programs.size()) {
+				if (_transaction->type == ELATransaction::Type::RegisterIdentification) {
 					std::string redeemScript = keys[i].keyToRedeemScript(ELA_STANDARD);
 					CMBlock code = Utils::decodeHex(redeemScript);
-					Program *program(new Program());
 					program->setCode(code);
 					_transaction->programs.push_back(program);
+				} else {
+					if (i >= _transaction->programs.size()) {
+						std::string redeemScript = keys[i].keyToRedeemScript(ELA_STANDARD);
+						CMBlock code = Utils::decodeHex(redeemScript);
+						program->setCode(code);
+						_transaction->programs.push_back(program);
+					} else {
+						delete program;
+						program = nullptr;
+					}
 				}
-				Program *program = _transaction->programs[i];
+
 				if (!BRAddressFromScriptPubKey(address.s, sizeof(address), input->script, input->scriptLen)) continue;
 				j = 0;
 				while (j < keysCount && !BRAddressEq(&addrs[j], &address)) j++;
-				if (j >= keysCount) continue;
+				if (j >= keysCount)
+					continue;
+				if (program == nullptr)
+					continue;
 
 				Log::getLogger()->info("Transaction transactionSign begin sign the {} input.", i);
 				const uint8_t *elems[BRScriptElements(NULL, 0, program->getCode(), program->getCode().GetSize())];
