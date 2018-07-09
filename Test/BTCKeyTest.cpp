@@ -54,7 +54,7 @@ TEST_CASE("get public key from private key", "[BTCKey]") {
 
 TEST_CASE("verify public key ", "[BTCKey]") {
 	CMBlock privKey, pubKey;
-	size_t loop = 10000;
+	size_t loop = 100;
 	while (loop--) {
 		if (true == BTCKey::generateKey(privKey, pubKey, NID_secp256k1)) {
 			REQUIRE(true == BTCKey::KeyIsValid(privKey, pubKey, NID_secp256k1));
@@ -722,5 +722,25 @@ TEST_CASE("Derive PrivateKey and PublicKey for ECDSA NID_X9_62_prime256v1", "[BT
 			}
 			REQUIRE(true == bVerify);
 		}
+	}
+}
+
+TEST_CASE("ECDSA65Sign_sha256/ECDSA65Verify_sha256 for ECDSA NID_X9_62_prime256v1", "[BTCKey]") {
+	static int ECDSA_NID = NID_X9_62_prime256v1;
+
+	std::string mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+	CMBlock seed = BTCKey::getPrivKeySeed(mnemonic, "", "Data", "english", ECDSA_NID);
+
+	CMBlock privKey = BTCKey::getMasterPrivkey(seed, ECDSA_NID);
+	CMBlock pubKey = BTCKey::getPubKeyFromPrivKey(privKey, ECDSA_NID);
+
+	uint8_t data[] = {0, 1, 2, 3, 4, 5};
+	UInt256 md = UINT256_ZERO;
+	BRSHA256(&md, data, sizeof(data));
+
+	CMBlock mbSignedData;
+	if (BTCKey::ECDSA65Sign_sha256(privKey, md, mbSignedData, ECDSA_NID)) {
+		bool bVerify = BTCKey::ECDSA65Verify_sha256(pubKey, md, mbSignedData, ECDSA_NID);
+		REQUIRE(true == bVerify);
 	}
 }
