@@ -593,10 +593,10 @@ namespace Elastos {
 			}
 			EC_KEY *key = EC_KEY_new_by_curve_name(nid);
 			if (key) {
-				BIGNUM *_privkey = BN_bin2bn((const unsigned char *) (uint8_t *) privKey, (int) privKey.GetSize(),
+				BIGNUM *privkeyIn = BN_bin2bn((const unsigned char *) (uint8_t *) privKey, (int) privKey.GetSize(),
 											 nullptr);
-				if (_privkey) {
-					if (1 == EC_KEY_set_private_key(key, _privkey)) {
+				if (privkeyIn) {
+					if (1 == EC_KEY_set_private_key(key, privkeyIn)) {
 						ECDSA_SIG *sig = ECDSA_do_sign((unsigned char *) &md, sizeof(md), key);
 						if (nullptr != sig) {
 							const BIGNUM *r = nullptr;
@@ -620,7 +620,7 @@ namespace Elastos {
 							ECDSA_SIG_free(sig);
 						}
 					}
-					BN_free(_privkey);
+					BN_free(privkeyIn);
 				}
 				EC_KEY_free(key);
 			}
