@@ -226,7 +226,7 @@ namespace Elastos {
 		}
 
 		void SubWallet::removeDuplicatedPrograms(const TransactionPtr &transaction) {
-			std::vector<Program *> &programs = (std::vector<Program *> &)transaction->getPrograms();
+			const std::vector<Program *> &programs = transaction->getPrograms();
 			std::map<std::string, Program *> programMap;
 			size_t len = programs.size();
 			for (size_t i = 0; i < len; ++i) {
@@ -235,7 +235,8 @@ namespace Elastos {
 					programMap[key] = programs[i];
 				}
 			}
-			programs.clear();
+
+			transaction->clearPrograms();
 
 			std::map<std::string, Program *>::iterator it = programMap.begin();
 			while(it != programMap.end()) {

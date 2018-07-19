@@ -344,6 +344,9 @@ namespace Elastos {
 			return _transaction->programs;
 		}
 
+		void Transaction::clearPrograms() {
+			_transaction->programs.clear();
+		}
 
 		const std::string Transaction::getRemark() const {
 			return _transaction->Remark;

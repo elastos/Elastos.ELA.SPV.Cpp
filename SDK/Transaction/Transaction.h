@@ -161,6 +161,8 @@ namespace Elastos {
 
 			void addProgram(Program *program);
 
+			void clearPrograms();
+
 			const std::vector<Attribute *> &getAttributes() const;
 
 			const std::vector<Program *> &getPrograms() const;
