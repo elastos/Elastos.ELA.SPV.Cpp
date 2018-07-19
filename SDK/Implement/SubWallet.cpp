@@ -216,12 +216,32 @@ namespace Elastos {
 		nlohmann::json SubWallet::sendTransactionInternal(const boost::shared_ptr<Transaction> &transaction,
 														  const std::string &payPassword) {
 			signTransaction(transaction, _info.getForkId(), payPassword);
+			removeDuplicatedPrograms(transaction);
 			publishTransaction(transaction);
 
 			nlohmann::json j;
 			j["TxHash"] = Utils::UInt256ToString(transaction->getHash());
 			j["Fee"] = transaction->getStandardFee();
 			return j;
+		}
+
+		void SubWallet::removeDuplicatedPrograms(const TransactionPtr &transaction) {
+			std::vector<Program *> &programs = (std::vector<Program *> &)transaction->getPrograms();
+			std::map<std::string, Program *> programMap;
+			size_t len = programs.size();
+			for (size_t i = 0; i < len; ++i) {
+				std::string key = Utils::encodeHex(programs[i]->getCode());
+				if (programMap.find(key) == programMap.end()) {
+					programMap[key] = programs[i];
+				}
+			}
+			programs.clear();
+
+			std::map<std::string, Program *>::iterator it = programMap.begin();
+			while(it != programMap.end()) {
+				transaction->addProgram(it->second);
+				it ++;
+			}
 		}
 
 		void SubWallet::publishTransaction(const TransactionPtr &transaction) {
