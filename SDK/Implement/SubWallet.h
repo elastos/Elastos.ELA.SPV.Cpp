@@ -161,8 +161,6 @@ namespace Elastos {
 													  const std::string &status,
 													  const nlohmann::json &desc,
 													  uint32_t confirms);
-			void removeDuplicatedPrograms(const TransactionPtr &transaction);
-
 		protected:
 			WalletManagerPtr _walletManager;
 			std::vector<ISubWalletCallback *> _callbacks;

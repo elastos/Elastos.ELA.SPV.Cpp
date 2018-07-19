@@ -173,6 +173,7 @@ namespace Elastos {
 
 			void generateExtraTransactionInfo(nlohmann::json &rawTxJson, const boost::shared_ptr<Wallet> &wallet, uint32_t blockHeight);
 
+			void removeDuplicatePrograms();
 		private:
 			IPayload *newPayload(ELATransaction::Type type);
 

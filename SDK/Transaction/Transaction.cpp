@@ -345,7 +345,27 @@ namespace Elastos {
 		}
 
 		void Transaction::clearPrograms() {
+			for (size_t i = 0; i < _transaction->programs.size(); ++i) {
+				delete _transaction->programs[i];
+			}
 			_transaction->programs.clear();
+		}
+
+		void Transaction::removeDuplicatePrograms() {
+			std::map<std::string, Program *> programMap;
+
+			for (std::vector<Program *>::iterator iter = _transaction->programs.begin();
+					iter != _transaction->programs.end();) {
+				Program *program = *iter;
+				std::string key = Utils::encodeHex(program->getCode());
+				if (programMap.find(key) == programMap.end()) {
+					programMap[key] = program;
+					++iter;
+				} else {
+					iter = _transaction->programs.erase(iter);
+					delete program;
+				}
+			}
 		}
 
 		const std::string Transaction::getRemark() const {
@@ -583,6 +603,7 @@ namespace Elastos {
 			_transaction->type = ELATransaction::Type(jsonData["Type"].get<uint8_t>());
 			_transaction->payloadVersion = jsonData["PayloadVersion"];
 
+			delete _transaction->payload;
 			_transaction->payload = newPayload(_transaction->type);
 			if (_transaction->payload == nullptr) {
 				Log::getLogger()->error("payload is nullptr when convert from json");
