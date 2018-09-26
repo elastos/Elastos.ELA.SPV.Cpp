@@ -159,6 +159,10 @@ namespace Elastos {
 					IMasterWallet *masterWallet,
 					const std::string &payPassword);
 
+			std::string ConvertToHexString(const nlohmann::json &tx);
+
+			nlohmann::json ConvertFromHexString(const std::string &raw);
+
 		protected:
 			typedef std::map<std::string, IMasterWallet *> MasterWalletMap;
 
