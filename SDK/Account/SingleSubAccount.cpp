@@ -14,13 +14,6 @@ namespace Elastos {
 
 		}
 
-		void SingleSubAccount::InitWallet(BRTransaction *transactions[], size_t txCount, ELAWallet *wallet) {
-			wallet->IsSingleAddress = true;
-			wallet->SingleAddress = _parentAccount->GetAddress();
-
-			wallet->Raw.WalletUpdateBalance((BRWallet *) wallet);
-		}
-
 		Key SingleSubAccount::DeriveMainAccountKey(const std::string &payPassword) {
 			return _parentAccount->DeriveKey(payPassword);
 		}
@@ -37,10 +30,11 @@ namespace Elastos {
 			return result;
 		}
 
-		void SingleSubAccount::SignTransaction(const TransactionPtr &transaction, ELAWallet *wallet,
-											   const std::string &payPassword) {
+		void
+		SingleSubAccount::SignTransaction(const TransactionPtr &transaction, Wallet *wallet,
+										  const std::string &payPassword) {
 			WrapperList<Key, BRKey> keyList = DeriveAccountAvailableKeys(payPassword, transaction);
-			ParamChecker::checkCondition(!transaction->sign(keyList, 0), Error::Sign,
+			ParamChecker::checkCondition(!transaction->sign(keyList, wallet), Error::Sign,
 										 "Transaction Sign error!");
 		}
 
@@ -48,6 +42,32 @@ namespace Elastos {
 			nlohmann::json j;
 			j["Type"] = "Single Account";
 			return j;
+		}
+
+		bool SingleSubAccount::IsSingleAddress() const {
+			return true;
+		}
+
+		std::vector<Address> SingleSubAccount::GetAllAddresses(size_t addrsCount) const {
+			std::vector<Address> result;
+			if (addrsCount > 0) {
+				result.push_back(GetParent()->GetAddress());
+			}
+			return result;
+		}
+
+		std::vector<Address> SingleSubAccount::UnusedAddresses(uint32_t gapLimit, bool internal) {
+			std::vector<Address> result;
+			result.push_back(GetParent()->GetAddress());
+			return result;
+		}
+
+		bool SingleSubAccount::IsAddressUsed(const Address &address) const {
+			return true;
+		}
+
+		bool SingleSubAccount::ContainsAddress(const Address &address) const {
+			return address.IsEqual(GetParent()->GetAddress());
 		}
 	}
 }

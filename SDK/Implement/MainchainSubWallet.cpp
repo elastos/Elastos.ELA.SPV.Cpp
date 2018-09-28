@@ -9,7 +9,6 @@
 #include "MainchainSubWallet.h"
 #include "KeyStore/CoinInfo.h"
 #include "Payload/PayloadTransferCrossChainAsset.h"
-#include "ELACoreExt/ELATxOutput.h"
 #include "Utils.h"
 #include "ParamChecker.h"
 #include "Transaction/MainchainTransactionChecker.h"
@@ -78,11 +77,11 @@ namespace Elastos {
 
 				if (!ptr) return nullptr;
 
-				ptr->setTransactionType(ELATransaction::TransferCrossChainAsset);
-				const std::vector<TransactionOutput *> &outList = ptr->getOutputs();
+				ptr->setTransactionType(Transaction::TransferCrossChainAsset);
+				const std::vector<TransactionOutput> &outList = ptr->getOutputs();
 				std::for_each(outList.begin(), outList.end(),
-							  [&param](TransactionOutput *output) {
-								  ((ELATxOutput *) output->getRaw())->assetId = param->getAssetId();
+							  [&param](const TransactionOutput &output) {
+								  const_cast<TransactionOutput &>(output).setAssetId(param->getAssetId());
 							  });
 
 				PayloadTransferCrossChainAsset *payloadTransferCrossChainAsset =
@@ -95,7 +94,7 @@ namespace Elastos {
 		}
 
 		void MainchainSubWallet::verifyRawTransaction(const TransactionPtr &transaction) {
-			if (transaction->getTransactionType() == ELATransaction::TransferCrossChainAsset) {
+			if (transaction->getTransactionType() == Transaction::TransferCrossChainAsset) {
 				MainchainTransactionChecker checker(transaction, _walletManager->getWallet());
 				checker.Check();
 			} else
@@ -103,7 +102,7 @@ namespace Elastos {
 		}
 
 		TransactionPtr MainchainSubWallet::completeTransaction(const TransactionPtr &transaction, uint64_t actualFee) {
-			if (transaction->getTransactionType() == ELATransaction::TransferCrossChainAsset) {
+			if (transaction->getTransactionType() == Transaction::TransferCrossChainAsset) {
 				MainchainTransactionCompleter completer(transaction, _walletManager->getWallet());
 				return completer.Complete(actualFee);
 			} else

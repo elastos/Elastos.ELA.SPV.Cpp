@@ -10,7 +10,6 @@
 #include "WalletManager.h"
 #include "Utils.h"
 #include "Log.h"
-#include "ELACoreExt/ELATxOutput.h"
 #include "Plugin/Registry.h"
 #include "Plugin/Block/MerkleBlock.h"
 
@@ -67,19 +66,20 @@ namespace Elastos {
 				const boost::function<bool(const TransactionPtr &)> filter) const {
 			SharedWrapperList<Transaction, BRTransaction *> txs;
 
-			std::vector<TransactionEntity> txsEntity = _databaseManager.getAllTransactions(ISO);
-
-			for (size_t i = 0; i < txsEntity.size(); ++i) {
-				TransactionPtr transaction(new Transaction());
-				ByteStream byteStream(txsEntity[i].buff, txsEntity[i].buff.GetSize(), false);
-				transaction->Deserialize(byteStream);
-				BRTransaction *raw = transaction->getRaw();
-				raw->blockHeight = txsEntity[i].blockHeight;
-				raw->timestamp = txsEntity[i].timeStamp;
-				if (filter(transaction)) {
-					txs.push_back(transaction);
-				}
-			}
+			//fixme [refactor] complete me
+//			std::vector<TransactionEntity> txsEntity = _databaseManager.getAllTransactions(ISO);
+//
+//			for (size_t i = 0; i < txsEntity.size(); ++i) {
+//				TransactionPtr transaction(new Transaction());
+//				ByteStream byteStream(txsEntity[i].buff, txsEntity[i].buff.GetSize(), false);
+//				transaction->Deserialize(byteStream);
+//				BRTransaction *raw = transaction->getRaw();
+//				raw->blockHeight = txsEntity[i].blockHeight;
+//				raw->timestamp = txsEntity[i].timeStamp;
+//				if (filter(transaction)) {
+//					txs.push_back(transaction);
+//				}
+//			}
 			return txs;
 		}
 
@@ -194,7 +194,7 @@ namespace Elastos {
 						  });
 		}
 
-		void WalletManager::saveBlocks(bool replace, const SharedWrapperList<IMerkleBlock, BRMerkleBlock *> &blocks) {
+		void WalletManager::saveBlocks(bool replace, const std::vector<MerkleBlockPtr> &blocks) {
 
 			if (replace) {
 				_databaseManager.deleteAllBlocks(ISO);
@@ -212,13 +212,14 @@ namespace Elastos {
 					time_t now = time(NULL);
 					char tbuf[20];
 					strftime(tbuf, sizeof(tbuf), "%Y-%m-%d %H:%M:%S", localtime(&now));
-					peer_dbg(getPeerManager()->getRaw()->downloadPeer,
-							 "%s: checkpoint ====> { %d,  uint256(\"%s\"), %d, %d },",
-							 tbuf,
-							 blocks[i]->getHeight(),
-							 Utils::UInt256ToString(blocks[i]->getBlockHash(), true).c_str(),
-							 blocks[i]->getRawBlock()->timestamp,
-							 blocks[i]->getRawBlock()->target);
+					//fixme [refactor] replace with IMerkleBlock interface
+//					peer_dbg(getPeerManager()->getRaw()->downloadPeer,
+//							 "%s: checkpoint ====> { %d,  uint256(\"%s\"), %d, %d },",
+//							 tbuf,
+//							 blocks[i]->getHeight(),
+//							 Utils::UInt256ToString(blocks[i]->getHash(), true).c_str(),
+//							 blocks[i]->getRawBlock()->timestamp,
+//							 blocks[i]->getRawBlock()->target);
 				}
 #endif
 
@@ -237,7 +238,7 @@ namespace Elastos {
 			delete &blocks;
 		}
 
-		void WalletManager::savePeers(bool replace, const SharedWrapperList<Peer, BRPeer *> &peers) {
+		void WalletManager::savePeers(bool replace, const std::vector<PeerPtr> &peers) {
 
 			if (replace) {
 				_databaseManager.deleteAllPeers(ISO);
@@ -300,22 +301,23 @@ namespace Elastos {
 		SharedWrapperList<Transaction, BRTransaction *> WalletManager::loadTransactions() {
 			SharedWrapperList<Transaction, BRTransaction *> txs;
 
-			std::vector<TransactionEntity> txsEntity = _databaseManager.getAllTransactions(ISO);
-
-			for (size_t i = 0; i < txsEntity.size(); ++i) {
-				ELATransaction *tx = ELATransactionNew();
-				TransactionPtr transaction(new Transaction(tx, false));
-
-				ByteStream byteStream(txsEntity[i].buff, txsEntity[i].buff.GetSize(), false);
-				transaction->Deserialize(byteStream);
-				transaction->setRemark(txsEntity[i].remark);
-
-				BRTransaction *raw = transaction->getRaw();
-				raw->blockHeight = txsEntity[i].blockHeight;
-				raw->timestamp = txsEntity[i].timeStamp;
-
-				txs.push_back(transaction);
-			}
+			//fixme [refactor] complte me
+//			std::vector<TransactionEntity> txsEntity = _databaseManager.getAllTransactions(ISO);
+//
+//			for (size_t i = 0; i < txsEntity.size(); ++i) {
+//				ELATransaction *tx = ELATransactionNew();
+//				TransactionPtr transaction(new Transaction(tx, false));
+//
+//				ByteStream byteStream(txsEntity[i].buff, txsEntity[i].buff.GetSize(), false);
+//				transaction->Deserialize(byteStream);
+//				transaction->setRemark(txsEntity[i].remark);
+//
+//				BRTransaction *raw = transaction->getRaw();
+//				raw->blockHeight = txsEntity[i].blockHeight;
+//				raw->timestamp = txsEntity[i].timeStamp;
+//
+//				txs.push_back(transaction);
+//			}
 
 			return txs;
 		}
@@ -326,7 +328,7 @@ namespace Elastos {
 			std::vector<MerkleBlockEntity> blocksEntity = _databaseManager.getAllMerkleBlocks(ISO);
 
 			for (size_t i = 0; i < blocksEntity.size(); ++i) {
-				MerkleBlockPtr block(Registry::Instance()->CreateMerkleBlock(_pluginTypes.BlockType, false));
+				MerkleBlockPtr block(Registry::Instance()->CreateMerkleBlock(_pluginTypes.BlockType));
 				block->setHeight(blocksEntity[i].blockHeight);
 				ByteStream stream(blocksEntity[i].blockBytes, blocksEntity[i].blockBytes.GetSize(), false);
 				stream.setPosition(0);
@@ -384,7 +386,7 @@ namespace Elastos {
 			_reconnectTimer = boost::shared_ptr<boost::asio::deadline_timer>(new boost::asio::deadline_timer(
 					_reconnectService, boost::posix_time::seconds(_reconnectSeconds)));
 			_reconnectTimer->async_wait(
-					boost::bind(&WalletManager::asyncConnect, this, boost::asio::placeholders::error));
+					boost::bind(&PeerManager::asyncConnect, _peerManager.get(), boost::asio::placeholders::error));
 			_reconnectService.restart();
 			_reconnectService.run_one();
 		}
@@ -392,24 +394,7 @@ namespace Elastos {
 		void WalletManager::resetReconnect() {
 			_reconnectTimer->expires_at(_reconnectTimer->expires_at() + boost::posix_time::seconds(_reconnectSeconds));
 			_reconnectTimer->async_wait(
-					boost::bind(&WalletManager::asyncConnect, this, boost::asio::placeholders::error));
-		}
-
-		void WalletManager::asyncConnect(const boost::system::error_code &error) {
-			if (error.value() == 0) {
-				if (_peerManager->getConnectStatus() != Peer::Connected) {
-					Log::getLogger()->info("async connecting...");
-					_peerManager->connect();
-				}
-			} else {
-				Log::getLogger()->warn("asyncConnect err: {}", error.message());
-			}
-
-			if (_peerManager->getRaw()->reconnectTaskCount > 0) {
-				pthread_mutex_lock(&_peerManager->getRaw()->lock);
-				_peerManager->getRaw()->reconnectTaskCount = 0;
-				pthread_mutex_unlock(&_peerManager->getRaw()->lock);
-			}
+					boost::bind(&PeerManager::asyncConnect, _peerManager.get(), boost::asio::placeholders::error));
 		}
 
 	}
