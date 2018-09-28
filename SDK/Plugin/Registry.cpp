@@ -25,32 +25,17 @@ namespace Elastos {
 			return instance.get();
 		}
 
-		IMerkleBlock *
-		Registry::CreateMerkleBlock(const std::string &blockType, bool manageRaw, const BRMerkleBlock *block) {
+		IMerkleBlock * Registry::CreateMerkleBlock(const std::string &blockType) {
+//			IMerkleBlock *result = nullptr;
+//			if (blockType == "ELA") {
+//				fruit::Injector<IMerkleBlock> injector(GetMerkleBlockComponent);
+//				result = injector.get<IMerkleBlock*>();
+//			} else if (blockType == "SideStandard") {
+//					injector = boost::make_shared<MerkleBlockInj>(GetSidechainMerkleBlockComponent);
+//			}
 
-			typedef fruit::Injector<IMerkleBlock> MerkleBlockInj;
-			typedef boost::shared_ptr<MerkleBlockInj> MerkleBlockInjPtr;
-			MerkleBlockInjPtr injector;
-			if (blockType == "ELA") {
-				if (block == nullptr)
-					injector = boost::make_shared<MerkleBlockInj>(GetMerkleBlockComponent, manageRaw);
-				else
-					injector = boost::make_shared<MerkleBlockInj>(
-							GetMerkleBlockComponentWithParams, (ELAMerkleBlock *) block, manageRaw);
-
-			} else if (blockType == "SideStandard") {
-				if (block == nullptr)
-					injector = boost::make_shared<MerkleBlockInj>(GetSidechainMerkleBlockComponent, manageRaw);
-				else
-					injector = boost::make_shared<MerkleBlockInj>(
-							GetSidechainMerkleBlockComponentWithParams, (IdMerkleBlock *) block, manageRaw);
-			}
-
-			return injector->get<IMerkleBlock *>();
-		}
-
-		fruit::Component<bool> GetManageRawComponent(bool manage) {
-			return fruit::createComponent().bindInstance(manage);
+//			return result;
+			return new MerkleBlock();
 		}
 
 	}

@@ -19,14 +19,12 @@ namespace Elastos {
 		public:
 			static Registry *Instance(bool erase = false);
 
-			IMerkleBlock *CreateMerkleBlock(const std::string &blockType, bool manageRaw, const BRMerkleBlock *block = nullptr);
+			IMerkleBlock *CreateMerkleBlock(const std::string &blockType);
 
 		private:
 			Registry();
 
 		};
-
-		fruit::Component<bool> GetManageRawComponent(bool manage);
 	}
 
 }

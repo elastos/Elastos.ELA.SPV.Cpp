@@ -205,13 +205,14 @@ namespace Elastos {
 					time_t now = time(NULL);
 					char tbuf[20];
 					strftime(tbuf, sizeof(tbuf), "%Y-%m-%d %H:%M:%S", localtime(&now));
-					peer_dbg(getPeerManager()->getRaw()->downloadPeer,
-							 "%s: checkpoint ====> { %d,  uint256(\"%s\"), %d, %d },",
-							 tbuf,
-							 blocks[i]->getHeight(),
-							 Utils::UInt256ToString(blocks[i]->getBlockHash(), true).c_str(),
-							 blocks[i]->getRawBlock()->timestamp,
-							 blocks[i]->getRawBlock()->target);
+					//fixme [refactor] replace with IMerkleBlock interface
+//					peer_dbg(getPeerManager()->getRaw()->downloadPeer,
+//							 "%s: checkpoint ====> { %d,  uint256(\"%s\"), %d, %d },",
+//							 tbuf,
+//							 blocks[i]->getHeight(),
+//							 Utils::UInt256ToString(blocks[i]->getBlockHash(), true).c_str(),
+//							 blocks[i]->getRawBlock()->timestamp,
+//							 blocks[i]->getRawBlock()->target);
 				}
 #endif
 
@@ -319,7 +320,7 @@ namespace Elastos {
 			std::vector<MerkleBlockEntity> blocksEntity = _databaseManager.getAllMerkleBlocks(ISO);
 
 			for (size_t i = 0; i < blocksEntity.size(); ++i) {
-				MerkleBlockPtr block(Registry::Instance()->CreateMerkleBlock(_pluginTypes.BlockType, false));
+				MerkleBlockPtr block(Registry::Instance()->CreateMerkleBlock(_pluginTypes.BlockType));
 				block->setHeight(blocksEntity[i].blockHeight);
 				ByteStream stream(blocksEntity[i].blockBytes, blocksEntity[i].blockBytes.GetSize(), false);
 				stream.setPosition(0);
