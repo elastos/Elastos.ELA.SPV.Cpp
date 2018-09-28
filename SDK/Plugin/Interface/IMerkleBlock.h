@@ -7,8 +7,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "BRMerkleBlock.h"
-
+#include "BRInt.h"
 #include "ELAMessageSerializable.h"
 
 namespace Elastos {
@@ -18,11 +17,7 @@ namespace Elastos {
 		public:
 			virtual ~IMerkleBlock() {}
 
-			virtual BRMerkleBlock *getRawBlock() const = 0;
-
-			virtual void deleteRawBlock() = 0;
-
-			virtual UInt256 getBlockHash() const = 0;
+			virtual const UInt256 &getBlockHash() const = 0;
 
 			virtual uint32_t getHeight() const = 0;
 

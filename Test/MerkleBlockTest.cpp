@@ -4,12 +4,11 @@
 
 #define CATCH_CONFIG_MAIN
 
-#include <Core/BRMerkleBlock.h>
-#include "BRMerkleBlock.h"
 #include "Utils.h"
 #include "catch.hpp"
 #include "Log.h"
 #include "SDK/Plugin/Block/MerkleBlock.h"
+//#include "SDK/Plugin/Registry.h"
 #include "TestHelper.h"
 
 using namespace Elastos::ElaWallet;
@@ -19,38 +18,27 @@ TEST_CASE("MerkleBlock construct test", "[MerkleBlock]") {
 	srand(time(nullptr));
 
 	SECTION("serialize and deserialize") {
-		ELAMerkleBlock *block = createELAMerkleBlock();
+		fruit::Injector<IMerkleBlock> injector(GetMerkleBlockComponent);
+		MerkleBlock *merkleBlock = dynamic_cast<MerkleBlock *>(injector.get<IMerkleBlock *>());
+//		IMerkleBlock *iMerkleBlock = Registry::Instance()->CreateMerkleBlock("ELA");
+//		MerkleBlock *merkleBlock = dynamic_cast<MerkleBlock *>(iMerkleBlock);
+		REQUIRE(merkleBlock != nullptr);
+		setMerkleBlockValues(merkleBlock);
 
-		MerkleBlock mbOrig(block, true);
 		ByteStream stream;
-		mbOrig.Serialize(stream);
+		merkleBlock->Serialize(stream);
 
 		MerkleBlock mb;
 		stream.setPosition(0);
 		mb.Deserialize(stream);
-		ELAMerkleBlock *newBlock = (ELAMerkleBlock *) mb.getRaw();
 
-		mbOrig.getBlockHash();
-		mb.getBlockHash();
-
-		REQUIRE(nullptr != mb.getRaw());
-		verifyELAMerkleBlock(newBlock, block);
-	}
-	SECTION("Clone test") {
-		ELAMerkleBlock *block = createELAMerkleBlock();
-
-		MerkleBlock mbOrig(block, true);
-
-		MerkleBlockPtr clonedBlock(mbOrig.Clone(mbOrig.getRaw(), true));
-
-		verifyELAMerkleBlock((ELAMerkleBlock *) clonedBlock->getRawBlock(), block);
+		verifyELAMerkleBlock(*merkleBlock, mb);
 	}
 }
 
 TEST_CASE("Json convert", "[json]") {
 
-	ELAMerkleBlock *merkleBlock = ELAMerkleBlockNew();
-	MerkleBlock mb(merkleBlock, true);
+	MerkleBlock mb;
 
 	SECTION("Convert to json") {
 		std::vector<std::string> hashes = {
@@ -64,35 +52,35 @@ TEST_CASE("Json convert", "[json]") {
 		};
 		uint8_t flags[] = {1, 2, 3, 4, 5, 6};
 
-		mb.getRaw()->blockHash = Utils::UInt256FromString(
-				"000000000000000002df2dd9d4fe0578392e519610e341dd09025469f101cfa1");
-		mb.getRaw()->version = 11111;
-		mb.getRaw()->prevBlock = Utils::UInt256FromString(
-				"00000000000000000f9cfece8494800d3dcbf9583232825da640c8703bcd27e7");
-		mb.getRaw()->merkleRoot = Utils::UInt256FromString(
-				"000000000000000001630546cde8482cc183708f076a5e4d6f51cd24518e8f85");
-		mb.getRaw()->timestamp = 22222;
-		mb.getRaw()->target = 33333;
-		mb.getRaw()->nonce = 44444;
-		mb.getRaw()->totalTx = 55555;
+		mb.setVersion(11111);
+		mb.setPrevBlockHash(Utils::UInt256FromString(
+				"00000000000000000f9cfece8494800d3dcbf9583232825da640c8703bcd27e7"));
+		mb.setRootBlockHash(Utils::UInt256FromString(
+				"000000000000000001630546cde8482cc183708f076a5e4d6f51cd24518e8f85"));
+		mb.setTimestamp(22222);
+		mb.setTarget( 33333);
+		mb.setNonce( 44444);
+		mb.setTransactionCount(55555);
 
-		mb.getRaw()->hashesCount = hashes.size();
-		mb.getRaw()->hashes = (UInt256 *) malloc(sizeof(UInt256) * hashes.size());
+		std::vector<UInt256> hashList;
 		for (int i = 0; i < hashes.size(); ++i) {
-			memcpy(&mb.getRaw()->hashes[i], Utils::UInt256FromString(hashes[i]).u8, sizeof(UInt256));
+			hashList.push_back(Utils::UInt256FromString(hashes[i]));
 		}
+		mb.setHashes(hashList);
 
-		mb.getRaw()->flagsLen = sizeof(flags) / sizeof(flags[0]);
-		mb.getRaw()->flags = (uint8_t *) malloc(mb.getRaw()->flagsLen);
-		for (int i = 0; i < mb.getRaw()->flagsLen; ++i) {
-			mb.getRaw()->flags[i] = flags[i];
+		std::vector<uint8_t> flagList;
+		for (int i = 0; i < sizeof(flags) / sizeof(flags[0]); ++i) {
+			flagList.push_back(flags[i]);
 		}
+		mb.setFlags(flagList);
 
-		mb.getRaw()->height = 1000;
+		mb.setHeight(1000);
+
+		std::string blockHash = Utils::UInt256ToString(mb.getBlockHash());
 
 		nlohmann::json j = mb.toJson();
 
-		REQUIRE(Utils::UInt256ToString(mb.getRaw()->blockHash) == j["BlockHash"].get<std::string>());
+		REQUIRE(blockHash == j["BlockHash"].get<std::string>());
 		REQUIRE(mb.getVersion() == j["Version"].get<uint32_t>());
 		REQUIRE(Utils::UInt256ToString(mb.getPrevBlockHash()) == j["PrevBlock"].get<std::string>());
 		REQUIRE(Utils::UInt256ToString(mb.getRootBlockHash()) == j["MerkleRoot"].get<std::string>());
@@ -101,15 +89,15 @@ TEST_CASE("Json convert", "[json]") {
 		REQUIRE(mb.getNonce() == j["Nonce"].get<uint32_t>());
 
 		std::vector<std::string> jhashes = j["Hashes"].get<std::vector<std::string>>();
-		REQUIRE(jhashes.size() == hashes.size());
-		for (int i = 0; i < hashes.size(); ++i) {
+		REQUIRE(jhashes.size() == mb.getHashes().size());
+		for (int i = 0; i < mb.getHashes().size(); ++i) {
 			REQUIRE(jhashes[i] == hashes[i]);
 		}
 
 		std::vector<uint8_t> jflags = j["Flags"].get<std::vector<uint8_t>>();
-		REQUIRE(mb.getRaw()->flagsLen == jflags.size());
-		for (int i = 0; i < mb.getRaw()->flagsLen; ++i) {
-			REQUIRE(jflags[i] == mb.getRaw()->flags[i]);
+		REQUIRE(mb.getFlags().size() == jflags.size());
+		for (int i = 0; i < mb.getFlags().size(); ++i) {
+			REQUIRE(jflags[i] == mb.getFlags()[i]);
 		}
 		REQUIRE(mb.getHeight() == j["Height"].get<uint32_t>());
 	}
@@ -151,14 +139,14 @@ TEST_CASE("Json convert", "[json]") {
 		REQUIRE(mb.getNonce() == j["Nonce"].get<uint32_t>());
 		REQUIRE(mb.getTransactionCount() == j["TotalTx"].get<uint32_t>());
 		std::vector<std::string> jhashes = j["Hashes"].get<std::vector<std::string>>();
-		REQUIRE(mb.getRaw()->hashesCount == jhashes.size());
+		REQUIRE(mb.getHashes().size() == jhashes.size());
 		for (int i = 0; i < jhashes.size(); ++i) {
-			REQUIRE(Utils::UInt256ToString(mb.getRaw()->hashes[i]) == jhashes[i]);
+			REQUIRE(Utils::UInt256ToString(mb.getHashes()[i]) == jhashes[i]);
 		}
 		std::vector<uint8_t> jflags = j["Flags"].get<std::vector<uint8_t>>();
-		REQUIRE(jflags.size() == mb.getRaw()->flagsLen);
+		REQUIRE(jflags.size() == mb.getFlags().size());
 		for (int i = 0; i < jflags.size(); ++i) {
-			REQUIRE(jflags[i] == mb.getRaw()->flags[i]);
+			REQUIRE(jflags[i] == mb.getFlags()[i]);
 		}
 	}
 

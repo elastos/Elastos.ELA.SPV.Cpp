@@ -56,8 +56,7 @@ namespace Elastos {
 							new SharedWrapperList<IMerkleBlock, BRMerkleBlock *>();
 					for (size_t i = 0; i < blockCount; ++i) {
 						MerkleBlockPtr wrappedBlock(
-								Registry::Instance()->CreateMerkleBlock(listener->getPluginTypes().BlockType, true,
-																		blocks[i]));
+								Registry::Instance()->CreateMerkleBlock(listener->getPluginTypes().BlockType));
 						coreBlocks->push_back(wrappedBlock);
 					}
 					listener->saveBlocks(replace, *coreBlocks);
@@ -145,23 +144,24 @@ namespace Elastos {
 				peerArray[i] = *peers[i]->getRaw();
 			}
 
-			std::vector<BRMerkleBlock *> blockArray;
-			for (SharedWrapperList<IMerkleBlock, BRMerkleBlock *>::const_iterator it = blocks.cbegin();
-				 it != blocks.cend(); ++it) {
-				blockArray.push_back((*it)->getRawBlock());
-			}
-
-			_manager = ELAPeerManagerNew(
-					_chainParams.getRaw(),
-					wallet->getRaw(),
-					earliestKeyTime,
-					blockArray.data(),
-					blocks.size(),
-					peerArray,
-					peers.size(),
-					PeerMessageManager::instance().createMessageManager(),
-					plugins
-			);
+			//fixme [refactor] replace raw block
+//			std::vector<BRMerkleBlock *> blockArray;
+//			for (SharedWrapperList<IMerkleBlock, BRMerkleBlock *>::const_iterator it = blocks.cbegin();
+//				 it != blocks.cend(); ++it) {
+//				blockArray.push_back((*it)->getRawBlock());
+//			}
+//
+//			_manager = ELAPeerManagerNew(
+//					_chainParams.getRaw(),
+//					wallet->getRaw(),
+//					earliestKeyTime,
+//					blockArray.data(),
+//					blocks.size(),
+//					peerArray,
+//					peers.size(),
+//					PeerMessageManager::instance().createMessageManager(),
+//					plugins
+//			);
 
 			BRPeerManagerSetCallbacks((BRPeerManager *) _manager, &_listener,
 									  syncStarted,

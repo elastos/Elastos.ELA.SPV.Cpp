@@ -11,7 +11,7 @@
 
 #include "Wrapper.h"
 #include "CMemBlock.h"
-#include "Plugin/Interface/IMerkleBlock.h"
+#include "Plugin/Block/MerkleBlockBase.h"
 #include "ELACoreExt/AuxPow.h"
 #include "ELACoreExt/ELAMerkleBlock.h"
 
@@ -19,23 +19,16 @@ namespace Elastos {
 	namespace ElaWallet {
 
 		class MerkleBlock :
-				public IMerkleBlock,
-				public Wrapper<BRMerkleBlock> {
+				public MerkleBlockBase {
 
 		public:
-			MerkleBlock();
+			INJECT(MerkleBlock());
 
-			MerkleBlock(bool manageRaw);
-
-			MerkleBlock(ELAMerkleBlock *merkleBlock, bool manageRaw);
-
-			MerkleBlock(const ELAMerkleBlock &merkleBlock);
+			MerkleBlock(const MerkleBlock &merkleBlock);
 
 			~MerkleBlock();
 
-			virtual std::string toString() const;
-
-			virtual BRMerkleBlock *getRaw() const;
+			MerkleBlock &operator=(const MerkleBlock &other);
 
 			virtual void Serialize(ByteStream &ostream) const;
 
@@ -45,50 +38,21 @@ namespace Elastos {
 
 			virtual void fromJson(const nlohmann::json &);
 
-			virtual UInt256 getBlockHash() const;
-
-			uint32_t getVersion() const;
-
-			UInt256 getPrevBlockHash() const;
-
-			UInt256 getRootBlockHash() const;
-
-			uint32_t getTimestamp() const;
-
-			uint32_t getTarget() const;
-
-			uint32_t getNonce() const;
-
-			uint32_t getTransactionCount() const;
-
-			virtual uint32_t getHeight() const;
-
-			virtual void setHeight(uint32_t height);
+			virtual const UInt256 &getBlockHash() const;
 
 			virtual bool isValid(uint32_t currentTime) const;
 
-			const AuxPow &getAuxPow() const;
-
-			virtual BRMerkleBlock *getRawBlock() const;
-
-			virtual void deleteRawBlock();
-
 			virtual std::string getBlockType() const { return "ELA"; }
 
-			static void serializeNoAux(ByteStream &ostream, const BRMerkleBlock &raw);
+			const AuxPow &getAuxPow() const;
 
-			static UInt256 MerkleBlockRootR(size_t *hashIdx, size_t *flagIdx, int depth, const BRMerkleBlock &raw);
+			void setAuxPow(const AuxPow &pow);
 
 		private:
-			ELAMerkleBlock *_merkleBlock;
-			bool _manageRaw;
+			AuxPow _auxPow;
 		};
 
-		fruit::Component<ELAMerkleBlock> GetELAMerkleBlockComponent(ELAMerkleBlock *block);
-
-		fruit::Component<IMerkleBlock> GetMerkleBlockComponent(bool manage);
-
-		fruit::Component<IMerkleBlock> GetMerkleBlockComponentWithParams(ELAMerkleBlock *block, bool manage);
+		fruit::Component<IMerkleBlock> GetMerkleBlockComponent();
 	}
 }
 
