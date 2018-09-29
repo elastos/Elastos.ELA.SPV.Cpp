@@ -191,5 +191,9 @@ namespace Elastos {
 			}
 		}
 
+		size_t TransactionOutput::GetSize() const {
+			return sizeof(_assetId) + sizeof(_amount) + sizeof(_outputLock) + sizeof(_programHash);
+		}
+
 	}
 }

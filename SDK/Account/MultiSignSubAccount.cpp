@@ -22,31 +22,32 @@ namespace Elastos {
 
 		void MultiSignSubAccount::SignTransaction(const TransactionPtr &transaction, ELAWallet *wallet,
 												  const std::string &payPassword) {
-			ELATransaction *elaTransaction = (ELATransaction *) transaction->getRaw();
-			if (elaTransaction->programs.empty()) {
-				Program *program = new Program;
-				program->setCode(_multiSignAccount->GenerateRedeemScript());
-				elaTransaction->programs.push_back(program);
-			}
-
-			if (elaTransaction->programs.size() != 1)
-				ErrorCode::StandardLogicError(ErrorCode::TransactionContentError,
-											  "Multi-sign program should be unique.");
-
-			ByteStream stream;
-			if (elaTransaction->programs[0]->getParameter().GetSize() > 0) {
-				stream.putBytes(elaTransaction->programs[0]->getParameter(),
-								elaTransaction->programs[0]->getParameter().GetSize());
-			}
-
-			CMBlock shaData = transaction->GetShaData();
-			CMBlock signData = DeriveMainAccountKey(payPassword).compactSign(shaData);
-			uint8_t buff[65];
-			memset(buff, 0, 65);
-			memcpy(buff, signData, signData.GetSize());
-			stream.putBytes(buff, 65);
-
-			elaTransaction->programs[0]->setParameter(stream.getBuffer());
+			//fixme [refactor] complete me
+//			ELATransaction *elaTransaction = (ELATransaction *) transaction->getRaw();
+//			if (elaTransaction->programs.empty()) {
+//				Program *program = new Program;
+//				program->setCode(_multiSignAccount->GenerateRedeemScript());
+//				elaTransaction->programs.push_back(program);
+//			}
+//
+//			if (elaTransaction->programs.size() != 1)
+//				ErrorCode::StandardLogicError(ErrorCode::TransactionContentError,
+//											  "Multi-sign program should be unique.");
+//
+//			ByteStream stream;
+//			if (elaTransaction->programs[0]->getParameter().GetSize() > 0) {
+//				stream.putBytes(elaTransaction->programs[0]->getParameter(),
+//								elaTransaction->programs[0]->getParameter().GetSize());
+//			}
+//
+//			CMBlock shaData = transaction->GetShaData();
+//			CMBlock signData = DeriveMainAccountKey(payPassword).compactSign(shaData);
+//			uint8_t buff[65];
+//			memset(buff, 0, 65);
+//			memcpy(buff, signData, signData.GetSize());
+//			stream.putBytes(buff, 65);
+//
+//			elaTransaction->programs[0]->setParameter(stream.getBuffer());
 		}
 
 		nlohmann::json MultiSignSubAccount::GetBasicInfo() const {
@@ -57,11 +58,11 @@ namespace Elastos {
 
 		std::vector<std::string> MultiSignSubAccount::GetTransactionSignedSigners(const TransactionPtr &transaction) {
 
-			for (std::vector<Program *>::const_iterator programIt = transaction->getPrograms().cbegin();
+			for (std::vector<Program>::const_iterator programIt = transaction->getPrograms().cbegin();
 				 programIt != transaction->getPrograms().cend(); ++programIt) {
 
-				const CMBlock &code = (*programIt)->getCode();
-				const CMBlock &parameter = (*programIt)->getParameter();
+				const CMBlock &code = programIt->getCode();
+				const CMBlock &parameter = programIt->getParameter();
 				if (code[code.GetSize() - 1] == ELA_MULTISIG) {
 					std::vector<std::string> result;
 

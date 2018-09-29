@@ -4,7 +4,6 @@
 
 #include <boost/scoped_ptr.hpp>
 #include <algorithm>
-#include <SDK/ELACoreExt/ELATxOutput.h>
 #include <Core/BRTransaction.h>
 
 #include "BRTransaction.h"
@@ -155,17 +154,19 @@ namespace Elastos {
 			}
 			pthread_mutex_unlock(&wallet->lock);
 
-			std::vector<nlohmann::json> jsonList(realCount);
-			for (size_t i = 0; i < realCount; ++i) {
-				TransactionPtr transactionPtr(new Transaction((ELATransaction *) transactions[i], false));
-				nlohmann::json txJson = transactionPtr->toJson();
-				transactionPtr->generateExtraTransactionInfo(txJson, _walletManager->getWallet(),
-															 _walletManager->getPeerManager()->getLastBlockHeight());
-				jsonList[i] = txJson;
-			}
-			nlohmann::json j;
-			j["Transactions"] = jsonList;
-			return j;
+			//fixme [refactor] complete me
+//			std::vector<nlohmann::json> jsonList(realCount);
+//			for (size_t i = 0; i < realCount; ++i) {
+//				TransactionPtr transactionPtr(new Transaction((ELATransaction *) transactions[i], false));
+//				nlohmann::json txJson = transactionPtr->toJson();
+//				transactionPtr->generateExtraTransactionInfo(txJson, _walletManager->getWallet(),
+//															 _walletManager->getPeerManager()->getLastBlockHeight());
+//				jsonList[i] = txJson;
+//			}
+//			nlohmann::json j;
+//			j["Transactions"] = jsonList;
+//			return j;
+			return nlohmann::json();
 		}
 
 		boost::shared_ptr<Transaction>
@@ -176,11 +177,11 @@ namespace Elastos {
 									  param->getMemo());
 			if (!ptr) return nullptr;
 
-			ptr->setTransactionType(ELATransaction::TransferAsset);
-			const std::vector<TransactionOutput *> &outList = ptr->getOutputs();
+			ptr->setTransactionType(Transaction::TransferAsset);
+			std::vector<TransactionOutput> &outList = ptr->getOutputs();
 			std::for_each(outList.begin(), outList.end(),
-						  [&param](TransactionOutput *output) {
-							  output->setAssetId(param->getAssetId());
+						  [&param](TransactionOutput &output) {
+							  output.setAssetId(param->getAssetId());
 						  });
 
 			return ptr;
@@ -283,7 +284,7 @@ namespace Elastos {
 
 			nlohmann::json j;
 			j["TxHash"] = Utils::UInt256ToString(transaction->getHash(), true);
-			j["Fee"] = transaction->getStandardFee();
+			j["Fee"] = transaction->getFee();
 			return j;
 		}
 
@@ -307,33 +308,34 @@ namespace Elastos {
 		}
 
 		bool SubWallet::filterByAddressOrTxId(BRTransaction *transaction, const std::string &addressOrTxid) {
-			ELATransaction *tx = (ELATransaction *) transaction;
-
-			if (addressOrTxid == "") {
-				return true;
-			}
-
-			for (size_t i = 0; i < tx->raw.inCount; ++i) {
-				BRTxInput *input = &tx->raw.inputs[i];
-				std::string addr(input->address);
-				if (addr == addressOrTxid) {
-					return true;
-				}
-			}
-			for (size_t i = 0; i < tx->outputs.size(); ++i) {
-				TransactionOutput *output = tx->outputs[i];
-				if (output->getAddress() == addressOrTxid) {
-					return true;
-				}
-			}
-
-			if (addressOrTxid.length() == sizeof(UInt256) * 2) {
-				Transaction txn(tx, false);
-				UInt256 Txid = Utils::UInt256FromString(addressOrTxid, true);
-				if (UInt256Eq(&Txid, &tx->raw.txHash)) {
-					return true;
-				}
-			}
+			//fixme [refactor] complete me
+//			ELATransaction *tx = (ELATransaction *) transaction;
+//
+//			if (addressOrTxid == "") {
+//				return true;
+//			}
+//
+//			for (size_t i = 0; i < tx->raw.inCount; ++i) {
+//				BRTxInput *input = &tx->raw.inputs[i];
+//				std::string addr(input->address);
+//				if (addr == addressOrTxid) {
+//					return true;
+//				}
+//			}
+//			for (size_t i = 0; i < tx->outputs.size(); ++i) {
+//				TransactionOutput *output = tx->outputs[i];
+//				if (output->getAddress() == addressOrTxid) {
+//					return true;
+//				}
+//			}
+//
+//			if (addressOrTxid.length() == sizeof(UInt256) * 2) {
+//				Transaction txn(tx, false);
+//				UInt256 Txid = Utils::UInt256FromString(addressOrTxid, true);
+//				if (UInt256Eq(&Txid, &tx->raw.txHash)) {
+//					return true;
+//				}
+//			}
 
 			return false;
 		}

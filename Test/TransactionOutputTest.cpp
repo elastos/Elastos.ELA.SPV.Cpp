@@ -4,7 +4,6 @@
 
 #define CATCH_CONFIG_MAIN
 
-#include "ELATxOutput.h"
 #include "catch.hpp"
 #include "SDK/Transaction/TransactionOutput.h"
 #include "BRAddress.h"

@@ -9,7 +9,6 @@
 #include "Utils.h"
 #include "Log.h"
 #include "BRArray.h"
-#include "ELATransaction.h"
 #include "ELAMerkleBlock.h"
 #include "arith_uint256.h"
 #include "Message/PeerMessageManager.h"

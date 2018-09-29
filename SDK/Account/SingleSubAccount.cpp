@@ -14,7 +14,7 @@ namespace Elastos {
 
 		}
 
-		void SingleSubAccount::InitWallet(BRTransaction *transactions[], size_t txCount, ELAWallet *wallet) {
+		void SingleSubAccount::InitWallet(const std::vector<Transaction> &transactions, size_t txCount, ELAWallet *wallet) {
 			wallet->IsSingleAddress = true;
 			wallet->SingleAddress = _parentAccount->GetAddress();
 

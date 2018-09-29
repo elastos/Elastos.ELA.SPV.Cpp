@@ -12,7 +12,7 @@
 #include "BRInt.h"
 #include "Wrapper.h"
 #include "CMemBlock.h"
-#include "ELATransaction.h"
+#include "Transaction/Transaction.h"
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -51,7 +51,7 @@ namespace Elastos {
 
 			static bool isValidIdAddress(const std::string &address);
 
-			static bool isValidProgramHash(const UInt168 &u168, const ELATransaction::Type &type);
+			static bool isValidProgramHash(const UInt168 &u168, const Transaction::Type &type);
 
 		private:
 			boost::shared_ptr<BRAddress> _address;
