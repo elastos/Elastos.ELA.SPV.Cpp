@@ -199,7 +199,7 @@ namespace Elastos {
 			}
 
 			for (size_t i = 0; txn && i < txn->outputs.size(); i++) {
-				size += sizeof(uint64_t) + BRVarIntSize(txn->outputs[i]->getRaw()->scriptLen) + txn->outputs[i]->getRaw()->scriptLen;
+				size += sizeof(uint64_t) + BRVarIntSize(txn->outputs[i]->getScript().GetSize()) + txn->outputs[i]->getScript().GetSize();
 			}
 
 			return size;

@@ -7,34 +7,25 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "BRTransaction.h"
-#include "SDK/ELACoreExt/ELATxOutput.h"
-#include "Wrapper.h"
+#include "BRInt.h"
 #include "CMemBlock.h"
-#include "SDK/Plugin/Interface/ELAMessageSerializable.h"
+#include "Plugin/Interface/ELAMessageSerializable.h"
 
 namespace Elastos {
 	namespace ElaWallet {
 
 		class TransactionOutput :
-				public Wrapper<BRTxOutput>,
 				public ELAMessageSerializable {
 
 		public:
 
 			TransactionOutput();
 
-			explicit TransactionOutput(ELATxOutput *output);
-
 			TransactionOutput(const TransactionOutput &output);
 
 			TransactionOutput(uint64_t amount, const CMBlock &script, int signType);
 
 			~TransactionOutput();
-
-			virtual std::string toString() const;
-
-			virtual BRTxOutput *getRaw() const;
 
 			virtual void Serialize(ByteStream &ostream) const;
 
@@ -52,7 +43,7 @@ namespace Elastos {
 
 			void setAmount(uint64_t amount);
 
-			CMBlock getScript() const;
+			const CMBlock &getScript() const;
 
 			const UInt256 &getAssetId() const;
 
@@ -70,8 +61,16 @@ namespace Elastos {
 
 			virtual void fromJson(const nlohmann::json &jsonData);
 
+			void SetScript(const CMBlock &script, int signType);
+
 		private:
-			ELATxOutput *_output;
+			char _address[75];
+			uint64_t _amount;
+			CMBlock _script;
+			UInt256 _assetId;
+			uint32_t _outputLock;
+			UInt168 _programHash;
+			int _signType;
 		};
 
 		typedef boost::shared_ptr<TransactionOutput> TransactionOutputPtr;

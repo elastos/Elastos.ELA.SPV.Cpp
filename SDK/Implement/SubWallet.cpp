@@ -180,7 +180,7 @@ namespace Elastos {
 			const std::vector<TransactionOutput *> &outList = ptr->getOutputs();
 			std::for_each(outList.begin(), outList.end(),
 						  [&param](TransactionOutput *output) {
-							  ((ELATxOutput *) output->getRaw())->assetId = param->getAssetId();
+							  output->setAssetId(param->getAssetId());
 						  });
 
 			return ptr;

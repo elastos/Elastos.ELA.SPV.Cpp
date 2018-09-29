@@ -82,7 +82,7 @@ namespace Elastos {
 
 				const std::vector<TransactionOutput *> &outList = ptr->getOutputs();
 				for (size_t i = 0; i < outList.size(); ++i) {
-					((ELATxOutput *) outList[i]->getRaw())->assetId = param->getAssetId();
+					outList[i]->setAssetId(param->getAssetId());
 				}
 
 				return ptr;
