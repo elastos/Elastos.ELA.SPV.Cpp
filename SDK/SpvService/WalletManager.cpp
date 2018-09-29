@@ -10,7 +10,6 @@
 #include "WalletManager.h"
 #include "Utils.h"
 #include "Log.h"
-#include "ELACoreExt/ELATxOutput.h"
 #include "Plugin/Registry.h"
 #include "Plugin/Block/MerkleBlock.h"
 
@@ -60,19 +59,20 @@ namespace Elastos {
 				const boost::function<bool(const TransactionPtr &)> filter) const {
 			SharedWrapperList<Transaction, BRTransaction *> txs;
 
-			std::vector<TransactionEntity> txsEntity = _databaseManager.getAllTransactions(ISO);
-
-			for (size_t i = 0; i < txsEntity.size(); ++i) {
-				TransactionPtr transaction(new Transaction());
-				ByteStream byteStream(txsEntity[i].buff, txsEntity[i].buff.GetSize(), false);
-				transaction->Deserialize(byteStream);
-				BRTransaction *raw = transaction->getRaw();
-				raw->blockHeight = txsEntity[i].blockHeight;
-				raw->timestamp = txsEntity[i].timeStamp;
-				if (filter(transaction)) {
-					txs.push_back(transaction);
-				}
-			}
+			//fixme [refactor] complete me
+//			std::vector<TransactionEntity> txsEntity = _databaseManager.getAllTransactions(ISO);
+//
+//			for (size_t i = 0; i < txsEntity.size(); ++i) {
+//				TransactionPtr transaction(new Transaction());
+//				ByteStream byteStream(txsEntity[i].buff, txsEntity[i].buff.GetSize(), false);
+//				transaction->Deserialize(byteStream);
+//				BRTransaction *raw = transaction->getRaw();
+//				raw->blockHeight = txsEntity[i].blockHeight;
+//				raw->timestamp = txsEntity[i].timeStamp;
+//				if (filter(transaction)) {
+//					txs.push_back(transaction);
+//				}
+//			}
 			return txs;
 		}
 
@@ -294,22 +294,23 @@ namespace Elastos {
 		SharedWrapperList<Transaction, BRTransaction *> WalletManager::loadTransactions() {
 			SharedWrapperList<Transaction, BRTransaction *> txs;
 
-			std::vector<TransactionEntity> txsEntity = _databaseManager.getAllTransactions(ISO);
-
-			for (size_t i = 0; i < txsEntity.size(); ++i) {
-				ELATransaction *tx = ELATransactionNew();
-				TransactionPtr transaction(new Transaction(tx, false));
-
-				ByteStream byteStream(txsEntity[i].buff, txsEntity[i].buff.GetSize(), false);
-				transaction->Deserialize(byteStream);
-				transaction->setRemark(txsEntity[i].remark);
-
-				BRTransaction *raw = transaction->getRaw();
-				raw->blockHeight = txsEntity[i].blockHeight;
-				raw->timestamp = txsEntity[i].timeStamp;
-
-				txs.push_back(transaction);
-			}
+			//fixme [refactor] complte me
+//			std::vector<TransactionEntity> txsEntity = _databaseManager.getAllTransactions(ISO);
+//
+//			for (size_t i = 0; i < txsEntity.size(); ++i) {
+//				ELATransaction *tx = ELATransactionNew();
+//				TransactionPtr transaction(new Transaction(tx, false));
+//
+//				ByteStream byteStream(txsEntity[i].buff, txsEntity[i].buff.GetSize(), false);
+//				transaction->Deserialize(byteStream);
+//				transaction->setRemark(txsEntity[i].remark);
+//
+//				BRTransaction *raw = transaction->getRaw();
+//				raw->blockHeight = txsEntity[i].blockHeight;
+//				raw->timestamp = txsEntity[i].timeStamp;
+//
+//				txs.push_back(transaction);
+//			}
 
 			return txs;
 		}

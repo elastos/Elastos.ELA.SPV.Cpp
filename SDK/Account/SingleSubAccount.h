@@ -16,7 +16,7 @@ namespace Elastos {
 
 			virtual nlohmann::json GetBasicInfo() const;
 
-			virtual void InitWallet(BRTransaction *transactions[], size_t txCount, ELAWallet *wallet);
+			virtual void InitWallet(const std::vector<Transaction> &transactions, size_t txCount, ELAWallet *wallet);
 
 			virtual Key DeriveMainAccountKey(const std::string &payPassword);
 

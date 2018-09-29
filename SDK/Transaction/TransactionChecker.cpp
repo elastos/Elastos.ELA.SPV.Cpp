@@ -38,7 +38,7 @@ namespace Elastos {
 
 		bool TransactionChecker::checkTransactionOutput(const TransactionPtr &transaction) {
 
-			const std::vector<TransactionOutput *> &outputs = transaction->getOutputs();
+			const std::vector<TransactionOutput> &outputs = transaction->getOutputs();
 			size_t size = outputs.size();
 			if (size < 1) {
 				return false;
@@ -46,20 +46,20 @@ namespace Elastos {
 
 			bool hasChange = false;
 			bool hasOutput = false;
-			std::string toAddress = outputs[0]->getAddress();
+			std::string toAddress = outputs[0].getAddress();
 			int toAddressCount = 0;
 
 			std::vector<std::string> addresses = _wallet->getAllAddresses();
 			for (size_t i = 0; i < size; ++i) {
-				TransactionOutput *output = outputs[i];
-				if (!Address::UInt168IsValid(output->getProgramHash())) {
+				const TransactionOutput &output = outputs[i];
+				if (!Address::UInt168IsValid(output.getProgramHash())) {
 					Log::error("output's program hash is not valid");
 					return false;
 				}
-				if (output->getAddress() == toAddress) {
+				if (output.getAddress() == toAddress) {
 					toAddressCount ++;
 				}
-				if (std::find(addresses.begin(), addresses.end(), output->getAddress()) != addresses.end()) {
+				if (std::find(addresses.begin(), addresses.end(), output.getAddress()) != addresses.end()) {
 //					if (hasChange) //should have only one change output per tx
 //						return false;
 					hasChange = true;
@@ -87,11 +87,10 @@ namespace Elastos {
 		}
 
 		bool TransactionChecker::checkTransactionAttribute(const TransactionPtr &transaction) {
-			const std::vector<Attribute *> &attributes = transaction->getAttributes();
+			const std::vector<Attribute> &attributes = transaction->getAttributes();
 			size_t size = attributes.size();
 			for (size_t i = 0; i < size; ++i) {
-				Attribute *attr = attributes[i];
-				if (!attr->isValid()) {
+				if (!attributes[i].isValid()) {
 					return false;
 				}
 			}
@@ -99,10 +98,10 @@ namespace Elastos {
 		}
 
 		bool TransactionChecker::checkTransactionProgram(const TransactionPtr &transaction) {
-			const std::vector<Program *> &programs = transaction->getPrograms();
+			const std::vector<Program> &programs = transaction->getPrograms();
 			size_t size = programs.size();
 			for (size_t i = 0; i < size; ++i) {
-				if (!programs[i]->isValid(transaction)) {
+				if (!programs[i].isValid(transaction.get())) {
 					return false;
 				}
 			}

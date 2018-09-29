@@ -241,7 +241,7 @@ namespace Elastos {
 		    return r;
 	    }
 
-	    bool Address::isValidProgramHash(const UInt168 &u168, const ELATransaction::Type &type) {
+	    bool Address::isValidProgramHash(const UInt168 &u168, const Transaction::Type &type) {
 		    if (UInt168IsZero(&u168) == true) {
 			    return true;
 		    }
@@ -250,13 +250,13 @@ namespace Elastos {
 		    bool result = false;
 
 		    switch (type) {
-			    case  ELATransaction::TransferCrossChainAsset:
+			    case Transaction::TransferCrossChainAsset:
 				    result = prefix == ELA_CROSSCHAIN_ADDRESS;
 				    break;
-			    case ELATransaction::TransferAsset:
+			    case Transaction::TransferAsset:
 				    result = prefix == ELA_STAND_ADDRESS;
 				    break;
-			    case ELATransaction::RegisterIdentification:
+			    case Transaction::RegisterIdentification:
 				    result = prefix == ELA_IDCHAIN_ADDRESS;
 				    break;
 			    default:

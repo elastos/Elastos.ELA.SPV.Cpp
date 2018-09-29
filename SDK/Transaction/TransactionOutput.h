@@ -18,7 +18,6 @@ namespace Elastos {
 				public ELAMessageSerializable {
 
 		public:
-
 			TransactionOutput();
 
 			TransactionOutput(const TransactionOutput &output);
@@ -62,6 +61,8 @@ namespace Elastos {
 			virtual void fromJson(const nlohmann::json &jsonData);
 
 			void SetScript(const CMBlock &script, int signType);
+
+			size_t GetSize() const;
 
 		private:
 			char _address[75];

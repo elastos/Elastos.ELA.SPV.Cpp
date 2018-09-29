@@ -14,12 +14,10 @@
 #include "Key.h"
 #include "WrapperList.h"
 #include "Program.h"
-#include "ELATransaction.h"
 #include "SDK/Plugin/Interface/ELAMessageSerializable.h"
 #include "ELACoreExt/Attribute.h"
 #include "ELACoreExt/Payload/IPayload.h"
-#include "ELACoreExt/ELATransaction.h"
-
+#include "TransactionInput.h"
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -27,29 +25,29 @@ namespace Elastos {
 		class Wallet;
 
 		class Transaction :
-				public Wrapper<BRTransaction>,
 				public ELAMessageSerializable {
-
+		public:
+			enum Type {
+				CoinBase = 0x00,
+				RegisterAsset = 0x01,
+				TransferAsset = 0x02,
+				Record = 0x03,
+				Deploy = 0x04,
+				SideMining = 0x05,
+				IssueToken = 0x06,
+				WithdrawAsset = 0x07,
+				TransferCrossChainAsset = 0x08,
+				RegisterIdentification = 0x09,
+				TypeMaxCount
+			};
 		public:
 			Transaction();
-
-			Transaction(ELATransaction *transaction, bool manageRaw = true);
-
-			Transaction(const ELATransaction &tx);
 
 			Transaction(const Transaction &tx);
 
 			Transaction &operator=(const Transaction &tx);
 
-			Transaction(const CMBlock &buffer);
-
-			Transaction(const CMBlock &buffer, uint32_t blockHeight, uint32_t timeStamp);
-
 			~Transaction();
-
-			virtual std::string toString() const;
-
-			virtual BRTransaction *getRaw() const;
 
 			virtual void Serialize(ByteStream &ostream) const;
 
@@ -63,27 +61,26 @@ namespace Elastos {
 
 			bool &isRegistered();
 
-			UInt256 getHash() const;
+			const UInt256 &getHash() const;
 
 			void resetHash();
 
 			uint32_t getVersion() const;
 
-			std::vector<std::string> getInputAddresses();
+			void setVersion(uint32_t version);
 
-			const std::vector<TransactionOutput *> &getOutputs() const;
+			const std::vector<TransactionOutput> &getOutputs() const;
+
+			std::vector<TransactionOutput> &getOutputs();
+
+			const std::vector<TransactionInput> &getInputs() const;
 
 			std::vector<std::string> getOutputAddresses();
 
-			void setTransactionType(ELATransaction::Type type);
+			void setTransactionType(Type type);
 
-			ELATransaction::Type getTransactionType() const;
+			Type getTransactionType() const;
 
-			/**
-			 * The transaction's lockTime
-			 *
-			 * @return the lock time as a long (from a uint32_t)
-			 */
 			uint32_t getLockTime();
 
 			void setLockTime(uint32_t lockTime);
@@ -95,6 +92,8 @@ namespace Elastos {
 			 */
 			uint32_t getBlockHeight();
 
+			void setBlockHeight(uint32_t height);
+
 			/**
 			 * The transacdtion's timestamp.
 			 *
@@ -104,9 +103,9 @@ namespace Elastos {
 
 			void setTimestamp(uint32_t timestamp);
 
-			void addOutput(TransactionOutput *output);
+			void addOutput(const TransactionOutput &output);
 
-			void shuffleOutputs();
+			void addInput(const TransactionInput &input);
 
 			/**
 			 * The the transactions' size in bytes if signed, or the estimated size assuming
@@ -117,14 +116,6 @@ namespace Elastos {
 			size_t getSize();
 
 			/**
-			 * The transaction's standard fee which is the minimum transaction fee needed for the
-			 * transaction to relay across the bitcoin network.
-			 * *
-			 * @return the fee (in Satoshis)?
-			 */
-			uint64_t getStandardFee();
-
-			/**
 			 * Returns true if all the transaction's signatures exists.  This method does not verify
 			 * the signatures.
 			 *
@@ -132,18 +123,9 @@ namespace Elastos {
 			 */
 			bool isSigned();
 
-
 			bool sign(const WrapperList<Key, BRKey> &keys, int forkId);
 
 			bool sign(const Key &key, int forkId);
-
-			/**
-			 * Return true if this transaction satisfied the rules in:
-			 *      https://bitcoin.org/en/developer-guide#standard-transactions
-			 *
-			 * @return true if standard; false otherwise
-			 */
-			bool isStandard();
 
 			UInt256 getReverseHash();
 
@@ -157,21 +139,30 @@ namespace Elastos {
 
 			IPayload *getPayload();
 
-			void addAttribute(Attribute *attribute);
+			void addAttribute(const Attribute &attribute);
 
-			void addProgram(Program *program);
+			void addProgram(const Program &program);
 
 			void clearPrograms();
 
-			const std::vector<Attribute *> &getAttributes() const;
+			const std::vector<Attribute> &getAttributes() const;
 
-			const std::vector<Program *> &getPrograms() const;
+			const std::vector<Program> &getPrograms() const;
 
 			const std::string getRemark() const;
 
 			void setRemark(const std::string &remark);
 
-			void generateExtraTransactionInfo(nlohmann::json &rawTxJson, const boost::shared_ptr<Wallet> &wallet, uint32_t blockHeight);
+			void generateExtraTransactionInfo(nlohmann::json &rawTxJson, const boost::shared_ptr<Wallet> &wallet,
+											  uint32_t blockHeight);
+
+			uint8_t	getPayloadVersion() const;
+
+			void setPayloadVersion(uint8_t version);
+
+			uint64_t getFee() const;
+
+			void setFee(uint64_t fee);
 
 			void removeDuplicatePrograms();
 
@@ -179,11 +170,13 @@ namespace Elastos {
 
 			CMBlock GetShaData() const;
 
+			void Cleanup();
+
+			void initPayloadFromType(Type type);
+
 		private:
 
 			void reinit();
-
-			IPayload *newPayload(ELATransaction::Type type);
 
 			bool transactionSign(int forkId, const WrapperList<Key, BRKey> keys);
 
@@ -193,8 +186,21 @@ namespace Elastos {
 
 		private:
 			bool _isRegistered;
-			bool _manageRaw;
-			ELATransaction *_transaction;
+			UInt256 txHash;
+			uint32_t version;
+			uint32_t lockTime;
+			uint32_t blockHeight;
+			uint32_t timestamp; // time interval since unix epoch
+
+			Type type;
+			uint8_t payloadVersion;
+			uint64_t fee;
+			PayloadPtr payload;
+			std::vector<TransactionOutput> outputs;
+			std::vector<TransactionInput> inputs;
+			std::vector<Attribute> attributes;
+			std::vector<Program> programs;
+			std::string Remark;
 		};
 
 		typedef boost::shared_ptr<Transaction> TransactionPtr;

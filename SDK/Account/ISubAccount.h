@@ -24,7 +24,7 @@ namespace Elastos {
 
 			virtual IAccount *GetParent() = 0;
 
-			virtual void InitWallet(BRTransaction *transactions[], size_t txCount, ELAWallet *wallet) = 0;
+			virtual void InitWallet(const std::vector<Transaction> &transactions, size_t txCount, ELAWallet *wallet) = 0;
 
 			virtual std::string GetMainAccountPublicKey() const = 0;
 

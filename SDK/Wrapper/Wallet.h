@@ -10,7 +10,6 @@
 #include <BRWallet.h>
 #include <boost/weak_ptr.hpp>
 #include <boost/function.hpp>
-#include <SDK/ELACoreExt/ELATransaction.h>
 
 #include "BRInt.h"
 

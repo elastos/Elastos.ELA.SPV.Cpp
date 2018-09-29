@@ -9,6 +9,7 @@
 #define TEST_ASCII_BEGIN 48
 
 #include "AuxPow.h"
+#include "Plugin/Block/MerkleBlock.h"
 
 namespace Elastos {
 	namespace ElaWallet {
