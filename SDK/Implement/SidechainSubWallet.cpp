@@ -81,7 +81,7 @@ namespace Elastos {
 
 				std::for_each(outList.begin(), outList.end(),
 							  [&param](TransactionOutput *output) {
-								  ((ELATxOutput *) output->getRaw())->assetId = param->getAssetId();
+								  output->setAssetId(param->getAssetId());
 							  });
 
 				PayloadTransferCrossChainAsset *payloadTransferCrossChainAsset =

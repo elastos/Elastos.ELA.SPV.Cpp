@@ -13,11 +13,6 @@
 using namespace Elastos::ElaWallet;
 
 TEST_CASE("TransactionOutput test", "[TransactionOutput]") {
-	SECTION("constructor with null and object") {
-		ELATxOutput *brTxOutput = ELATxOutputNew();
-		TransactionOutput transactionOutput1(brTxOutput);
-		REQUIRE(transactionOutput1.getRaw() != nullptr);
-	}
 
 	SECTION("constructor with amount and script") {
 		uint8_t dummyScript[] = {OP_DUP, OP_HASH160, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -27,7 +22,6 @@ TEST_CASE("TransactionOutput test", "[TransactionOutput]") {
 		mb.SetMemFixed(dummyScript, sizeof(dummyScript));
 		TransactionOutput transactionOutput(10000, mb, ELA_STANDARD);
 
-		REQUIRE(transactionOutput.getRaw() != nullptr);
 		REQUIRE(transactionOutput.getAmount() == 10000);
 		REQUIRE(transactionOutput.getScript().GetSize() == sizeof(dummyScript));
 
@@ -39,8 +33,7 @@ TEST_CASE("TransactionOutput test", "[TransactionOutput]") {
 	}
 
 	SECTION("TransactionOutput address test", "") {
-		ELATxOutput *brTxOutput = ELATxOutputNew();
-		TransactionOutput transactionOutput(brTxOutput);
+		TransactionOutput transactionOutput;
 
 		std::string content = "ETFELUtMYwPpb96QrYaP6tBztEsUbQrytP";
 		transactionOutput.setAddress(content);
@@ -49,8 +42,7 @@ TEST_CASE("TransactionOutput test", "[TransactionOutput]") {
 	}
 
 	SECTION("Serialize and deserialize test", "") {
-		ELATxOutput *brTxOutput = ELATxOutputNew();
-		TransactionOutput transactionOutput(brTxOutput);
+		TransactionOutput transactionOutput;
 
 		UInt168 hash = *(UInt168 *) "\x21\xc2\xe2\x51\x72\xcb\x15\x19\x3c\xb1\xc6"
 						"\xd4\x8f\x60\x7d\x42\xc1\xd2\xa2\x15\x16";
@@ -64,8 +56,7 @@ TEST_CASE("TransactionOutput test", "[TransactionOutput]") {
 
 		s.setPosition(0);
 
-		ELATxOutput *brTxOutput1 = ELATxOutputNew();
-		TransactionOutput transactionOutput1(brTxOutput1);
+		TransactionOutput transactionOutput1;
 
 		transactionOutput1.Deserialize(s);
 

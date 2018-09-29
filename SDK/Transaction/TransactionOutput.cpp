@@ -5,9 +5,8 @@
 #include <iostream>
 #include <cstring>
 #include <Core/BRTransaction.h>
+#include <SDK/Wrapper/Address.h>
 
-#include "Core/BRTransaction.h"
-#include "ELATxOutput.h"
 #include "TransactionOutput.h"
 #include "Utils.h"
 #include "Log.h"
@@ -16,186 +15,180 @@
 namespace Elastos {
 	namespace ElaWallet {
 
-		TransactionOutput::TransactionOutput() {
-			_output = ELATxOutputNew();
-		}
-
-		TransactionOutput::TransactionOutput(ELATxOutput *output) :
-			_output(output) {
+		TransactionOutput::TransactionOutput() :
+				_assetId(UINT256_ZERO),
+				_outputLock(0),
+				_programHash(UINT168_ZERO),
+				_signType(ELA_STANDARD) {
 		}
 
 		TransactionOutput::TransactionOutput(const TransactionOutput &output) {
-			_output = ELATxOutputNew();
-			CMBlock script = output.getScript();
-			ELATxOutputSetScript(_output, (const uint8_t *)script, script.GetSize(), output.getAddressSignType());
-			_output->raw.amount = output.getAmount();
-			_output->assetId = output.getAssetId();
-			_output->programHash = output.getProgramHash();
-			_output->outputLock = output.getOutputLock();
+			SetScript(output.getScript(), output.getAddressSignType());
+			_amount = output.getAmount();
+			_assetId = output.getAssetId();
+			_programHash = output.getProgramHash();
+			_outputLock = output.getOutputLock();
 
 		}
 
-		TransactionOutput::TransactionOutput(uint64_t amount, const CMBlock &script, int signType) {
-			_output = ELATxOutputNew();
-			ELATxOutputSetScript(_output, (const uint8_t *)script, script.GetSize(), signType);
-			_output->raw.amount = amount;
-			_output->assetId = Key::getSystemAssetId();
-			if (!Utils::UInt168FromAddress(_output->programHash, _output->raw.address)) {
-				Log::getLogger()->error("Invalid receiver address: {}", _output->raw.address);
+		TransactionOutput::TransactionOutput(uint64_t a, const CMBlock &script, int _signType) {
+			SetScript(script, _signType);
+			_amount = a;
+			_assetId = Key::getSystemAssetId();
+			if (!Utils::UInt168FromAddress(_programHash, _address)) {
+				Log::getLogger()->error("Invalid receiver _address: {}", _address);
 			}
 		}
 
 		TransactionOutput::~TransactionOutput() {
-			if (_output) {
-				ELATxOutputFree(_output);
-			}
-		}
-
-		std::string TransactionOutput::toString() const {
-			//todo complete me
-			return "";
-		}
-
-		BRTxOutput *TransactionOutput::getRaw() const {
-			return &_output->raw;
 		}
 
 		std::string TransactionOutput::getAddress() const {
-			return _output->raw.address;
+			return _address;
 		}
 
-		void TransactionOutput::setAddress(const std::string &address) {
-			BRTxOutputSetAddress(&_output->raw, address.c_str());
+		void TransactionOutput::setAddress(const std::string &addr) {
+			_script.Zero();
+			memset(_address, 0, sizeof(_address));
+
+			if (!addr.empty()) {
+				strncpy(_address, addr.data(), sizeof(_address) - 1);
+				size_t len = BRAddressScriptPubKey(NULL, 0, _address);
+				_script.Resize(len);
+				BRAddressScriptPubKey(_script, _script.GetSize(), _address);
+			}
 		}
 
-		void TransactionOutput::setAddressSignType(int signType) {
-			_output->signType = signType;
+		void TransactionOutput::setAddressSignType(int type) {
+			_signType = type;
 		}
 
 		int TransactionOutput::getAddressSignType() const {
-			return _output->signType;
+			return _signType;
 		}
 
 		uint64_t TransactionOutput::getAmount() const {
-			return _output->raw.amount;
+			return _amount;
 		}
 
-		void TransactionOutput::setAmount(uint64_t amount) {
-			_output->raw.amount = amount;
+		void TransactionOutput::setAmount(uint64_t a) {
+			_amount = a;
 		}
 
-		CMBlock TransactionOutput::getScript() const {
-			CMBlock data(_output->raw.scriptLen);
-			memcpy(data, _output->raw.script, _output->raw.scriptLen);
-			return data;
+		const CMBlock &TransactionOutput::getScript() const {
+			return _script;
 		}
 
 		void TransactionOutput::Serialize(ByteStream &ostream) const {
-			ostream.writeBytes(_output->assetId.u8, sizeof(_output->assetId));
-			ostream.writeUint64(_output->raw.amount);
-			ostream.writeUint32(_output->outputLock);
-			ostream.writeBytes(_output->programHash.u8, sizeof(_output->programHash));
+			ostream.writeBytes(_assetId.u8, sizeof(_assetId));
+			ostream.writeUint64(_amount);
+			ostream.writeUint32(_outputLock);
+			ostream.writeBytes(_programHash.u8, sizeof(_programHash));
 		}
 
 		bool TransactionOutput::Deserialize(ByteStream &istream) {
-			if (!istream.readBytes(_output->assetId.u8, sizeof(_output->assetId))) {
+			if (!istream.readBytes(_assetId.u8, sizeof(_assetId))) {
 				Log::getLogger()->error("deserialize output assetid error");
 				return false;
 			}
 
-			if (!istream.readUint64(_output->raw.amount)) {
-				Log::getLogger()->error("deserialize output amount error");
+			if (!istream.readUint64(_amount)) {
+				Log::getLogger()->error("deserialize output _amount error");
 				return false;
 			}
 
-			if (!istream.readUint32(_output->outputLock)) {
+			if (!istream.readUint32(_outputLock)) {
 				Log::getLogger()->error("deserialize output lock error");
 				return false;
 			}
 
-			if (!istream.readBytes(_output->programHash.u8, sizeof(_output->programHash))) {
+			if (!istream.readBytes(_programHash.u8, sizeof(_programHash))) {
 				Log::getLogger()->error("deserialize output program hash error");
 				return false;
 			}
 
-			setAddress(Utils::UInt168ToAddress(_output->programHash));
+			setAddress(Utils::UInt168ToAddress(_programHash));
 
 			return true;
 		}
 
 		const UInt256 &TransactionOutput::getAssetId() const {
-			return _output->assetId;
+			return _assetId;
 		}
 
 		void TransactionOutput::setAssetId(const UInt256 &assetId) {
-			_output->assetId = assetId;
+			_assetId = assetId;
 		}
 
 		uint32_t TransactionOutput::getOutputLock() const {
-			return _output->outputLock;
+			return _outputLock;
 		}
 
-		void TransactionOutput::setOutputLock(uint32_t outputLock) {
-			_output->outputLock = outputLock;
+		void TransactionOutput::setOutputLock(uint32_t lock) {
+			_outputLock = lock;
 		}
 
 		const UInt168 &TransactionOutput::getProgramHash() const {
-			return _output->programHash;
+			return _programHash;
 		}
 
 		void TransactionOutput::setProgramHash(const UInt168 &hash) {
-			_output->programHash = hash;
+			_programHash = hash;
 		}
 
 		nlohmann::json TransactionOutput::toJson() const {
 			nlohmann::json jsonData;
 
-			std::string addr = _output->raw.address;
+			std::string addr = _address;
 			jsonData["Address"] = addr;
-
-			jsonData["Amount"] = _output->raw.amount;
-
-			jsonData["ScriptLen"] = _output->raw.scriptLen;
-
-			jsonData["Script"] = Utils::encodeHex((const uint8_t *)_output->raw.script, _output->raw.scriptLen);
-
-			jsonData["AssetId"] = Utils::UInt256ToString(_output->assetId);
-
-			jsonData["OutputLock"] = _output->outputLock;
-
-			jsonData["ProgramHash"] = Utils::UInt168ToString(_output->programHash);
-
-			jsonData["SignType"] = _output->signType;
-
+			jsonData["Amount"] = _amount;
+			jsonData["ScriptLen"] = _script.GetSize();
+			jsonData["Script"] = Utils::encodeHex(_script);
+			jsonData["AssetId"] = Utils::UInt256ToString(_assetId);
+			jsonData["OutputLock"] = _outputLock;
+			jsonData["ProgramHash"] = Utils::UInt168ToString(_programHash);
+			jsonData["SignType"] = _signType;
 			return jsonData;
 		}
 
 		void TransactionOutput::fromJson(const nlohmann::json &jsonData) {
-			std::string address = jsonData["Address"].get<std::string>();
-			size_t addressSize = sizeof(_output->raw.address);
-			strncpy(_output->raw.address, address.c_str(), addressSize - 1);
-			_output->raw.address[addressSize - 1] = 0;
+			std::string addr = jsonData["Address"].get<std::string>();
+			size_t addressSize = sizeof(addr);
+			strncpy(_address, addr.c_str(), addressSize - 1);
+			_address[addressSize - 1] = 0;
 
-			_output->raw.amount = jsonData["Amount"].get<uint64_t>();
-
-			_output->signType = jsonData["SignType"].get<int>();
-
+			_amount = jsonData["Amount"].get<uint64_t>();
+			_signType = jsonData["SignType"].get<int>();
+			
 			size_t scriptLen = jsonData["ScriptLen"].get<size_t>();
 			std::string scriptString = jsonData["Script"].get<std::string>();
-			ELATxOutputSetScript(_output, nullptr, 0, _output->signType);
 			if (scriptLen > 0) {
 				if (scriptLen == scriptString.length() / 2) {
-					CMBlock script = Utils::decodeHex(scriptString);
-					ELATxOutputSetScript(_output, (const uint8_t *)script, script.GetSize(), _output->signType);
+					SetScript(Utils::decodeHex(scriptString), _signType);
 				} else {
 					Log::getLogger()->error("scriptLen={} and script=\"{}\" do not match of json",
-											_output->raw.scriptLen, scriptString);
+											scriptLen, scriptString);
 				}
 			}
 
-			_output->assetId = Utils::UInt256FromString(jsonData["AssetId"].get<std::string>());
-			_output->outputLock = jsonData["OutputLock"].get<uint32_t>();
-			_output->programHash = Utils::UInt168FromString(jsonData["ProgramHash"].get<std::string>());
+			_assetId = Utils::UInt256FromString(jsonData["AssetId"].get<std::string>());
+			_outputLock = jsonData["OutputLock"].get<uint32_t>();
+			_programHash = Utils::UInt168FromString(jsonData["ProgramHash"].get<std::string>());
+		}
+
+		void TransactionOutput::SetScript(const CMBlock &script, int type) {
+			_script.Zero();
+			memset(_address, 0, sizeof(_address));
+			_signType = type;
+
+			if (script) {
+				_script.Resize(script.GetSize());
+				memcpy(_script, script, script.GetSize());
+
+				AddressPtr addressPtr = Address::fromScriptPubKey(_script, _signType);
+				std::string addr = addressPtr->stringify();
+				strncpy(_address, addr.c_str(), sizeof(addr) - 1);
+			}
 		}
 
 	}
