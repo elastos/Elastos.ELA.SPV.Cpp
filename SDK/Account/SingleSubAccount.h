@@ -25,6 +25,8 @@ namespace Elastos {
 			virtual void
 			SignTransaction(const TransactionPtr &transaction, ELAWallet *wallet, const std::string &payPassword);
 
+			virtual bool IsSingleAddress() const;
+
 		protected:
 			WrapperList<Key, BRKey>
 			DeriveAccountAvailableKeys(const std::string &payPassword,

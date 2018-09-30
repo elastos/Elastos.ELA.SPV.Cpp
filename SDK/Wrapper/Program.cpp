@@ -38,7 +38,7 @@ namespace Elastos {
 		Program::~Program() {
 		}
 
-		bool Program::isValid(Transaction *transaction) const {
+		bool Program::isValid(const Transaction *transaction) const {
 			if (!_parameter || _parameter.GetSize() <= 0) {
 				return false;
 			}
