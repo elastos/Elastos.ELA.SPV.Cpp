@@ -112,6 +112,8 @@ namespace Elastos {
 
 			double getPingTime() const;
 
+			bool IsEqual(const Peer *peer) const;
+
 		private:
 			BRPeer *_peer;
 		};

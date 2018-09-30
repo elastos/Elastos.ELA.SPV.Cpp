@@ -14,7 +14,7 @@
 
 #include "Wrapper.h"
 #include "SDK/Transaction/Transaction.h"
-#include "SDK/Transaction/TransactionSet.h"
+#include "SDK/Transaction/ElementSet.h"
 #include "SDK/Transaction/UTXOList.h"
 #include "Address.h"
 #include "SharedWrapperList.h"
@@ -110,6 +110,7 @@ namespace Elastos {
 			bool registerTransaction(const TransactionPtr &transaction);
 
 			void removeTransaction(const UInt256 &transactionHash);
+				//fixme [refactor]
 
 			void updateTransactions(const std::vector<UInt256> &transactionsHashes, uint32_t blockHeight,
 									uint32_t timestamp);
