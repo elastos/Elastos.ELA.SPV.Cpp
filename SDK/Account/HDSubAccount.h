@@ -26,6 +26,8 @@ namespace Elastos {
 
 			virtual std::string GetMainAccountPublicKey() const;
 
+			virtual bool IsSingleAddress() const;
+
 		private:
 
 			WrapperList<Key, BRKey> DeriveAccountAvailableKeys(ELAWallet *wallet, const std::string &payPassword,

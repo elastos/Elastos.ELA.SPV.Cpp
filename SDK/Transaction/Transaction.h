@@ -121,7 +121,7 @@ namespace Elastos {
 			 *
 			 * @return true if all exist.
 			 */
-			bool isSigned();
+			bool isSigned() const;
 
 			bool sign(const WrapperList<Key, BRKey> &keys, int forkId);
 
@@ -173,6 +173,8 @@ namespace Elastos {
 			void Cleanup();
 
 			void initPayloadFromType(Type type);
+
+			bool IsEqual(const Transaction *tx) const;
 
 		private:
 

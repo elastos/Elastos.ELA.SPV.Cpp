@@ -7,7 +7,6 @@
 
 #include <map>
 #include <string>
-#include <BRWallet.h>
 #include <boost/weak_ptr.hpp>
 #include <boost/function.hpp>
 
@@ -15,59 +14,20 @@
 
 #include "Wrapper.h"
 #include "SDK/Transaction/Transaction.h"
+#include "SDK/Transaction/TransactionSet.h"
+#include "SDK/Transaction/UTXOList.h"
 #include "Address.h"
 #include "SharedWrapperList.h"
 #include "MasterPubKey.h"
 #include "SDK/Transaction/TransactionOutput.h"
 #include "WrapperList.h"
 #include "Account/ISubAccount.h"
+#include "Address.h"
 
 namespace Elastos {
 	namespace ElaWallet {
 
-		struct ELAWallet {
-
-			ELAWallet() {
-				memset(&Raw, 0, sizeof(Raw));
-				IsSingleAddress = false;
-			}
-
-			BRWallet Raw;
-			typedef std::map<std::string, std::string> TransactionRemarkMap;
-			TransactionRemarkMap TxRemarkMap;
-			std::vector<std::string> ListeningAddrs;
-
-			bool IsSingleAddress;
-			std::string SingleAddress;
-		};
-
-		ELAWallet *ELAWalletNew(BRTransaction *transactions[], size_t txCount,
-								size_t (*WalletUnusedAddrs)(BRWallet *wallet, BRAddress addrs[], uint32_t gapLimit,
-															int internal),
-								size_t (*WalletAllAddrs)(BRWallet *wallet, BRAddress addrs[], size_t addrsCount),
-								void (*setApplyFreeTx)(void *info, void *tx),
-								void (*WalletUpdateBalance)(BRWallet *wallet),
-								int (*WalletContainsTx)(BRWallet *wallet, const BRTransaction *tx),
-								void (*WalletAddUsedAddrs)(BRWallet *wallet, const BRTransaction *tx),
-								BRTransaction *(*WalletCreateTxForOutputs)(BRWallet *wallet,
-																		   const BRTxOutput outputs[],
-																		   size_t outCount),
-								uint64_t (*WalletMaxOutputAmount)(BRWallet *wallet),
-								uint64_t (*WalletFeeForTx)(BRWallet *wallet, const BRTransaction *tx),
-								int (*TransactionIsSigned)(const BRTransaction *tx),
-								size_t (*KeyToAddress)(const BRKey *key, char *addr, size_t addrLen),
-								uint64_t (*balanceAfterTx)(BRWallet *wallet, const BRTransaction *tx));
-
-		void ELAWalletFree(ELAWallet *wallet, bool freeInternal = true);
-
-		std::string ELAWalletGetRemark(ELAWallet *wallet, const std::string &txHash);
-
-		void ELAWalletRegisterRemark(ELAWallet *wallet, const std::string &txHash, const std::string &remark);
-
-		void ELAWalletLoadRemarks(ELAWallet *wallet, const SharedWrapperList<Transaction, BRTransaction *> &transaction);
-
-		class Wallet :
-				public Wrapper<BRWallet> {
+		class Wallet {
 
 		public:
 			class Listener {
@@ -87,17 +47,13 @@ namespace Elastos {
 
 		public:
 
-			Wallet(const SharedWrapperList<Transaction, BRTransaction *> &transactions,
+			Wallet(const std::vector<TransactionPtr> &transactions,
 				   const SubAccountPtr &subAccount,
 				   const boost::shared_ptr<Listener> &listener);
 
 			virtual ~Wallet();
 
 			void initListeningAddresses(const std::vector<std::string> &addrs);
-
-			virtual std::string toString() const;
-
-			virtual BRWallet *getRaw() const;
 
 			uint32_t getBlockHeight() const;
 
@@ -124,9 +80,9 @@ namespace Elastos {
 			// int BRWalletAddressIsUsed(BRWallet *wallet, const char *addr);
 			bool addressIsUsed(const std::string &address);
 
-			SharedWrapperList<Transaction, BRTransaction *> getTransactions() const;
+			std::vector<TransactionPtr> getTransactions() const;
 
-			SharedWrapperList<Transaction, BRTransaction *> getTransactionsConfirmedBefore(uint32_t blockHeight) const;
+			std::vector<TransactionPtr> getTransactionsConfirmedBefore(uint32_t blockHeight) const;
 
 			uint64_t getBalance() const;
 
@@ -136,7 +92,7 @@ namespace Elastos {
 
 			uint64_t getFeePerKb();
 
-			void setFeePerKb(uint64_t feePerKb);
+			void setFeePerKb(uint64_t fee);
 
 			uint64_t getMaxFeePerKb();
 
@@ -149,7 +105,7 @@ namespace Elastos {
 
 			bool containsTransaction(const TransactionPtr &transaction);
 
-			bool inputFromWallet(const BRTxInput *in);
+//			bool inputFromWallet(const BRTxInput *in);
 
 			bool registerTransaction(const TransactionPtr &transaction);
 
@@ -168,7 +124,7 @@ namespace Elastos {
 			 * @param transactionHash
 			 * @return
 			 */
-			TransactionPtr transactionForHash(const UInt256 &transactionHash);
+			const TransactionPtr &transactionForHash(const UInt256 &transactionHash);
 
 			/**
 			 * Check if a transaction is valid - THIS METHOD WILL FATAL if the transaction is not signed.
@@ -234,56 +190,73 @@ namespace Elastos {
 
 			uint64_t getMaxOutputAmount();
 
-			void signTransaction(const boost::shared_ptr<Transaction> &transaction, int forkId,
-								 const std::string &payPassword);
+			void signTransaction(const TransactionPtr &transaction, int forkId, const std::string &payPassword);
 
+		protected:
 
 		protected:
 			Wallet();
 
-			static bool AddressFilter(const std::string &fromAddress, const std::string &filterAddress);
+			bool AddressFilter(const std::string &fromAddress, const std::string &filterAddress);
 
-			static BRTransaction *CreateTxForOutputs(BRWallet *wallet, const BRTxOutput outputs[], size_t outCount,
-													 uint64_t fee, const std::string &fromAddress,
-													 bool(*filter)(const std::string &fromAddress,
-																   const std::string &addr));
+			TransactionPtr CreateTxForOutputs(const std::vector<TransactionOutput> &outputs, size_t outCount,
+											  uint64_t fee, const std::string &fromAddress,
+											  bool(*filter)(const std::string &fromAddress,
+															const std::string &addr));
 
-			static BRTransaction *
-			WalletCreateTxForOutputs(BRWallet *wallet, const BRTxOutput outputs[], size_t outCount);
+			TransactionPtr WalletCreateTxForOutputs(const std::vector<TransactionOutput> &outputs, size_t outCount);
 
-			static uint64_t WalletMaxOutputAmount(BRWallet *wallet);
+			uint64_t WalletMaxOutputAmount();
 
-			static uint64_t WalletFeeForTx(BRWallet *wallet, const BRTransaction *tx);
+			uint64_t WalletFeeForTx(const TransactionPtr &tx);
 
-			static void WalletUpdateBalance(BRWallet *wallet);
+			void WalletUpdateBalance();
 
-			static int WalletContainsTx(BRWallet *wallet, const BRTransaction *tx);
+			bool WalletContainsTx(const TransactionPtr &tx);
 
-			static void WalletAddUsedAddrs(BRWallet *wallet, const BRTransaction *tx);
+			void WalletAddUsedAddrs(const TransactionPtr &tx);
 
-			static int TransactionIsSigned(const BRTransaction *tx);
+			void setApplyFreeTx(void *info, void *tx);
 
-			static void setApplyFreeTx(void *info, void *tx);
+			void balanceChanged(uint64_t balance);
 
-			static void balanceChanged(void *info, uint64_t balance);
+			void txAdded(const TransactionPtr &tx);
 
-			static void txAdded(void *info, BRTransaction *tx);
+			void txUpdated(const std::vector<UInt256> &txHashes, uint32_t blockHeight, uint32_t timestamp);
 
-			static void txUpdated(void *info, const UInt256 txHashes[], size_t count, uint32_t blockHeight,
-								  uint32_t timestamp);
+			void txDeleted(const UInt256 &txHash, int notifyUser, int recommendRescan);
 
-			static void txDeleted(void *info, UInt256 txHash, int notifyUser, int recommendRescan);
+			size_t KeyToAddress(const BRKey *key, char *addr, size_t addrLen);
 
-			static size_t KeyToAddress(const BRKey *key, char *addr, size_t addrLen);
+			size_t WalletUnusedAddrs(std::vector<Address> &addrs, uint32_t gapLimit, int internal) const;
 
-			static size_t WalletUnusedAddrs(BRWallet *wallet, BRAddress addrs[], uint32_t gapLimit, int internal);
+			uint64_t BalanceAfterTx(const TransactionPtr &tx);
 
-			static uint64_t BalanceAfterTx(BRWallet *wallet, const BRTransaction *tx);
+			size_t WalletAllAddrs(std::vector<Address> &addrs, size_t addrsCount);
 
-			static size_t WalletAllAddrs(BRWallet *wallet, BRAddress addrs[], size_t addrsCount);
+			void sortTransations();
+
+			std::vector<UTXO> getUTXOSafe();
+
+			uint64_t AmountSentByTx(const TransactionPtr &tx);
 
 		protected:
-			ELAWallet *_wallet;
+			uint64_t balance, totalSent, totalReceived, feePerKb;
+			uint32_t blockHeight;
+			UTXOList utxos;
+			std::vector<TransactionPtr> transactions;
+			std::vector<uint64_t> balanceHist;
+			std::vector<Address> internalChain, externalChain;
+			//fixme [refator] set less than compare functor for allTx, invalidTx, pendingTx
+			TransactionSet allTx, invalidTx, pendingTx;
+			UTXOList spentOutputs;
+			std::set<Address> usedAddrs, allAddrs;
+
+			typedef std::map<std::string, std::string> TransactionRemarkMap;
+			TransactionRemarkMap TxRemarkMap;
+			std::vector<std::string> ListeningAddrs;
+
+			pthread_mutex_t lock;
 
 			SubAccountPtr _subAccount;
 			boost::weak_ptr<Listener> _listener;

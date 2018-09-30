@@ -139,5 +139,9 @@ namespace Elastos {
 			return Utils::encodeHex(_masterPubKey.getPubKey());
 		}
 
+		bool HDSubAccount::IsSingleAddress() const {
+			return false;
+		}
+
 	}
 }

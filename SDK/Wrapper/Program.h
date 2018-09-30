@@ -26,7 +26,7 @@ namespace Elastos {
 
 			~Program();
 
-			bool isValid(Transaction *transaction) const;
+			bool isValid(const Transaction *transaction) const;
 
 			const CMBlock &getCode() const;
 

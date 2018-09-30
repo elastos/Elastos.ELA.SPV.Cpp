@@ -15,10 +15,11 @@ namespace Elastos {
 		}
 
 		void SingleSubAccount::InitWallet(const std::vector<Transaction> &transactions, size_t txCount, ELAWallet *wallet) {
-			wallet->IsSingleAddress = true;
-			wallet->SingleAddress = _parentAccount->GetAddress();
-
-			wallet->Raw.WalletUpdateBalance((BRWallet *) wallet);
+			//fixme [refactor]
+//			wallet->IsSingleAddress = true;
+//			wallet->SingleAddress = _parentAccount->GetAddress();
+//
+//			wallet->Raw.WalletUpdateBalance((BRWallet *) wallet);
 		}
 
 		Key SingleSubAccount::DeriveMainAccountKey(const std::string &payPassword) {
@@ -49,6 +50,10 @@ namespace Elastos {
 			nlohmann::json j;
 			j["Type"] = "Single Account";
 			return j;
+		}
+
+		bool SingleSubAccount::IsSingleAddress() const {
+			return true;
 		}
 	}
 }

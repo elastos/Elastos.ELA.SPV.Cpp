@@ -2,9 +2,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <BRAddress.h>
-#include <Core/BRAddress.h>
-
 #include "BRBase58.h"
 #include "BRBech32.h"
 
@@ -16,18 +13,12 @@
 namespace Elastos {
     namespace ElaWallet {
 		Address::Address() {
-			_address = boost::shared_ptr<BRAddress>(new BRAddress());
+			memset(_s, 0, sizeof(_s));
 		}
 
-		Address::Address(std::string address) {
-			_address = boost::shared_ptr<BRAddress>(new BRAddress());
-			memset(_address->s, 0, sizeof(_address->s));
-			strncpy(_address->s, address.c_str(), sizeof(_address->s) - 1);
-		}
-
-		Address::Address(const BRAddress &addr) {
-			this->_address = boost::shared_ptr<BRAddress>(new BRAddress());
-			memcpy(_address->s, addr.s, sizeof(_address->s));
+		Address::Address(const std::string &address) {
+			memset(_s, 0, sizeof(_s));
+			strncpy(_s, address.c_str(), sizeof(_s) - 1);
 		}
 
 		boost::shared_ptr<Address> Address::createAddress(const std::string &address) {
@@ -39,8 +30,9 @@ namespace Elastos {
 			int addressPrefix = Utils::getAddressTypeBySignType(signType);
 
 
-			BRAddress address = {'\0'};
-			size_t scriptLen = script.GetSize(), addrSize = sizeof(address.s);
+			char s[75];
+			memset(s, 0, sizeof(s));
+			size_t scriptLen = script.GetSize(), addrSize = sizeof(s);
 
 			if (! script || scriptLen == 0 || scriptLen > MAX_SCRIPT_LENGTH) {
 				throw std::logic_error("fromScriptPubKey params error");
@@ -59,7 +51,7 @@ namespace Elastos {
 				data[0] = ELA_STAND_ADDRESS;
 #endif
 				memcpy(&data[1], BRScriptData(elems[2], &l), 20);
-				r = BRBase58CheckEncode(address.s, addrSize, data, 21);
+				r = BRBase58CheckEncode(s, addrSize, data, 21);
 			}
 			else if (count == 3 && *elems[0] == OP_HASH160 && *elems[1] == 20 && *elems[2] == OP_EQUAL) {
 				// pay-to-script-hash scriptPubKey
@@ -68,7 +60,7 @@ namespace Elastos {
 				data[0] = ELA_MULTISIG_ADDRESS;
 #endif
 				memcpy(&data[1], BRScriptData(elems[1], &l), 20);
-				r = BRBase58CheckEncode(address.s, addrSize, data, 21);
+				r = BRBase58CheckEncode(s, addrSize, data, 21);
 			}
 			else if (count == 2 && (*elems[0] == 65 || *elems[0] == 33) && *elems[1] == OP_CHECKSIG) {
 				// pay-to-pubkey scriptPubKey
@@ -78,7 +70,7 @@ namespace Elastos {
 #endif
 				d = BRScriptData(elems[0], &l);
 				BRHash160(&data[1], d, l);
-				r = BRBase58CheckEncode(address.s, addrSize, data, 21);
+				r = BRBase58CheckEncode(s, addrSize, data, 21);
 			}
 			else if (count == 2 && ((*elems[0] == OP_0 && (*elems[1] == 20 || *elems[1] == 32)) ||
 			                        (*elems[0] >= OP_1 && *elems[0] <= OP_16 && *elems[1] >= 2 && *elems[1] <= 40))) {
@@ -87,17 +79,18 @@ namespace Elastos {
 #if BITCOIN_TESTNET
 				r = BRBech32Encode(a, "tb", script);
 #endif
-				memset(address.s, 0, sizeof(address.s));
-				strncpy(address.s, a, sizeof(address.s) - 1);
+				memset(s, 0, sizeof(s));
+				strncpy(s, a, sizeof(s) - 1);
 			}
 
-			boost::shared_ptr<Address> addr = boost::shared_ptr<Address>(new Address(address));
+			boost::shared_ptr<Address> addr = boost::shared_ptr<Address>(new Address(s));
 			return addr;
 		}
 
 		boost::shared_ptr<Address> Address::fromScriptSignature(CMBlock script) {
-			BRAddress address = {'\0'};
-			size_t scriptLen = script.GetSize(), addrLen = sizeof(address.s);
+			char s[75];
+			memset(s, 0, sizeof(s));
+			size_t scriptLen = script.GetSize(), addrLen = sizeof(s);
 			if (! script || scriptLen == 0 || scriptLen > MAX_SCRIPT_LENGTH) {
 				throw std::logic_error("fromScriptSignature params error");
 			}
@@ -132,29 +125,26 @@ namespace Elastos {
 			// pay-to-witness scriptSig's are empty
 
 			if (d) {
-				BRBase58CheckEncode(address.s, addrLen, data, 21);
+				BRBase58CheckEncode(s, addrLen, data, 21);
 			}
-			return boost::shared_ptr<Address>(new Address(address));
+			return boost::shared_ptr<Address>(new Address(s));
 		}
 
 		bool Address::isValid() {
-			BRAddress* address = getRaw();
-			bool res = Address::isValidAddress(address->s);
+			bool res = Address::isValidAddress(_s);
 			return res;
 		}
 
 		CMBlock Address::getPubKeyScript() {
-			BRAddress* address = getRaw();
-
-			size_t pubKeyLen = BRAddressScriptPubKey(NULL, 0, address->s);
+			size_t pubKeyLen = BRAddressScriptPubKey(NULL, 0, _s);
 			CMBlock data(pubKeyLen);
-			BRAddressScriptPubKey(data, pubKeyLen, address->s);
+			BRAddressScriptPubKey(data, pubKeyLen, _s);
 
 			return data;
 		}
 
 	    int Address::getSignType() const {
-		    const char *addr = _address->s;
+		    const char *addr = _s;
 		    uint8_t data[42];
 		    if (BRBase58CheckDecode(data, sizeof(data), addr) == 21) {
 				if (data[0] == ELA_STAND_ADDRESS) {
@@ -175,16 +165,7 @@ namespace Elastos {
 		}
 
 		std::string Address::stringify() const {
-			BRAddress* address = getRaw();
-			return address->s;
-		}
-
-		std::string Address::toString() const {
-			return stringify();
-		}
-
-		BRAddress *Address::getRaw() const {
-			return _address.get();
+			return _s;
 		}
 
 	    bool Address::isValidAddress(const std::string &address) {
@@ -265,5 +246,9 @@ namespace Elastos {
 		    }
 		    return result;
 		}
-    }
+
+		bool Address::operator<(const Address &address) {
+			return strcmp(_s, address._s) < 0;
+		}
+	}
 }

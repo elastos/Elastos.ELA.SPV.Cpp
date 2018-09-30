@@ -151,7 +151,7 @@ namespace Elastos {
 			return outputs;
 		}
 
-		const std::vector<TransactionInput>& Transaction::getInputs() const {
+		const std::vector<TransactionInput> &Transaction::getInputs() const {
 			return inputs;
 		}
 
@@ -215,7 +215,7 @@ namespace Elastos {
 			return size;
 		}
 
-		bool Transaction::isSigned() {
+		bool Transaction::isSigned() const {
 			if (type == Type::TransferAsset) {
 				if (programs.size() <= 0) {
 					return false;
@@ -782,5 +782,10 @@ namespace Elastos {
 		void Transaction::setFee(uint64_t f) {
 			fee = f;
 		}
+
+		bool Transaction::IsEqual(const Transaction *tx) const {
+			return (tx == this || UInt256Eq(&(((BRTransaction *) tx)->txHash), &(((BRTransaction *) tx)->txHash)));
+		}
+
 	}
 }

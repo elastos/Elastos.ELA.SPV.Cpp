@@ -22,6 +22,8 @@ namespace Elastos {
 
 			virtual nlohmann::json GetBasicInfo() const = 0;
 
+			virtual bool IsSingleAddress() const = 0;
+
 			virtual IAccount *GetParent() = 0;
 
 			virtual void InitWallet(const std::vector<Transaction> &transactions, size_t txCount, ELAWallet *wallet) = 0;
