@@ -17,12 +17,12 @@ namespace Elastos {
 		}
 
 		void HDSubAccount::InitWallet(const std::vector<Transaction> &transactions, size_t txCount, ELAWallet *wallet) {
-			wallet->IsSingleAddress = false;
-			wallet->SingleAddress = "";
-
-			wallet->Raw.masterPubKey = *_masterPubKey.getRaw();
-
 			//fixme [refactor] replace with transaction
+//			wallet->IsSingleAddress = false;
+//			wallet->SingleAddress = "";
+//
+//			wallet->Raw.masterPubKey = *_masterPubKey.getRaw();
+
 //			for (size_t i = 0; transactions.size(); i++) {
 //				if (!wallet->Raw.TransactionIsSigned(tx)) continue;
 //

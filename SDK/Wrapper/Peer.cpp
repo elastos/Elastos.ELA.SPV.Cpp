@@ -106,7 +106,7 @@ namespace Elastos {
 
 		void Peer::setNeedsFilterUpdate(bool needsFilterUpdate) {
 			BRPeer *peer = getRaw();
-			BRPeerSetNeedsFilterUpdate (peer, needsFilterUpdate);
+			BRPeerSetNeedsFilterUpdate(peer, needsFilterUpdate);
 		}
 
 		std::string Peer::getHost() const {
@@ -137,6 +137,12 @@ namespace Elastos {
 		double Peer::getPingTime() const {
 			BRPeer *peer = getRaw();
 			return BRPeerPingTime(peer);
+		}
+
+		bool Peer::IsEqual(const Peer *otherPeer) const {
+			return (this == otherPeer ||
+					(UInt128Eq(&(_peer->address), &(((BRPeer *) otherPeer)->address)) &&
+					 ((const BRPeer *) _peer)->port == ((const BRPeer *) otherPeer)->port));
 		}
 
 	}
