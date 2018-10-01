@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <boost/weak_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include "Peer.h"
 #include "ChainParams.h"
@@ -116,6 +117,8 @@ namespace Elastos {
 
 			uint64_t getRelayCount(const UInt256 &txHash) const;
 
+			void asyncConnect(const boost::system::error_code &error);
+
 		private:
 			void syncStarted();
 
@@ -181,7 +184,7 @@ namespace Elastos {
 			ChainParams _chainParams;
 			boost::weak_ptr<Listener> _listener;
 
-			pthread_mutex_t lock;
+			mutable boost::mutex lock;
 		};
 
 		typedef boost::shared_ptr<PeerManager> PeerManagerPtr;

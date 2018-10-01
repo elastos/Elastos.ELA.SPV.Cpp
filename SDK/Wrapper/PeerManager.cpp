@@ -13,7 +13,6 @@
 #include "BRArray.h"
 #include "ELAMerkleBlock.h"
 #include "arith_uint256.h"
-#include "Message/PeerMessageManager.h"
 #include "Plugin/Registry.h"
 #include "Plugin/Block/MerkleBlock.h"
 
@@ -166,7 +165,6 @@ namespace Elastos {
 			array_new(txRelays, 10);
 			array_new(txRequests, 10);
 			array_new(publishedTx, 10);
-			pthread_mutex_init(&lock, NULL);
 		}
 
 		PeerManager::~PeerManager() {
@@ -175,27 +173,27 @@ namespace Elastos {
 		Peer::ConnectStatus PeerManager::getConnectStatus() const {
 			Peer::ConnectStatus status = Peer::Disconnected;
 
-			pthread_mutex_lock(&lock);
-			if (isConnected != 0) status = Peer::Connected;
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				if (isConnected != 0) status = Peer::Connected;
 
-			for (size_t i = _connectedPeers.size(); i > 0 && status == Peer::Disconnected; i--) {
-				if (_connectedPeers[i - 1]->getConnectStatusValue() == Peer::Disconnected) continue;
-				status = Peer::Connecting;
+				for (size_t i = _connectedPeers.size(); i > 0 && status == Peer::Disconnected; i--) {
+					if (_connectedPeers[i - 1]->getConnectStatusValue() == Peer::Disconnected) continue;
+					status = Peer::Connecting;
+				}
 			}
-
-			pthread_mutex_unlock(&lock);
 			return status;
 		}
 
 		void PeerManager::connect() {
-			pthread_mutex_lock(&lock);
+			lock.lock();
 			if (connectFailureCount >= MAX_CONNECT_FAILURES) connectFailureCount = 0; //this is a manual retry
 
 			if ((!downloadPeer || lastBlock->getHeight() < estimatedHeight) && syncStartHeight == 0) {
 				syncStartHeight = lastBlock->getHeight() + 1;
-				pthread_mutex_unlock(&lock);
-				if (syncStarted) syncStarted();
-				pthread_mutex_lock(&lock);
+				lock.unlock();
+				syncStarted();
+				lock.lock();
 			}
 
 			for (size_t i = _connectedPeers.size(); i > 0; i--) {
@@ -250,10 +248,10 @@ namespace Elastos {
 			if (_connectedPeers.empty()) {
 				_peer_log("sync failed");
 				syncStopped();
-				pthread_mutex_unlock(&lock);
-				if (syncStopped) syncStopped(ENETUNREACH);
+				lock.unlock();
+				syncStopped(ENETUNREACH);
 			} else {
-				pthread_mutex_unlock(&lock);
+				lock.unlock();
 			}
 		}
 
@@ -261,30 +259,32 @@ namespace Elastos {
 			struct timespec ts;
 			size_t peerCount, dnsThreadCount;
 
-			pthread_mutex_lock(&lock);
-			peerCount = _connectedPeers.size();
-			dnsThreadCount = this->dnsThreadCount;
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				peerCount = _connectedPeers.size();
+				dnsThreadCount = this->dnsThreadCount;
 
-			for (size_t i = peerCount; i > 0; i--) {
-				connectFailureCount = MAX_CONNECT_FAILURES; // prevent futher automatic reconnect attempts
-				_connectedPeers[i - 1]->disconnect();
+				for (size_t i = peerCount; i > 0; i--) {
+					connectFailureCount = MAX_CONNECT_FAILURES; // prevent futher automatic reconnect attempts
+					_connectedPeers[i - 1]->disconnect();
+				}
 			}
 
-			pthread_mutex_unlock(&lock);
 			ts.tv_sec = 0;
 			ts.tv_nsec = 1;
 
 			while (peerCount > 0 || dnsThreadCount > 0) {
 				nanosleep(&ts, NULL); // pthread_yield() isn't POSIX standard :(
-				pthread_mutex_lock(&lock);
-				peerCount = _connectedPeers.size();
-				dnsThreadCount = this->dnsThreadCount;
-				pthread_mutex_unlock(&lock);
+				{
+					boost::mutex::scoped_lock scoped_lock(lock);
+					peerCount = _connectedPeers.size();
+					dnsThreadCount = this->dnsThreadCount;
+				}
 			}
 		}
 
 		void PeerManager::rescan() {
-			pthread_mutex_lock(&lock);
+			lock.lock();
 
 			if (isConnected) {
 				// start the chain download from the most recent checkpoint that's at least a week older than earliestKeyTime
@@ -307,9 +307,9 @@ namespace Elastos {
 				}
 
 				syncStartHeight = 0; // a syncStartHeight of 0 indicates that syncing hasn't started yet
-				pthread_mutex_unlock(&lock);
+				lock.unlock();
 				connect();
-			} else pthread_mutex_unlock(&lock);
+			} else lock.unlock();
 		}
 
 		uint32_t PeerManager::getSyncStartHeight() const {
@@ -319,18 +319,20 @@ namespace Elastos {
 		uint32_t PeerManager::getEstimatedBlockHeight() const {
 			uint32_t height;
 
-			pthread_mutex_lock(&lock);
-			height = (lastBlock->getHeight() < estimatedHeight) ? estimatedHeight : lastBlock->getHeight();
-			pthread_mutex_unlock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				height = (lastBlock->getHeight() < estimatedHeight) ? estimatedHeight : lastBlock->getHeight();
+			}
 			return height;
 		}
 
 		uint32_t PeerManager::getLastBlockHeight() const {
 			uint32_t height;
 
-			pthread_mutex_lock(&lock);
-			height = lastBlock->getHeight();
-			pthread_mutex_unlock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				height = lastBlock->getHeight();
+			}
 			return height;
 		}
 
@@ -338,9 +340,10 @@ namespace Elastos {
 			//fixme [refactor]
 //			uint32_t timestamp;
 //
-//			pthread_mutex_lock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
 //			timestamp = lastBlock->timestamp;
-//			pthread_mutex_unlock(&lock);
+			}
 //			return timestamp;
 			return 0;
 		}
@@ -348,18 +351,18 @@ namespace Elastos {
 		double PeerManager::getSyncProgress(uint32_t startHeight) {
 			double progress;
 
-			pthread_mutex_lock(&lock);
-			if (startHeight == 0) startHeight = syncStartHeight;
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				if (startHeight == 0) startHeight = syncStartHeight;
 
-			if (!downloadPeer && syncStartHeight == 0) {
-				progress = 0.0;
-			} else if (!downloadPeer || lastBlock->getHeight() < estimatedHeight) {
-				if (lastBlock->getHeight() > startHeight && estimatedHeight > startHeight) {
-					progress = 0.1 + 0.9 * (lastBlock->getHeight() - startHeight) / (estimatedHeight - startHeight);
-				} else progress = 0.05;
-			} else progress = 1.0;
-
-			pthread_mutex_unlock(&lock);
+				if (!downloadPeer && syncStartHeight == 0) {
+					progress = 0.0;
+				} else if (!downloadPeer || lastBlock->getHeight() < estimatedHeight) {
+					if (lastBlock->getHeight() > startHeight && estimatedHeight > startHeight) {
+						progress = 0.1 + 0.9 * (lastBlock->getHeight() - startHeight) / (estimatedHeight - startHeight);
+					} else progress = 0.05;
+				} else progress = 1.0;
+			}
 			return progress;
 		}
 
@@ -369,12 +372,13 @@ namespace Elastos {
 
 		void PeerManager::setFixedPeer(UInt128 address, uint16_t port) {
 			disconnect();
-			pthread_mutex_lock(&lock);
-			maxConnectCount = UInt128IsZero(&address) ? PEER_MAX_CONNECTIONS : 1;
-			//fixme [refactor]
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				maxConnectCount = UInt128IsZero(&address) ? PEER_MAX_CONNECTIONS : 1;
+				//fixme [refactor]
 //    fixedPeer = PeerPtr() ((BRPeer) { address, port, 0, 0, 0 });
-			_peers.clear();
-			pthread_mutex_unlock(&lock);
+				_peers.clear();
+			}
 		}
 
 		bool PeerManager::useFixedPeer(const std::string &node, int port) {
@@ -401,49 +405,47 @@ namespace Elastos {
 
 		std::string PeerManager::getDownloadPeerName() const {
 			//fixme [refactor]
-//			pthread_mutex_lock(&lock);
-//
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
 //			if (downloadPeer) {
 //				sprintf(downloadPeerName, "%s:%d", BRPeerHost(downloadPeer.get()), downloadPeer->port);
 //			} else downloadPeerName[0] = '\0';
-//
-//			pthread_mutex_unlock(&lock);
+			}
 			return downloadPeerName;
 		}
 
 		size_t PeerManager::getPeerCount() const {
 			size_t count = 0;
 
-			pthread_mutex_lock(&lock);
-
-			for (size_t i = _connectedPeers.size(); i > 0; i--) {
-				if (_connectedPeers[i - 1]->getConnectStatusValue() != Peer::Disconnected) count++;
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				for (size_t i = _connectedPeers.size(); i > 0; i--) {
+					if (_connectedPeers[i - 1]->getConnectStatusValue() != Peer::Disconnected) count++;
+				}
 			}
-
-			pthread_mutex_unlock(&lock);
 			return count;
 		}
 
 		void PeerManager::publishTransaction(const TransactionPtr &tx) {
 
 			assert(tx != NULL && tx->isSigned());
-			if (tx) pthread_mutex_lock(&lock);
+			if (tx) lock.lock();
 
 			if (tx && !tx->isSigned()) {
-				pthread_mutex_unlock(&lock);
+				lock.unlock();
 				//fixme [refactor]
 //				if (callback) callback(info, EINVAL); // transaction not signed
 			} else if (tx && !isConnected) {
 				int connectFailureCount = connectFailureCount;
 
-				pthread_mutex_unlock(&lock);
+				lock.unlock();
 
 				if (connectFailureCount >= MAX_CONNECT_FAILURES ||
-					(networkIsReachable && !networkIsReachable())) {
+					(!networkIsReachable())) {
 					//fixme [refactor]
 //					if (callback) callback(info, ENOTCONN); // not connected to bitcoin network
 //            tx = NULL; // add tx to publish tx list anyway
-				} else pthread_mutex_lock(&lock);
+				} else lock.lock();
 			}
 
 			if (tx) {
@@ -476,7 +478,7 @@ namespace Elastos {
 //					}
 				}
 
-				pthread_mutex_unlock(&lock);
+				lock.unlock();
 			}
 		}
 
@@ -484,15 +486,16 @@ namespace Elastos {
 			size_t count = 0;
 
 			assert(!UInt256IsZero(&txHash));
-			pthread_mutex_lock(&lock);
 
-			for (size_t i = array_count(txRelays); i > 0; i--) {
-				if (!UInt256Eq(&txRelays[i - 1].txHash, &txHash)) continue;
-				count = array_count(txRelays[i - 1].peers);
-				break;
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				for (size_t i = array_count(txRelays); i > 0; i--) {
+					if (!UInt256Eq(&txRelays[i - 1].txHash, &txHash)) continue;
+					count = array_count(txRelays[i - 1].peers);
+					break;
+				}
 			}
 
-			pthread_mutex_unlock(&lock);
 			return count;
 		}
 
@@ -755,6 +758,24 @@ namespace Elastos {
 //													 NULL, NULL);
 //				}
 //			}
+		}
+
+		void PeerManager::asyncConnect(const boost::system::error_code &error) {
+			if (error.value() == 0) {
+				if (getConnectStatus() != Peer::Connected) {
+					Log::getLogger()->info("async connecting...");
+					connect();
+				}
+			} else {
+				Log::getLogger()->warn("asyncConnect err: {}", error.message());
+			}
+
+			if (reconnectTaskCount > 0) {
+				{
+					boost::mutex::scoped_lock scoped_lock(lock);
+					reconnectTaskCount = 0;
+				}
+			}
 		}
 	}
 

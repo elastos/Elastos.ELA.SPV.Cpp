@@ -15,7 +15,8 @@
 namespace Elastos {
 	namespace ElaWallet {
 
-		TransactionMessage::TransactionMessage() {
+		TransactionMessage::TransactionMessage(const MessagePeerPtr &peer) :
+			Message(peer) {
 
 		}
 

@@ -45,8 +45,6 @@ namespace Elastos {
 				feePerKb(DEFAULT_FEE_PER_KB),
 				_subAccount(subAccount) {
 
-			pthread_mutex_init(&lock, NULL);
-
 			for (size_t i = 0; txArray.size(); i++) {
 				if (!txArray[i]->isSigned() || allTx.Contains(txArray[i])) continue;
 				allTx.Insert(txArray[i]);
@@ -72,7 +70,6 @@ namespace Elastos {
 		}
 
 		Wallet::~Wallet() {
-			pthread_mutex_destroy(&lock);
 		}
 
 		void Wallet::initListeningAddresses(const std::vector<std::string> &addrs) {
@@ -92,11 +89,11 @@ namespace Elastos {
 		std::vector<UTXO> Wallet::getUTXOSafe() {
 			std::vector<UTXO> result(utxos.size());
 
-			pthread_mutex_lock(&lock);
-			for (size_t i = 0; utxos.size(); i++) {
-				result[i] = utxos[i];
+			{
+				for (size_t i = 0; utxos.size(); i++) {
+					result[i] = utxos[i];
+				}
 			}
-			pthread_mutex_unlock(&lock);
 
 			return result;
 		}
@@ -193,40 +190,45 @@ namespace Elastos {
 
 		uint64_t Wallet::getBalance() const {
 			uint64_t result;
-			pthread_mutex_lock(&lock);
-			result = balance;
-			pthread_mutex_unlock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				result = balance;
+			}
 			return result;
 		}
 
 		uint64_t Wallet::getTotalSent() {
 			uint64_t resutl;
-			pthread_mutex_lock(&lock);
-			resutl = totalSent;
-			pthread_mutex_unlock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				resutl = totalSent;
+			}
 			return resutl;
 		}
 
 		uint64_t Wallet::getTotalReceived() {
 			uint64_t result;
-			pthread_mutex_lock(&lock);
-			result = totalReceived;
-			pthread_mutex_unlock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				result = totalReceived;
+			}
 			return result;
 		}
 
 		uint64_t Wallet::getFeePerKb() {
 			uint64_t result;
-			pthread_mutex_lock(&lock);
-			result = feePerKb;
-			pthread_mutex_unlock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				result = feePerKb;
+			}
 			return result;
 		}
 
 		void Wallet::setFeePerKb(uint64_t fee) {
-			pthread_mutex_lock(&lock);
-			feePerKb = fee;
-			pthread_mutex_unlock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				feePerKb = fee;
+			}
 		}
 
 		uint64_t Wallet::getMaxFeePerKb() {
@@ -370,7 +372,8 @@ namespace Elastos {
 //			return (BRTransaction *) transaction;
 		}
 
-		TransactionPtr Wallet::WalletCreateTxForOutputs(const std::vector<TransactionOutput> &outputs, size_t outCount) {
+		TransactionPtr
+		Wallet::WalletCreateTxForOutputs(const std::vector<TransactionOutput> &outputs, size_t outCount) {
 			return CreateTxForOutputs(outputs, outCount, 0, "", nullptr);
 		}
 
@@ -425,9 +428,10 @@ namespace Elastos {
 
 		bool Wallet::containsTransaction(const TransactionPtr &transaction) {
 			bool result = false;
-			pthread_mutex_lock(&lock);
-			result = WalletContainsTx(transaction);
-			pthread_mutex_unlock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				result = WalletContainsTx(transaction);
+			}
 			return result;
 		}
 
@@ -454,7 +458,7 @@ namespace Elastos {
 			int notifyUser = 0, recommendRescan = 0;
 
 			assert(!UInt256IsZero(&transactionHash));
-			pthread_mutex_lock(&lock);
+			lock.lock();
 			const TransactionPtr &tx = allTx.GetTransaction(transactionHash);
 
 			TransactionPtr t;
@@ -474,7 +478,7 @@ namespace Elastos {
 				}
 
 				if (array_count(hashes) > 0) {
-					pthread_mutex_unlock(&lock);
+					lock.unlock();
 
 					for (size_t i = array_count(hashes); i > 0; i--) {
 						removeTransaction(hashes[i - 1]);
@@ -489,7 +493,7 @@ namespace Elastos {
 					}
 
 					WalletUpdateBalance();
-					pthread_mutex_unlock(&lock);
+					lock.unlock();
 
 					// if this is for a transaction we sent, and it wasn't already known to be invalid, notify user
 					if (AmountSentByTx(tx) > 0 && transactionIsValid(tx)) {
@@ -504,12 +508,12 @@ namespace Elastos {
 						}
 					}
 
-					if (balanceChanged) balanceChanged(balance);
-					if (txDeleted) txDeleted(transactionHash, notifyUser, recommendRescan);
+					balanceChanged(balance);
+					txDeleted(transactionHash, notifyUser, recommendRescan);
 				}
 
 				array_free(hashes);
-			} else pthread_mutex_unlock(&lock);
+			} else lock.unlock();
 		}
 
 		void Wallet::updateTransactions(const std::vector<UInt256> &transactionsHashes, uint32_t height,
@@ -518,43 +522,47 @@ namespace Elastos {
 			int needsUpdate = 0;
 			size_t i, j, k;
 
-			pthread_mutex_lock(&lock);
-			if (height > blockHeight) blockHeight = height;
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				if (height > blockHeight) blockHeight = height;
 
-			for (i = 0, j = 0; i < transactionsHashes.size(); i++) {
-				const TransactionPtr &tx = allTx.GetTransaction(transactionsHashes[i]);
-				if (!tx || (tx->getBlockHeight() == height && tx->getTimestamp() == timestamp)) continue;
+				for (i = 0, j = 0; i < transactionsHashes.size(); i++) {
+					const TransactionPtr &tx = allTx.GetTransaction(transactionsHashes[i]);
+					if (!tx || (tx->getBlockHeight() == height && tx->getTimestamp() == timestamp)) continue;
 
-				if (tx->getBlockHeight() == TX_UNCONFIRMED) needsUpdate = 1;
+					if (tx->getBlockHeight() == TX_UNCONFIRMED) needsUpdate = 1;
 
-				tx->setTimestamp(timestamp);
-				tx->setBlockHeight(height);
+					tx->setTimestamp(timestamp);
+					tx->setBlockHeight(height);
 
-				if (WalletContainsTx(tx)) {
+					if (WalletContainsTx(tx)) {
 //					for (k = transactions.size(); k > 0; k--) { // remove and re-insert tx to keep wallet sorted
 //						if (!transactions[k - 1]->IsEqual(tx.get())) continue;
 //						array_rm(transactions, k - 1);
 //						_BRWalletInsertTx(wallet, tx);
 //						break;
 //					}
-					sortTransations();
+						sortTransations();
 
-					hashes[j++] = transactionsHashes[i];
-					if (pendingTx.Contains(tx) || invalidTx.Contains(tx)) needsUpdate = 1;
-				} else if (blockHeight != TX_UNCONFIRMED) { // remove and free confirmed non-wallet tx
-					allTx.Remove(tx);
+						hashes[j++] = transactionsHashes[i];
+						if (pendingTx.Contains(tx) || invalidTx.Contains(tx)) needsUpdate = 1;
+					} else if (blockHeight != TX_UNCONFIRMED) { // remove and free confirmed non-wallet tx
+						allTx.Remove(tx);
+					}
 				}
+
+				if (needsUpdate) WalletUpdateBalance();
 			}
 
-			if (needsUpdate) WalletUpdateBalance();
-			pthread_mutex_unlock(&lock);
-			if (j > 0 && txUpdated) txUpdated(hashes, blockHeight, timestamp);
+			if (j > 0) txUpdated(hashes, blockHeight, timestamp);
 		}
 
 		const TransactionPtr &Wallet::transactionForHash(const UInt256 &transactionHash) {
-			pthread_mutex_lock(&lock);
-			const TransactionPtr &tx = allTx.GetTransaction(transactionHash);
-			pthread_mutex_unlock(&lock);
+			TransactionPtr tx;
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				tx = allTx.GetTransaction(transactionHash);
+			}
 			return tx;
 		}
 
@@ -566,15 +574,15 @@ namespace Elastos {
 			// TODO: XXX conflicted tx with the same wallet outputs should be presented as the same tx to the user
 
 			if (transaction->getBlockHeight() == TX_UNCONFIRMED) { // only unconfirmed transactions can be invalid
-				pthread_mutex_lock(&lock);
 
-				if (!allTx.Contains(transaction)) {
-					for (size_t i = 0; r && i < transaction->getInputs().size(); i++) {
-						if (spentOutputs.Constains(transaction->getInputs()[i].getTransctionHash())) r = 0;
-					}
-				} else if (invalidTx.Contains(transaction)) r = 0;
-
-				pthread_mutex_unlock(&lock);
+				{
+					boost::mutex::scoped_lock scoped_lock(lock);
+					if (!allTx.Contains(transaction)) {
+						for (size_t i = 0; r && i < transaction->getInputs().size(); i++) {
+							if (spentOutputs.Constains(transaction->getInputs()[i].getTransctionHash())) r = 0;
+						}
+					} else if (invalidTx.Contains(transaction)) r = 0;
+				}
 
 				for (size_t i = 0; r && i < transaction->getInputs().size(); i++) {
 					const TransactionPtr &t = transactionForHash(transaction->getInputs()[i].getTransctionHash());
@@ -591,9 +599,10 @@ namespace Elastos {
 			int r = 0;
 
 			assert(transaction->isSigned());
-			pthread_mutex_lock(&lock);
-			height = blockHeight;
-			pthread_mutex_unlock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				height = blockHeight;
+			}
 
 			if (transaction != nullptr &&
 				transaction->getBlockHeight() == TX_UNCONFIRMED) { // only unconfirmed transactions can be postdated
@@ -659,19 +668,20 @@ namespace Elastos {
 			uint64_t amount = 0;
 
 			assert(tx != NULL);
-			pthread_mutex_lock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				for (size_t i = 0; tx && i < tx->getInputs().size(); i++) {
+					const TransactionPtr &t = allTx.GetTransaction(tx->getInputs()[i].getTransctionHash());
+					uint32_t n = tx->getInputs()[i].getIndex();
 
-			for (size_t i = 0; tx && i < tx->getInputs().size(); i++) {
-				const TransactionPtr &t = allTx.GetTransaction(tx->getInputs()[i].getTransctionHash());
-				uint32_t n = tx->getInputs()[i].getIndex();
-
-				if (t && n < t->getOutputs().size() &&
-					allAddrs.find(t->getOutputs()[n].getAddress()) != allAddrs.end()) {
-					amount += t->getOutputs()[n].getAmount();
+					//fixme [refactor]
+//					if (t && n < t->getOutputs().size() &&
+//						allAddrs.find(t->getOutputs()[n].getAddress()) != allAddrs.end()) {
+//						amount += t->getOutputs()[n].getAmount();
+//					}
 				}
 			}
 
-			pthread_mutex_unlock(&lock);
 			return amount;
 		}
 
@@ -679,15 +689,17 @@ namespace Elastos {
 			uint64_t amount = 0;
 
 			assert(tx != NULL);
-			pthread_mutex_lock(&lock);
 
-			// TODO: don't include outputs below TX_MIN_OUTPUT_AMOUNT
-			for (size_t i = 0; tx && i < tx->getOutputs().size(); i++) {
-				if (allAddrs.find(tx->getOutputs()[i].getAddress()) != allAddrs.end())
-					amount += tx->getOutputs()[i].getAmount();
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				// TODO: don't include outputs below TX_MIN_OUTPUT_AMOUNT
+				for (size_t i = 0; tx && i < tx->getOutputs().size(); i++) {
+					//fixme [refactor]
+//					if (allAddrs.find(tx->getOutputs()[i].getAddress()) != allAddrs.end())
+//						amount += tx->getOutputs()[i].getAmount();
+				}
 			}
 
-			pthread_mutex_unlock(&lock);
 			return amount;
 		}
 
@@ -725,17 +737,19 @@ namespace Elastos {
 
 		uint64_t Wallet::getFeeForTransactionSize(size_t size) {
 			uint64_t fee;
-			pthread_mutex_lock(&lock);
-			fee = _txFee(feePerKb, size);
-			pthread_mutex_unlock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				fee = _txFee(feePerKb, size);
+			}
 			return fee;
 		}
 
 		uint64_t Wallet::getMinOutputAmount() {
 			uint64_t amount;
-			pthread_mutex_lock(&lock);
-			amount = (TX_MIN_OUTPUT_AMOUNT * feePerKb + MIN_FEE_PER_KB - 1) / MIN_FEE_PER_KB;
-			pthread_mutex_unlock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				amount = (TX_MIN_OUTPUT_AMOUNT * feePerKb + MIN_FEE_PER_KB - 1) / MIN_FEE_PER_KB;
+			}
 			return (amount > TX_MIN_OUTPUT_AMOUNT) ? amount : TX_MIN_OUTPUT_AMOUNT;
 		}
 
@@ -768,17 +782,21 @@ namespace Elastos {
 			}
 
 			bool result;
-			pthread_mutex_lock(&lock);
-			result = allAddrs.find(address) != allAddrs.end();
-			pthread_mutex_unlock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				//fixme [refactor]
+//				result = allAddrs.find(address) != allAddrs.end();
+			}
 			return result;
 		}
 
 		bool Wallet::addressIsUsed(const std::string &address) {
 			bool result;
-			pthread_mutex_lock(&lock);
-			result = usedAddrs.find(address) != usedAddrs.end();
-			pthread_mutex_unlock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				//fixme [refactor]
+//				result = usedAddrs.find(address) != usedAddrs.end();
+			}
 			return result;
 		}
 
@@ -787,24 +805,24 @@ namespace Elastos {
 			uint64_t fee, amount = 0;
 			size_t i, txSize, cpfpSize = 0, inCount = 0;
 
-			pthread_mutex_lock(&lock);
-
-			for (i = utxos.size(); i > 0; i--) {
-				UTXO &o = utxos[i - 1];
-				const TransactionPtr &tx = allTx.GetTransaction(o.hash);
-				if (!tx || o.n >= tx->getOutputs().size()) continue;
-				inCount++;
-				amount += tx->getOutputs()[o.n].getAmount();
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				for (i = utxos.size(); i > 0; i--) {
+					UTXO &o = utxos[i - 1];
+					const TransactionPtr &tx = allTx.GetTransaction(o.hash);
+					if (!tx || o.n >= tx->getOutputs().size()) continue;
+					inCount++;
+					amount += tx->getOutputs()[o.n].getAmount();
 
 //        // size of unconfirmed, non-change inputs for child-pays-for-parent fee
 //        // don't include parent tx with more than 10 inputs or 10 outputs
 //        if (tx->blockHeight == TX_UNCONFIRMED && tx->inCount <= 10 && tx->outCount <= 10 &&
 //            ! _BRWalletTxIsSend(wallet, tx)) cpfpSize += BRTransactionSize(tx);
-			}
+				}
 
-			txSize = 8 + BRVarIntSize(inCount) + TX_INPUT_SIZE * inCount + BRVarIntSize(2) + TX_OUTPUT_SIZE * 2;
-			fee = _txFee(feePerKb, txSize + cpfpSize);
-			pthread_mutex_unlock(&lock);
+				txSize = 8 + BRVarIntSize(inCount) + TX_INPUT_SIZE * inCount + BRVarIntSize(2) + TX_OUTPUT_SIZE * 2;
+				fee = _txFee(feePerKb, txSize + cpfpSize);
+			}
 
 			return (amount > fee) ? amount - fee : 0;
 		}
@@ -817,18 +835,17 @@ namespace Elastos {
 				return amount;
 			}
 
-			pthread_mutex_lock(&lock);
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				for (size_t i = 0; i < tx->getInputs().size() && amount != UINT64_MAX; i++) {
+					const TransactionPtr &t = allTx.GetTransaction(tx->getInputs()[i].getTransctionHash());
+					uint32_t n = tx->getInputs()[i].getIndex();
 
-			for (size_t i = 0; i < tx->getInputs().size() && amount != UINT64_MAX; i++) {
-				const TransactionPtr &t = allTx.GetTransaction(tx->getInputs()[i].getTransctionHash());
-				uint32_t n = tx->getInputs()[i].getIndex();
-
-				if (t && n < t->getOutputs().size()) {
-					amount += t->getOutputs()[n].getAmount();
-				} else amount = UINT64_MAX;
+					if (t && n < t->getOutputs().size()) {
+						amount += t->getOutputs()[n].getAmount();
+					} else amount = UINT64_MAX;
+				}
 			}
-
-			pthread_mutex_unlock(&lock);
 
 			for (size_t i = 0; tx->getOutputs().size() && amount != UINT64_MAX; i++) {
 				amount -= tx->getOutputs()[i].getAmount();
@@ -960,9 +977,10 @@ namespace Elastos {
 						r = 1;
 					}
 				} else {
-					if (allAddrs.find(tx->getOutputs()[i].getAddress()) != allAddrs.end()) {
-						r = 1;
-					}
+					//fixme [refactor]
+//					if (allAddrs.find(tx->getOutputs()[i].getAddress()) != allAddrs.end()) {
+//						r = 1;
+//					}
 				}
 			}
 
@@ -1001,8 +1019,9 @@ namespace Elastos {
 				return;
 
 			for (size_t j = 0; j < tx->getOutputs().size(); j++) {
-				if (!tx->getOutputs()[j].getAddress().empty())
-					usedAddrs.insert(tx->getOutputs()[j].getAddress());
+				//fixme [refactor]
+//				if (!tx->getOutputs()[j].getAddress().empty())
+//					usedAddrs.insert(tx->getOutputs()[j].getAddress());
 			}
 		}
 
@@ -1067,14 +1086,17 @@ namespace Elastos {
 			uint32_t chain = (internal) ? SEQUENCE_INTERNAL_CHAIN : SEQUENCE_EXTERNAL_CHAIN;
 
 			assert(gapLimit > 0);
-			pthread_mutex_lock(&lock);
-			std::vector<Address> &addrChain = (internal) ? internalChain : externalChain;
-			i = count = startCount = addrChain.size();
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				std::vector<Address> &addrChain = const_cast<std::vector<Address> &>((internal) ? internalChain
+																								: externalChain);
+				i = count = startCount = addrChain.size();
 
-			// keep only the trailing contiguous block of addresses with no transactions
-			while (i > 0 && usedAddrs.find(addrChain[i - 1]) == usedAddrs.end()) i--;
+				// keep only the trailing contiguous block of addresses with no transactions
+				//fixme [refactor]
+//				while (i > 0 && usedAddrs.find(addrChain[i - 1]) == usedAddrs.end()) i--;
 
-			//fixme [refactor] complete me
+				//fixme [refactor] complete me
 //			while (i + gapLimit > count) { // generate new addresses up to gapLimit
 //				Key key;
 //				BRAddress address = BR_ADDRESS_NONE;
@@ -1120,7 +1142,7 @@ namespace Elastos {
 //				}
 //			}
 //
-//			pthread_mutex_unlock(&lock);
+			}
 			return j;
 		}
 
@@ -1128,17 +1150,18 @@ namespace Elastos {
 			uint64_t result;
 
 			assert(tx != NULL && tx->isSigned());
-			pthread_mutex_lock(&lock);
-			result = balance;
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				result = balance;
 
-			for (size_t i = transactions.size(); tx && i > 0; i--) {
-				if (!tx->IsEqual(transactions[i - 1].get())) continue;
+				for (size_t i = transactions.size(); tx && i > 0; i--) {
+					if (!tx->IsEqual(transactions[i - 1].get())) continue;
 
-				result = balanceHist[i - 1];
-				break;
+					result = balanceHist[i - 1];
+					break;
+				}
 			}
 
-			pthread_mutex_unlock(&lock);
 			return result;
 		}
 
@@ -1152,21 +1175,22 @@ namespace Elastos {
 			}
 
 			size_t i, internalCount = 0, externalCount = 0;
-			pthread_mutex_lock(&lock);
-			internalCount = internalChain.size() < addrsCount ? internalChain.size() : addrsCount;
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				internalCount = internalChain.size() < addrsCount ? internalChain.size() : addrsCount;
 
-			for (i = 0; i < internalCount; i++) {
-				addrs.push_back(internalChain[i]);
+				for (i = 0; i < internalCount; i++) {
+					addrs.push_back(internalChain[i]);
+				}
+
+				externalCount = externalChain.size() < addrsCount - internalCount
+								? externalChain.size() : addrsCount - internalCount;
+
+				for (i = 0; i < externalCount; i++) {
+					addrs.push_back(externalChain[i]);
+				}
 			}
 
-			externalCount = externalChain.size() < addrsCount - internalCount
-					? externalChain.size() : addrsCount - internalCount;
-
-			for (i = 0; i < externalCount; i++) {
-				addrs.push_back(externalChain[i]);
-			}
-
-			pthread_mutex_unlock(&lock);
 			return internalCount + externalCount;
 		}
 
@@ -1184,19 +1208,21 @@ namespace Elastos {
 		uint64_t Wallet::AmountSentByTx(const TransactionPtr &tx) {
 			uint64_t amount = 0;
 			assert(tx != NULL);
-			pthread_mutex_lock(&lock);
 
-			for (size_t i = 0; tx && i < tx->getInputs().size(); i++) {
-				const TransactionPtr &t = allTx.GetTransaction(tx->getInputs()[i].getTransctionHash());
-				uint32_t n = tx->getInputs()[i].getIndex();
+			{
+				boost::mutex::scoped_lock scoped_lock(lock);
+				for (size_t i = 0; tx && i < tx->getInputs().size(); i++) {
+					const TransactionPtr &t = allTx.GetTransaction(tx->getInputs()[i].getTransctionHash());
+					uint32_t n = tx->getInputs()[i].getIndex();
 
-				if (t && n < t->getOutputs().size() &&
-					allAddrs.find(t->getOutputs()[n].getAddress()) != allAddrs.end()) {
-					amount += t->getOutputs()[n].getAmount();
+					//fixme [refactor]
+//					if (t && n < t->getOutputs().size() &&
+//						allAddrs.find(t->getOutputs()[n].getAddress()) != allAddrs.end()) {
+//						amount += t->getOutputs()[n].getAmount();
+//					}
 				}
 			}
 
-			pthread_mutex_unlock(&lock);
 			return amount;
 		}
 

@@ -530,11 +530,11 @@ namespace Elastos {
 			jsonData["BlockHeight"] = blockHeight;
 			jsonData["Timestamp"] = timestamp;
 
-			std::vector<nlohmann::json> inputJsons(inputs.size());
+			std::vector<nlohmann::json> inputsJson(inputs.size());
 			for (size_t i = 0; i < inputs.size(); ++i) {
-				inputJsons[i] = inputs[i].toJson();
+				inputsJson[i] = inputs[i].toJson();
 			}
-			jsonData["Inputs"] = inputs;
+			jsonData["Inputs"] = inputsJson;
 
 			jsonData["Type"] = (uint8_t) type;
 			jsonData["PayloadVersion"] = payloadVersion;
@@ -544,13 +544,13 @@ namespace Elastos {
 			for (size_t i = 0; i < attributes.size(); ++i) {
 				attributesJson[i] = attributes[i].toJson();
 			}
-			jsonData["Attributes"] = attributes;
+			jsonData["Attributes"] = attributesJson;
 
 			std::vector<nlohmann::json> programsJson(programs.size());
 			for (size_t i = 0; i < programs.size(); ++i) {
 				programsJson[i] = programs[i].toJson();
 			}
-			jsonData["Programs"] = programs;
+			jsonData["Programs"] = programsJson;
 
 			const std::vector<TransactionOutput> &txOutputs = getOutputs();
 			std::vector<nlohmann::json> outputs(txOutputs.size());
@@ -736,26 +736,26 @@ namespace Elastos {
 
 		void Transaction::initPayloadFromType(Type type) {
 			if (type == CoinBase) {
-				payload = TransactionPtr(new PayloadCoinBase());
+				payload = PayloadPtr(new PayloadCoinBase());
 			} else if (type == RegisterAsset) {
-				payload = TransactionPtr(new PayloadRegisterAsset());
+				payload = PayloadPtr(new PayloadRegisterAsset());
 			} else if (type == TransferAsset) {
-				payload = TransactionPtr(new PayloadTransferAsset());
+				payload = PayloadPtr(new PayloadTransferAsset());
 			} else if (type == Record) {
-				payload = TransactionPtr(new PayloadRecord());
+				payload = PayloadPtr(new PayloadRecord());
 			} else if (type == Deploy) {
 				//todo add deploy payload
 				//payload = boost::shared_ptr<PayloadDeploy>(new PayloadDeploy());
 			} else if (type == SideMining) {
-				payload = TransactionPtr(new PayloadSideMining());
+				payload = PayloadPtr(new PayloadSideMining());
 			} else if (type == IssueToken) {
-				payload = TransactionPtr(new PayloadIssueToken());
+				payload = PayloadPtr(new PayloadIssueToken());
 			} else if (type == WithdrawAsset) {
-				payload = TransactionPtr(new PayloadWithDrawAsset());
+				payload = PayloadPtr(new PayloadWithDrawAsset());
 			} else if (type == TransferCrossChainAsset) {
-				payload = TransactionPtr(new PayloadTransferCrossChainAsset());
+				payload = PayloadPtr(new PayloadTransferCrossChainAsset());
 			} else if (type == RegisterIdentification) {
-				payload = TransactionPtr(new PayloadRegisterIdentification());
+				payload = PayloadPtr(new PayloadRegisterIdentification());
 			}
 		}
 

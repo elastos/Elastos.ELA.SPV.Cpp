@@ -169,7 +169,7 @@ namespace Elastos {
 			PeerInfo _info;
 
 			uint32_t _magicNumber;
-			std::string _host;
+			mutable std::string _host;
 			ConnectStatus _status;
 			int _waitingForNetwork;
 			volatile int _needsFilterUpdate;

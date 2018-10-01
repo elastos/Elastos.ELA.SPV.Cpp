@@ -28,15 +28,6 @@ namespace Elastos {
 			}
 		}
 
-		int BloomFilterMessage::Accept(BRPeer *peer, const uint8_t *msg, size_t msgLen) {
-			return 0;
-		}
-
-		void BloomFilterMessage::Send(BRPeer *peer, void *serializable) {
-
-
-		}
-
 		bool BloomFilterMessage::Accept(const std::string &msg) {
 			return false;
 		}

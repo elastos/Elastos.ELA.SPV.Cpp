@@ -13,7 +13,7 @@ namespace Elastos {
 		class TransactionMessage :
 				public Message {
 		public:
-			TransactionMessage();
+			TransactionMessage(const MessagePeerPtr &peer);
 
 			virtual int Accept(BRPeer *peer, const uint8_t *msg, size_t msgLen);
 
