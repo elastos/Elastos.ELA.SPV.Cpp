@@ -4,7 +4,6 @@
 
 #include <float.h>
 #include <sys/time.h>
-#include <tclDecls.h>
 #include <SDK/Common/Log.h>
 #include <arpa/inet.h>
 #include <boost/thread.hpp>

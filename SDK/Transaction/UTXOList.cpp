@@ -14,7 +14,8 @@ namespace Elastos {
 
 		UTXO &UTXOList::operator[](size_t i) {
 			//fixme [refactor]
-			return <#initializer#>;
+			static UTXO temp;
+			return temp;
 		}
 
 		size_t UTXOList::size() const {

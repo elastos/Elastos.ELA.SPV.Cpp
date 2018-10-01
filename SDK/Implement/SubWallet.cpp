@@ -133,28 +133,28 @@ namespace Elastos {
 		}
 
 		nlohmann::json SubWallet::GetAllTransaction(uint32_t start, uint32_t count, const std::string &addressOrTxid) {
-			BRWallet *wallet = _walletManager->getWallet()->getRaw();
-			assert(wallet != nullptr);
-
-			Log::getLogger()->info("GetAllTransaction: start = {}, count = {}, addressOrTxid = {}", start, count,
-								   addressOrTxid);
-
-			size_t fullTxCount = array_count(wallet->transactions);
-			size_t pageCount = count;
-			pthread_mutex_lock(&wallet->lock);
-			if (fullTxCount < start + count)
-				pageCount = fullTxCount - start;
-
-			BRTransaction *transactions[pageCount];
-			uint32_t realCount = 0;
-			for (int i = fullTxCount - 1 - start; i >= 0 && realCount < pageCount; --i) {
-				if (!filterByAddressOrTxId(wallet->transactions[i], addressOrTxid))
-					continue;
-				transactions[realCount++] = wallet->transactions[i];
-			}
-			pthread_mutex_unlock(&wallet->lock);
-
 			//fixme [refactor] complete me
+//			BRWallet *wallet = _walletManager->getWallet()->getRaw();
+//			assert(wallet != nullptr);
+//
+//			Log::getLogger()->info("GetAllTransaction: start = {}, count = {}, addressOrTxid = {}", start, count,
+//								   addressOrTxid);
+//
+//			size_t fullTxCount = array_count(wallet->transactions);
+//			size_t pageCount = count;
+//			pthread_mutex_lock(&wallet->lock);
+//			if (fullTxCount < start + count)
+//				pageCount = fullTxCount - start;
+//
+//			BRTransaction *transactions[pageCount];
+//			uint32_t realCount = 0;
+//			for (int i = fullTxCount - 1 - start; i >= 0 && realCount < pageCount; --i) {
+//				if (!filterByAddressOrTxId(wallet->transactions[i], addressOrTxid))
+//					continue;
+//				transactions[realCount++] = wallet->transactions[i];
+//			}
+//			pthread_mutex_unlock(&wallet->lock);
+//
 //			std::vector<nlohmann::json> jsonList(realCount);
 //			for (size_t i = 0; i < realCount; ++i) {
 //				TransactionPtr transactionPtr(new Transaction((ELATransaction *) transactions[i], false));
@@ -365,7 +365,7 @@ namespace Elastos {
 						  });
 		}
 
-		void SubWallet::saveBlocks(bool replace, const SharedWrapperList<IMerkleBlock, BRMerkleBlock *> &blocks) {
+		void SubWallet::saveBlocks(bool replace, const std::vector<MerkleBlockPtr> &blocks) {
 			Log::getLogger()->info("Saving blocks: block count = {}, chain id = {}", blocks.size(),
 								   _info.getChainId());
 		}

@@ -9,6 +9,7 @@
 #include <string>
 #include <boost/weak_ptr.hpp>
 #include <boost/function.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include "BRInt.h"
 
@@ -257,10 +258,10 @@ namespace Elastos {
 			TransactionRemarkMap TxRemarkMap;
 			std::vector<std::string> ListeningAddrs;
 
-			pthread_mutex_t lock;
-
 			SubAccountPtr _subAccount;
 			boost::weak_ptr<Listener> _listener;
+
+			mutable boost::mutex lock;
 		};
 
 		typedef boost::shared_ptr<Wallet> WalletPtr;
