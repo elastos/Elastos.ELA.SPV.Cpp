@@ -361,11 +361,113 @@ namespace Elastos {
 				_currentBlock.reset();
 				r = 0;
 			} else if (_messages.find(type) != _messages.end())
-				_messages[type]->Accept(msg);
+				r = _messages[type]->Accept(msg);
 			//fixme [refactor]
 //    else peer_log(peer, "dropping %s, length %zu, not implemented", type, msgLen);
 
 			return r;
+		}
+
+		bool Peer::sentVerack() {
+			return _sentVerack;
+		}
+
+		bool Peer::gotVerack() {
+			return _gotVerack;
+		}
+
+		bool Peer::sentGetaddr() {
+			return _sentGetaddr;
+		}
+
+		bool Peer::sentFilter() {
+			return _sentFilter;
+		}
+
+		bool Peer::sentGetdata() {
+			return _sentGetdata;
+		}
+
+		bool Peer::sentMempool() {
+			return _sentMempool;
+		}
+
+		bool Peer::sentGetblocks() {
+			return _sentGetblocks;
+		}
+
+		int Peer::openSocket(int domain, double timeout, int *error) {
+			//fixme [refactor]
+//			BRPeerContext *ctx = (BRPeerContext *) peer;
+//			struct sockaddr_storage addr;
+//			struct timeval tv;
+//			fd_set fds;
+//			socklen_t addrLen, optLen;
+//			int count, arg = 0, err = 0, on = 1, r = 1;
+//
+//			ctx->socket = socket(domain, SOCK_STREAM, 0);
+//
+//			if (ctx->socket < 0) {
+//				err = errno;
+//				r = 0;
+//			} else {
+//				tv.tv_sec = 1; // one second timeout for send/receive, so thread doesn't block for too long
+//				tv.tv_usec = 0;
+//				setsockopt(ctx->socket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+//				setsockopt(ctx->socket, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+//				setsockopt(ctx->socket, SOL_SOCKET, SO_KEEPALIVE, &on, sizeof(on));
+//#ifdef SO_NOSIGPIPE // BSD based systems have a SO_NOSIGPIPE socket option to supress SIGPIPE signals
+//				setsockopt(ctx->socket, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof(on));
+//#endif
+//				arg = fcntl(ctx->socket, F_GETFL, NULL);
+//				if (arg < 0 || fcntl(ctx->socket, F_SETFL, arg | O_NONBLOCK) < 0)
+//					r = 0; // temporarily set socket non-blocking
+//				if (!r) err = errno;
+//			}
+//
+//			if (r) {
+//				memset(&addr, 0, sizeof(addr));
+//
+//				if (domain == PF_INET6) {
+//					((struct sockaddr_in6 *) &addr)->sin6_family = AF_INET6;
+//					((struct sockaddr_in6 *) &addr)->sin6_addr = *(struct in6_addr *) &peer->address;
+//					((struct sockaddr_in6 *) &addr)->sin6_port = htons(peer->port);
+//					addrLen = sizeof(struct sockaddr_in6);
+//				} else {
+//					((struct sockaddr_in *) &addr)->sin_family = AF_INET;
+//					((struct sockaddr_in *) &addr)->sin_addr = *(struct in_addr *) &peer->address.u32[3];
+//					((struct sockaddr_in *) &addr)->sin_port = htons(peer->port);
+//					addrLen = sizeof(struct sockaddr_in);
+//				}
+//
+//				if (connect(ctx->socket, (struct sockaddr *) &addr, addrLen) < 0) err = errno;
+//
+//				if (err == EINPROGRESS) {
+//					err = 0;
+//					optLen = sizeof(err);
+//					tv.tv_sec = timeout;
+//					tv.tv_usec = (long) (timeout * 1000000) % 1000000;
+//					FD_ZERO(&fds);
+//					FD_SET(ctx->socket, &fds);
+//					count = select(ctx->socket + 1, NULL, &fds, NULL, &tv);
+//
+//					if (count <= 0 || getsockopt(ctx->socket, SOL_SOCKET, SO_ERROR, &err, &optLen) < 0 || err) {
+//						if (count == 0) err = ETIMEDOUT;
+//						if (count < 0 || !err) err = errno;
+//						r = 0;
+//					}
+//				} else if (err && domain == PF_INET6 && _BRPeerIsIPv4(peer)) {
+//					return _BRPeerOpenSocket(peer, PF_INET, timeout, error); // fallback to IPv4
+//				} else if (err) r = 0;
+//
+//				if (r) peer_log(peer, "socket connected");
+//				fcntl(ctx->socket, F_SETFL, arg); // restore socket non-blocking status
+//			}
+//
+//			if (!r && err) peer_log(peer, "connect error: %s", strerror(err));
+//			if (error && err) *error = err;
+//			return r;
+			return 0;
 		}
 
 	}

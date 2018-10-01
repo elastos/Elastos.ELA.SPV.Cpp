@@ -65,28 +65,27 @@ namespace Elastos {
 
 				void OnDisconnected(int error) {}
 
-				void OnRelayedPeers(const BRPeer peers[], size_t peersCount) {}
+				void OnRelayedPeers(const std::vector<boost::shared_ptr<Peer>> &peers, size_t peersCount) {}
 
 				void OnRelayedTx(const TransactionPtr &tx) {}
 
-				void OnHasTx(void *info, UInt256 txHash) {}
+				void OnHasTx(const UInt256 &txHash) {}
 
-				void OnRejectedTx(void *info, UInt256 txHash, uint8_t code) {}
+				void OnRejectedTx(const UInt256 &txHash, uint8_t code) {}
 
-				void OnRelayedBlock(void *info, BRMerkleBlock *block) {}
+				void OnRelayedBlock(const MerkleBlockPtr &block) {}
 
-				void OnRelayedPingMsg(void *info) {}
+				void OnRelayedPingMsg() {}
 
-				void OnNotfound(void *info, const UInt256 txHashes[], size_t txCount,
-							  const UInt256 blockHashes[], size_t blockCount) {}
+				void OnNotfound(const std::vector<UInt256> &txHashes, const std::vector<UInt256> &blockHashes) {}
 
-				void OnSetFeePerKb(void *info, uint64_t feePerKb) {}
+				void OnSetFeePerKb(uint64_t feePerKb) {}
 
-				const TransactionPtr &OnRequestedTx(void *info, UInt256 txHash) {}
+				const TransactionPtr &OnRequestedTx(const UInt256 &txHash) { return nullptr;}
 
-				int *OnNetworkIsReachable(void *info) {}
+				bool OnNetworkIsReachable() { return false;}
 
-				void *OnThreadCleanup(void *info) {}
+				void OnThreadCleanup() {}
 			};
 
 		public:
@@ -138,6 +137,20 @@ namespace Elastos {
 
 			bool IsEqual(const Peer *peer) const;
 
+			bool sentVerack();
+
+			bool gotVerack();
+
+			bool sentGetaddr();
+
+			bool sentFilter();
+
+			bool sentGetdata();
+
+			bool sentMempool();
+
+			bool sentGetblocks();
+
 		private:
 			void initDefaultMessages();
 
@@ -152,6 +165,7 @@ namespace Elastos {
 			void peerThreadRoutine();
 
 		private:
+			friend class Message;
 			PeerInfo _info;
 
 			uint32_t _magicNumber;
@@ -164,7 +178,7 @@ namespace Elastos {
 			uint32_t _version, _lastblock, _earliestKeyTime, _currentBlockHeight;
 			double _startTime, _pingTime;
 			volatile double _disconnectTime, _mempoolTime;
-			int _sentVerack, _gotVerack, _sentGetaddr, _sentFilter, _sentGetdata, _sentMempool, _sentGetblocks;
+			bool _sentVerack, _gotVerack, _sentGetaddr, _sentFilter, _sentGetdata, _sentMempool, _sentGetblocks;
 			UInt256 _lastBlockHash;
 			MerkleBlockPtr _currentBlock;
 			std::vector<UInt256> _currentBlockTxHashes, _knownBlockHashes, _knownTxHashes;
