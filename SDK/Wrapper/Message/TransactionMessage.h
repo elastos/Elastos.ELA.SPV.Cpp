@@ -5,13 +5,13 @@
 #ifndef __ELASTOS_SDK_TRANSACTIONMESSAGE_H__
 #define __ELASTOS_SDK_TRANSACTIONMESSAGE_H__
 
-#include "IWrapperMessage.h"
+#include "Message.h"
 
 namespace Elastos {
 	namespace ElaWallet {
 
 		class TransactionMessage :
-				public IWrapperMessage {
+				public Message {
 		public:
 			TransactionMessage();
 

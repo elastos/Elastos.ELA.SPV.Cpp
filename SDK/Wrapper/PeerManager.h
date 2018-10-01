@@ -182,7 +182,6 @@ namespace Elastos {
 			boost::weak_ptr<Listener> _listener;
 
 			pthread_mutex_t lock;
-			BRPeerMessages *peerMessages;
 		};
 
 		typedef boost::shared_ptr<PeerManager> PeerManagerPtr;

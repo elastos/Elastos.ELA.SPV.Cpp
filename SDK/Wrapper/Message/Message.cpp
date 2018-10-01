@@ -2,16 +2,14 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "IWrapperMessage.h"
+#include "Message.h"
 
 namespace Elastos {
 	namespace ElaWallet {
 
-		IWrapperMessage::IWrapperMessage() {
+		SendMessageParameter Message::DefaultParam = SendMessageParameter();
 
-		}
-
-		IWrapperMessage::~IWrapperMessage() {
+		Message::~Message() {
 
 		}
 	}

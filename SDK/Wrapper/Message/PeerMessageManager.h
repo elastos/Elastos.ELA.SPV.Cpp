@@ -11,7 +11,7 @@
 #include "BRPeerManager.h"
 
 #include "IMessage.h"
-#include "IWrapperMessage.h"
+#include "Message.h"
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -25,7 +25,7 @@ namespace Elastos {
 			typedef boost::shared_ptr<IMessage> MessagePtr;
 			const MessagePtr &getMessage(const std::string &message);
 
-			typedef boost::shared_ptr<IWrapperMessage> WrapperMessagePtr;
+			typedef boost::shared_ptr<Message> WrapperMessagePtr;
 			const WrapperMessagePtr &getWrapperMessage(const std::string &message);
 
 			BRPeerMessages *createMessageManager();
