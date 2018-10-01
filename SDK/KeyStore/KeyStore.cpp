@@ -195,7 +195,7 @@ namespace Elastos {
 			_walletJson.setRequiredSignCount(multiSignAccount->GetRequiredSignCount());
 
 			if (multiSignAccount->GetInnerAccount() != nullptr)
-				initAccountByType(multiSignAccount->GetInnerAccount(), payPassword);
+				(multiSignAccount->GetInnerAccount(), payPassword);
 		}
 
 		void KeyStore::initAccountByType(IAccount *account, const std::string &payPassword) {
