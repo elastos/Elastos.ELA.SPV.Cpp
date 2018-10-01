@@ -40,8 +40,6 @@ namespace Elastos {
 
 		}
 
-		typedef boost::weak_ptr<PeerManager::Listener> WeakListener;
-
 		void PeerManager::syncStarted() {
 			if (!_listener.expired()) {
 				_listener.lock()->syncStarted();
@@ -202,7 +200,7 @@ namespace Elastos {
 
 			for (size_t i = _connectedPeers.size(); i > 0; i--) {
 				if (_connectedPeers[i]->getConnectStatusValue() == Peer::Connecting)
-					BRPeerConnect(_connectedPeers[i]->getRaw());
+					_connectedPeers[i]->connect();
 			}
 
 			if (_connectedPeers.size() < maxConnectCount) {
@@ -210,7 +208,7 @@ namespace Elastos {
 				std::vector<PeerPtr> peers;
 
 				if (_peers.size() < maxConnectCount ||
-					_peers[maxConnectCount - 1]->getRaw()->timestamp + 3 * 24 * 60 * 60 < now) {
+					_peers[maxConnectCount - 1]->getTimestamp() + 3 * 24 * 60 * 60 < now) {
 					findPeers();
 				}
 
@@ -269,7 +267,7 @@ namespace Elastos {
 
 			for (size_t i = peerCount; i > 0; i--) {
 				connectFailureCount = MAX_CONNECT_FAILURES; // prevent futher automatic reconnect attempts
-				BRPeerDisconnect(_connectedPeers[i - 1]->getRaw());
+				_connectedPeers[i - 1]->disconnect();
 			}
 
 			pthread_mutex_unlock(&lock);
@@ -305,7 +303,7 @@ namespace Elastos {
 							_peers.erase(_peers.begin() + i - 1);
 					}
 
-					BRPeerDisconnect(downloadPeer->getRaw());
+					downloadPeer->disconnect();
 				}
 
 				syncStartHeight = 0; // a syncStartHeight of 0 indicates that syncing hasn't started yet
@@ -737,7 +735,7 @@ namespace Elastos {
 					if (publishedTx[i - 1].callback != NULL) return;
 				}
 
-				BRPeerScheduleDisconnect(downloadPeer->getRaw(), -1); // cancel sync timeout
+				downloadPeer->scheduleDisconnect(-1); // cancel sync timeout
 			}
 		}
 
@@ -760,5 +758,4 @@ namespace Elastos {
 		}
 	}
 
-}
 }

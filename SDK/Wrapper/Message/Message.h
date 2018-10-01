@@ -5,22 +5,27 @@
 #ifndef __ELASTOS_SDK_IWRAPPERMESSAGE_H__
 #define __ELASTOS_SDK_IWRAPPERMESSAGE_H__
 
-#include "BRPeer.h"
-
-#include "SDK/Plugin/Interface/ELAMessageSerializable.h"
+#include "SDK/Wrapper/Peer.h"
 
 namespace Elastos {
 	namespace ElaWallet {
 
-		class IWrapperMessage {
+		struct SendMessageParameter {
+		};
+
+		class Message {
 		public:
-			IWrapperMessage();
+			virtual ~Message();
 
-			virtual ~IWrapperMessage();
+			virtual const PeerPtr &GetPeer() const = 0;
 
-			virtual int Accept(BRPeer *peer, const uint8_t *msg, size_t msgLen) = 0;
+			virtual int Accept(const std::string &msg) = 0;
 
-			virtual void Send(BRPeer *peer, void *serializable) = 0;
+			virtual void Send(const SendMessageParameter &param) = 0;
+
+			virtual std::string Type() const = 0;
+
+			static SendMessageParameter DefaultParam;
 		};
 
 	}
