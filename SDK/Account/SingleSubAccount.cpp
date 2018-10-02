@@ -14,15 +14,6 @@ namespace Elastos {
 
 		}
 
-		void
-		SingleSubAccount::InitWallet(const std::vector<Transaction> &transactions, size_t txCount, ELAWallet *wallet) {
-			//fixme [refactor]
-//			wallet->IsSingleAddress = true;
-//			wallet->SingleAddress = _parentAccount->GetAddress();
-//
-//			wallet->Raw.WalletUpdateBalance((BRWallet *) wallet);
-		}
-
 		Key SingleSubAccount::DeriveMainAccountKey(const std::string &payPassword) {
 			return _parentAccount->DeriveKey(payPassword);
 		}
@@ -39,8 +30,7 @@ namespace Elastos {
 			return result;
 		}
 
-		void SingleSubAccount::SignTransaction(const TransactionPtr &transaction, ELAWallet *wallet,
-											   const std::string &payPassword) {
+		void SingleSubAccount::SignTransaction(const TransactionPtr &transaction, const std::string &payPassword) {
 			WrapperList<Key, BRKey> keyList = DeriveAccountAvailableKeys(payPassword, transaction);
 			if (!transaction->sign(keyList, 0)) {
 				throw std::logic_error("Transaction Sign error!");

@@ -16,14 +16,11 @@ namespace Elastos {
 
 			virtual nlohmann::json GetBasicInfo() const;
 
-			virtual void InitWallet(const std::vector<Transaction> &transactions, size_t txCount, ELAWallet *wallet);
-
 			virtual Key DeriveMainAccountKey(const std::string &payPassword);
 
 			virtual std::string GetMainAccountPublicKey() const;
 
-			virtual void
-			SignTransaction(const TransactionPtr &transaction, ELAWallet *wallet, const std::string &payPassword);
+			virtual void SignTransaction(const TransactionPtr &transaction, const std::string &payPassword);
 
 			virtual bool IsSingleAddress() const;
 

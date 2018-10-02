@@ -6,6 +6,7 @@
 #define __ELASTOS_SDK_ISUBACCOUNT_H__
 
 #include <boost/shared_ptr.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include "IAccount.h"
 #include "Key.h"
@@ -17,6 +18,8 @@ namespace Elastos {
 
 		struct ELAWallet;
 
+		class Lockable;
+
 		class ISubAccount {
 		public:
 			virtual ~ISubAccount() {}
@@ -27,14 +30,15 @@ namespace Elastos {
 
 			virtual IAccount *GetParent() const = 0;
 
-			virtual void InitWallet(const std::vector<Transaction> &transactions, size_t txCount, ELAWallet *wallet) = 0;
+			virtual void InitAccount(const std::vector<TransactionPtr> &transactions, Lockable *lock) = 0;
 
 			virtual std::string GetMainAccountPublicKey() const = 0;
 
 			virtual Key DeriveMainAccountKey(const std::string &payPassword) = 0;
 
-			virtual void
-			SignTransaction(const TransactionPtr &transaction, ELAWallet *wallet, const std::string &payPassword) = 0;
+			virtual void SignTransaction(const TransactionPtr &transaction, const std::string &payPassword) = 0;
+
+			virtual void AddUsedAddrs(const TransactionPtr &tx) = 0;
 
 			virtual std::vector<Address> UnusedAddresses(uint32_t gapLimit, bool internal) = 0;
 

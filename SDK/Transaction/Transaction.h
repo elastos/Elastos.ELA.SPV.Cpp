@@ -149,6 +149,8 @@ namespace Elastos {
 
 			const std::vector<Program> &getPrograms() const;
 
+			std::vector<Program> &getPrograms();
+
 			const std::string getRemark() const;
 
 			void setRemark(const std::string &remark);

@@ -24,5 +24,13 @@ namespace Elastos {
 			return keyPtr.address();
 		}
 
+		void SubAccountBase::InitAccount(const std::vector<TransactionPtr> &transactions, Lockable *lock) {
+
+		}
+
+		void SubAccountBase::AddUsedAddrs(const TransactionPtr &tx) {
+
+		}
+
 	}
 }

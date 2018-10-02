@@ -365,6 +365,10 @@ namespace Elastos {
 			return programs;
 		}
 
+		std::vector<Program>& Transaction::getPrograms() {
+			return programs;
+		}
+
 		void Transaction::clearPrograms() {
 			programs.clear();
 		}
