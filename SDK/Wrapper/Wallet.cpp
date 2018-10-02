@@ -58,11 +58,10 @@ namespace Elastos {
 			assert(listener != nullptr);
 			_listener = boost::weak_ptr<Listener>(listener);
 
-//fixme [refactor] comlete me
-//			typedef SharedWrapperList<Transaction, BRTransaction *> Transactions;
-//			for (Transactions::const_iterator it = transactions.cbegin(); it != transactions.cend(); ++it) {
-//				(*it)->isRegistered() = true;
-//			}
+			for (std::vector<TransactionPtr>::const_iterator it = transactions.cbegin();
+				 it != transactions.cend(); ++it) {
+				(*it)->isRegistered() = true;
+			}
 
 			for (int i = 0; i < txArray.size(); ++i) {
 				TxRemarkMap[Utils::UInt256ToString(txArray[i]->getHash())] = txArray[i]->getRemark();
@@ -101,34 +100,34 @@ namespace Elastos {
 		nlohmann::json Wallet::GetBalanceInfo() {
 			std::vector<UTXO> utxos = getUTXOSafe();
 			nlohmann::json j;
-//fixme [refactor] comlete me
-//			ELATransaction *t;
-//			std::map<std::string, uint64_t> addressesBalanceMap;
-//			pthread_mutex_lock(&_wallet->Raw.lock);
-//			for (size_t i = 0; i < utxosCount; ++i) {
-//				void *tempPtr = BRSetGet(_wallet->Raw.allTx, &utxos[utxosCount].hash);
-//				if (tempPtr == nullptr) continue;
-//				t = static_cast<ELATransaction *>(tempPtr);
-//
-//				if (addressesBalanceMap.find(t->outputs[utxos->n]->getAddress()) != addressesBalanceMap.end()) {
-//					addressesBalanceMap[t->outputs[utxos->n]->getAddress()] += t->outputs[utxos->n]->getAmount();
-//				} else {
-//					addressesBalanceMap[t->outputs[utxos->n]->getAddress()] = t->outputs[utxos->n]->getAmount();
-//				}
-//			}
-//			pthread_mutex_unlock(&_wallet->Raw.lock);
-//
-//			std::vector<nlohmann::json> balances;
-//			std::for_each(addressesBalanceMap.begin(), addressesBalanceMap.end(),
-//						  [&addressesBalanceMap, &balances](const std::map<std::string, uint64_t>::value_type &item) {
-//							  nlohmann::json balanceKeyValue;
-//							  balanceKeyValue[item.first] = item.second;
-//							  balances.push_back(balanceKeyValue);
-//						  });
-//
-//			j["Balances"] = balances;
-//			return j;
-			return nlohmann::json();
+			std::map<std::string, uint64_t> addressesBalanceMap;
+
+			{
+				boost::mutex::scoped_lock scopedLock(lock);
+
+				for (size_t i = 0; i < utxos.size(); ++i) {
+					if (!allTx.Contains(utxos[i].hash)) continue;
+
+					const TransactionPtr &t = allTx.GetTransaction(utxos[i].hash);
+					if (addressesBalanceMap.find(t->getOutputs()[utxos[i].n].getAddress()) !=
+						addressesBalanceMap.end()) {
+						addressesBalanceMap[t->getOutputs()[utxos[i].n].getAddress()] += t->getOutputs()[utxos[i].n].getAmount();
+					} else {
+						addressesBalanceMap[t->getOutputs()[utxos[i].n].getAddress()] = t->getOutputs()[utxos[i].n].getAmount();
+					}
+				}
+			}
+
+			std::vector<nlohmann::json> balances;
+			std::for_each(addressesBalanceMap.begin(), addressesBalanceMap.end(),
+						  [&addressesBalanceMap, &balances](const std::map<std::string, uint64_t>::value_type &item) {
+							  nlohmann::json balanceKeyValue;
+							  balanceKeyValue[item.first] = item.second;
+							  balances.push_back(balanceKeyValue);
+						  });
+
+			j["Balances"] = balances;
+			return j;
 		}
 
 		uint64_t Wallet::GetBalanceWithAddress(const std::string &address) {
@@ -759,15 +758,13 @@ namespace Elastos {
 		}
 
 		std::string Wallet::getReceiveAddress() const {
-			std::vector<Address> addr;
-			WalletUnusedAddrs(addr, 1, 0);
+			std::vector<Address> addr = WalletUnusedAddrs(1, 0);
 			return addr[0].stringify();
 		}
 
 		std::vector<std::string> Wallet::getAllAddresses() {
 
-			std::vector<Address> addrs;
-			WalletAllAddrs(addrs, INT64_MAX);
+			std::vector<Address> addrs = WalletAllAddrs(INT64_MAX);
 
 			std::vector<std::string> results;
 			for (int i = 0; i < addrs.size(); i++) {
@@ -1056,94 +1053,15 @@ namespace Elastos {
 			}
 		}
 
-		size_t Wallet::KeyToAddress(const BRKey *key, char *addr, size_t addrLen) {
-			BRKey *brKey = new BRKey;
-			memcpy(brKey, key, sizeof(BRKey));
-
-			KeyPtr keyPtr(new Key(brKey));
-
-			std::string address = keyPtr->address();
-
-			memset(addr, '\0', addrLen);
-			strncpy(addr, address.c_str(), addrLen - 1);
-
-			return address.size();
-		}
-
 		uint32_t Wallet::getBlockHeight() const {
 			return blockHeight;
 		}
 
-		size_t Wallet::WalletUnusedAddrs(std::vector<Address> &addrs, uint32_t gapLimit, int internal) const {
-			if (_subAccount->IsSingleAddress()) {
-				addrs.clear();
-				addrs.push_back(_subAccount->GetParent()->GetAddress());
-				return 1;
-			}
-
-			BRAddress emptyAddress = BR_ADDRESS_NONE;
-			size_t i, j = 0, count, startCount;
-			uint32_t chain = (internal) ? SEQUENCE_INTERNAL_CHAIN : SEQUENCE_EXTERNAL_CHAIN;
-
-			assert(gapLimit > 0);
+		std::vector<Address> Wallet::WalletUnusedAddrs(uint32_t gapLimit, bool internal) const {
 			{
 				boost::mutex::scoped_lock scoped_lock(lock);
-				std::vector<Address> &addrChain = const_cast<std::vector<Address> &>((internal) ? internalChain
-																								: externalChain);
-				i = count = startCount = addrChain.size();
-
-				// keep only the trailing contiguous block of addresses with no transactions
-				//fixme [refactor]
-//				while (i > 0 && usedAddrs.find(addrChain[i - 1]) == usedAddrs.end()) i--;
-
-				//fixme [refactor] complete me
-//			while (i + gapLimit > count) { // generate new addresses up to gapLimit
-//				Key key;
-//				BRAddress address = BR_ADDRESS_NONE;
-//
-//				uint8_t pubKey[BRBIP32PubKey(NULL, 0, masterPubKey, chain, count)];
-//				size_t len = BRBIP32PubKey(pubKey, sizeof(pubKey), masterPubKey, chain, count);
-//
-//				CMBlock publicKey(len);
-//				memcpy(publicKey, pubKey, len);
-//
-//				if (!key.setPubKey(publicKey)) break;
-//				if (!KeyToAddress(key.getRaw(), address.s, sizeof(BRAddress)) ||
-//					BRAddressEq(&address, &emptyAddress))
-//					break;
-//
-//				array_add(addrChain, address);
-//				count++;
-//				if (BRSetContains(usedAddrs, &address)) i = count;
-//			}
-//
-//			if (addrs && i + gapLimit <= count) {
-//				for (j = 0; j < gapLimit; j++) {
-//					addrs[j] = addrChain[i + j];
-//				}
-//			}
-//
-//			// was addrChain moved to a new memory location?
-//			if (addrChain == (internal ? internalChain : externalChain)) {
-//				for (i = startCount; i < count; i++) {
-//					BRSetAdd(allAddrs, &addrChain[i]);
-//				}
-//			} else {
-//				if (internal) internalChain = addrChain;
-//				if (!internal) externalChain = addrChain;
-//				BRSetClear(allAddrs); // clear and rebuild allAddrs
-//
-//				for (i = array_count(internalChain); i > 0; i--) {
-//					BRSetAdd(allAddrs, &internalChain[i - 1]);
-//				}
-//
-//				for (i = array_count(externalChain); i > 0; i--) {
-//					BRSetAdd(allAddrs, &externalChain[i - 1]);
-//				}
-//			}
-//
+				return _subAccount->UnusedAddresses(gapLimit, internal);
 			}
-			return j;
 		}
 
 		uint64_t Wallet::BalanceAfterTx(const TransactionPtr &tx) {
@@ -1165,33 +1083,9 @@ namespace Elastos {
 			return result;
 		}
 
-		size_t Wallet::WalletAllAddrs(std::vector<Address> &addrs, size_t addrsCount) {
-			if (_subAccount->IsSingleAddress()) {
-				if (addrsCount > 0) {
-					addrs.clear();
-					addrs.push_back(_subAccount->GetParent()->GetAddress());
-				}
-				return 1;
-			}
-
-			size_t i, internalCount = 0, externalCount = 0;
-			{
-				boost::mutex::scoped_lock scoped_lock(lock);
-				internalCount = internalChain.size() < addrsCount ? internalChain.size() : addrsCount;
-
-				for (i = 0; i < internalCount; i++) {
-					addrs.push_back(internalChain[i]);
-				}
-
-				externalCount = externalChain.size() < addrsCount - internalCount
-								? externalChain.size() : addrsCount - internalCount;
-
-				for (i = 0; i < externalCount; i++) {
-					addrs.push_back(externalChain[i]);
-				}
-			}
-
-			return internalCount + externalCount;
+		std::vector<Address> Wallet::WalletAllAddrs(size_t addrsCount) {
+			boost::mutex::scoped_lock scoped_lock(lock);
+			return  _subAccount->GetAllAddresses(addrsCount);
 		}
 
 		void Wallet::signTransaction(const TransactionPtr &transaction, int forkId, const std::string &payPassword) {

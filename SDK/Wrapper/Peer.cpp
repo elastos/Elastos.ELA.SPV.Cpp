@@ -191,9 +191,6 @@ namespace Elastos {
 
 			int socket, error = 0;
 
-			//fixme [refactor]
-//			pthread_cleanup_push(threadCleanup, info);
-
 			if (openSocket(PF_INET6, CONNECT_TIMEOUT, &error)) {
 				struct timeval tv;
 				double time = 0, msgTimeout;

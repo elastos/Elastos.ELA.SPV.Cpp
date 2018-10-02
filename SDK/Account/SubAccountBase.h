@@ -14,7 +14,9 @@ namespace Elastos {
 		public:
 			SubAccountBase(IAccount *account);
 
-			virtual IAccount *GetParent();
+			virtual IAccount *GetParent() const;
+
+			Address KeyToAddress(const BRKey *key) const;
 
 		protected:
 			IAccount *_parentAccount;

@@ -9,6 +9,7 @@
 
 #include "IAccount.h"
 #include "Key.h"
+#include "Address.h"
 #include "Transaction/Transaction.h"
 
 namespace Elastos {
@@ -24,7 +25,7 @@ namespace Elastos {
 
 			virtual bool IsSingleAddress() const = 0;
 
-			virtual IAccount *GetParent() = 0;
+			virtual IAccount *GetParent() const = 0;
 
 			virtual void InitWallet(const std::vector<Transaction> &transactions, size_t txCount, ELAWallet *wallet) = 0;
 
@@ -34,6 +35,10 @@ namespace Elastos {
 
 			virtual void
 			SignTransaction(const TransactionPtr &transaction, ELAWallet *wallet, const std::string &payPassword) = 0;
+
+			virtual std::vector<Address> UnusedAddresses(uint32_t gapLimit, bool internal) = 0;
+
+			virtual std::vector<Address> GetAllAddresses(size_t addrsCount) const = 0;
 		};
 
 		typedef boost::shared_ptr<ISubAccount> SubAccountPtr;
