@@ -16,10 +16,13 @@
 #include "SharedWrapperList.h"
 #include "WrapperList.h"
 #include "CMemBlock.h"
-#include "ELACoreExt/ELAPeerManager.h"
+#include "PublishedTransaction.h"
+#include "TransactionPeerList.h"
 #include "Plugin/PluginTypes.h"
 #include "Plugin/Interface/IMerkleBlock.h"
 #include "Plugin/Block/MerkleBlock.h"
+
+#define PEER_MAX_CONNECTIONS 3
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -175,8 +178,8 @@ namespace Elastos {
 			BlockSet _orphans;
 			BlockSet _checkpoints;
 			MerkleBlockPtr lastBlock, lastOrphan;
-			BRTxPeerList *txRelays, *txRequests;
-			BRPublishedTx *publishedTx;
+			std::vector<TransactionPeerList> txRelays, txRequests;
+			std::vector<PublishedTransaction> publishedTx;
 			std::vector<UInt256> publishedTxHashes;
 
 			PluginTypes _pluginTypes;
