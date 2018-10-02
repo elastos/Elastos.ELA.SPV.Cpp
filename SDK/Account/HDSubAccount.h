@@ -35,6 +35,10 @@ namespace Elastos {
 
 			virtual std::vector<Address> UnusedAddresses(uint32_t gapLimit, bool internal);
 
+			virtual bool ContainsAddress(const Address &address) const;
+
+			virtual bool IsAddressUsed(const Address &address) const;
+
 		private:
 
 			WrapperList<Key, BRKey> DeriveAccountAvailableKeys(const std::string &payPassword,

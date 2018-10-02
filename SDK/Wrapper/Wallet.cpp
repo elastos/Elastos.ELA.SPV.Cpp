@@ -55,7 +55,8 @@ namespace Elastos {
 			_subAccount->InitAccount(transactions, this);
 			WalletUpdateBalance();
 
-			if (!transactions.empty() && !WalletContainsTx(transactions[0])) { // verify transactions match master pubKey
+			if (!transactions.empty() &&
+				!WalletContainsTx(transactions[0])) { // verify transactions match master pubKey
 				std::stringstream ess;
 				ess << "txCount = " << transactions.size()
 					<< ", wallet do not contain tx[0] = "
@@ -458,7 +459,42 @@ namespace Elastos {
 		bool Wallet::registerTransaction(const TransactionPtr &transaction) {
 			//fixme [refactor] comlete me
 			return false;
-//			return BRWalletRegisterTransaction((BRWallet *) _wallet, transaction->getRaw()) != 0;
+//			int wasAdded = 0, r = 1;
+//
+//			assert(tx != NULL && wallet->TransactionIsSigned(tx));
+//
+//			if (tx && wallet->TransactionIsSigned(tx)) {
+//				pthread_mutex_lock(&wallet->lock);
+//
+//				if (!BRSetContains(wallet->allTx, tx)) {
+//					if (wallet->WalletContainsTx(wallet, tx)) {
+//						// TODO: verify signatures when possible
+//						// TODO: handle tx replacement with input sequence numbers
+//						//       (for now, replacements appear invalid until confirmation)
+//						BRSetAdd(wallet->allTx, tx);
+//						_BRWalletInsertTx(wallet, tx);
+//						wallet->WalletUpdateBalance(wallet);
+//						wasAdded = 1;
+//					} else { // keep track of unconfirmed non-wallet tx for invalid tx checks and child-pays-for-parent fees
+//						// BUG: limit total non-wallet unconfirmed tx to avoid memory exhaustion attack
+//						if (tx->blockHeight == TX_UNCONFIRMED) BRSetAdd(wallet->allTx, tx);
+//						r = 0;
+//						// BUG: XXX memory leak if tx is not added to wallet->allTx, and we can't just free it
+//					}
+//				}
+//
+//				pthread_mutex_unlock(&wallet->lock);
+//			} else r = 0;
+//
+//			if (wasAdded) {
+//				// when a wallet address is used in a transaction, generate a new address to replace it
+//				wallet->WalletUnusedAddrs(wallet, NULL, SEQUENCE_GAP_LIMIT_EXTERNAL, 0);
+//				wallet->WalletUnusedAddrs(wallet, NULL, SEQUENCE_GAP_LIMIT_INTERNAL, 1);
+//				if (wallet->balanceChanged) wallet->balanceChanged(wallet->callbackInfo, wallet->balance);
+//				if (wallet->txAdded) wallet->txAdded(wallet->callbackInfo, tx);
+//			}
+//
+//			return r;
 		}
 
 		void Wallet::removeTransaction(const UInt256 &transactionHash) {
@@ -682,11 +718,10 @@ namespace Elastos {
 					const TransactionPtr &t = allTx.GetTransaction(tx->getInputs()[i].getTransctionHash());
 					uint32_t n = tx->getInputs()[i].getIndex();
 
-					//fixme [refactor]
-//					if (t && n < t->getOutputs().size() &&
-//						allAddrs.find(t->getOutputs()[n].getAddress()) != allAddrs.end()) {
-//						amount += t->getOutputs()[n].getAmount();
-//					}
+					if (t && n < t->getOutputs().size() &&
+						_subAccount->ContainsAddress(t->getOutputs()[n].getAddress())) {
+						amount += t->getOutputs()[n].getAmount();
+					}
 				}
 			}
 
@@ -697,14 +732,12 @@ namespace Elastos {
 			uint64_t amount = 0;
 
 			assert(tx != NULL);
-
 			{
 				boost::mutex::scoped_lock scoped_lock(lock);
 				// TODO: don't include outputs below TX_MIN_OUTPUT_AMOUNT
 				for (size_t i = 0; tx && i < tx->getOutputs().size(); i++) {
-					//fixme [refactor]
-//					if (allAddrs.find(tx->getOutputs()[i].getAddress()) != allAddrs.end())
-//						amount += tx->getOutputs()[i].getAmount();
+					if (_subAccount->ContainsAddress(tx->getOutputs()[i].getAddress()))
+						amount += tx->getOutputs()[i].getAmount();
 				}
 			}
 
@@ -783,15 +816,10 @@ namespace Elastos {
 		}
 
 		bool Wallet::containsAddress(const std::string &address) {
-			if (_subAccount->IsSingleAddress()) {
-				return _subAccount->GetParent()->GetAddress() == address;
-			}
-
 			bool result;
 			{
 				boost::mutex::scoped_lock scoped_lock(lock);
-				//fixme [refactor]
-//				result = allAddrs.find(address) != allAddrs.end();
+				result = _subAccount->ContainsAddress(address);
 			}
 			return result;
 		}
@@ -800,8 +828,7 @@ namespace Elastos {
 			bool result;
 			{
 				boost::mutex::scoped_lock scoped_lock(lock);
-				//fixme [refactor]
-//				result = usedAddrs.find(address) != usedAddrs.end();
+				result = _subAccount->IsAddressUsed(address);
 			}
 			return result;
 		}
@@ -983,10 +1010,9 @@ namespace Elastos {
 						r = 1;
 					}
 				} else {
-					//fixme [refactor]
-//					if (allAddrs.find(tx->getOutputs()[i].getAddress()) != allAddrs.end()) {
-//						r = 1;
-//					}
+					if (_subAccount->ContainsAddress(tx->getOutputs()[i].getAddress())) {
+						r = 1;
+					}
 				}
 			}
 
@@ -1094,11 +1120,10 @@ namespace Elastos {
 					const TransactionPtr &t = allTx.GetTransaction(tx->getInputs()[i].getTransctionHash());
 					uint32_t n = tx->getInputs()[i].getIndex();
 
-					//fixme [refactor]
-//					if (t && n < t->getOutputs().size() &&
-//						allAddrs.find(t->getOutputs()[n].getAddress()) != allAddrs.end()) {
-//						amount += t->getOutputs()[n].getAmount();
-//					}
+					if (t && n < t->getOutputs().size() &&
+						_subAccount->ContainsAddress(t->getOutputs()[n].getAddress())) {
+						amount += t->getOutputs()[n].getAmount();
+					}
 				}
 			}
 

@@ -52,14 +52,14 @@ namespace Elastos {
 			_lock->Lock();
 			for (i = 0; i < transaction->getInputs().size(); i++) {
 				for (j = (uint32_t) internalChain.size(); j > 0; j--) {
-					Address inputAddr; // = transaction->getInputs()[i].address;
+					Address inputAddr; // = transaction->getInputs()[i].address;  fixme [refactor] get address by tx hash
 					if (inputAddr.IsEqual(internalChain[j - 1])) {
 						internalIdx[internalCount++] = j - 1;
 					}
 				}
 
 				for (j = (uint32_t) externalChain.size(); j > 0; j--) {
-					Address inputAddr; // = transaction->getInputs()[i].address;
+					Address inputAddr; // = transaction->getInputs()[i].address;  fixme [refactor] get address by tx hash
 					if (inputAddr.IsEqual(externalChain[j - 1])) {
 						externalIdx[externalCount++] = j - 1;
 					}
@@ -186,6 +186,14 @@ namespace Elastos {
 				if (!tx->getOutputs()[j].getAddress().empty())
 					usedAddrs.insert(tx->getOutputs()[j].getAddress());
 			}
+		}
+
+		bool HDSubAccount::IsAddressUsed(const Address &address) const {
+			return usedAddrs.find(address) != usedAddrs.end();
+		}
+
+		bool HDSubAccount::ContainsAddress(const Address &address) const {
+			return allAddrs.find(address) != allAddrs.end();
 		}
 
 	}
