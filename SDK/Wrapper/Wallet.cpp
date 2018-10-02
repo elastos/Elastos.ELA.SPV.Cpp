@@ -52,8 +52,17 @@ namespace Elastos {
 			}
 			sortTransations();
 
-			//fixme [refactor] comlete me
-//			_subAccount->InitWallet(transactions.getRawPointerArray().data(), transactions.size(), _wallet);
+			_subAccount->InitAccount(transactions, this);
+			WalletUpdateBalance();
+
+			if (!transactions.empty() && !WalletContainsTx(transactions[0])) { // verify transactions match master pubKey
+				std::stringstream ess;
+				ess << "txCount = " << transactions.size()
+					<< ", wallet do not contain tx[0] = "
+					<< Utils::UInt256ToString(transactions[0]->getHash());
+				Log::getLogger()->error(ess.str());
+				throw std::logic_error(ess.str());
+			}
 
 			assert(listener != nullptr);
 			_listener = boost::weak_ptr<Listener>(listener);
@@ -758,13 +767,13 @@ namespace Elastos {
 		}
 
 		std::string Wallet::getReceiveAddress() const {
-			std::vector<Address> addr = WalletUnusedAddrs(1, 0);
+			std::vector<Address> addr = _subAccount->UnusedAddresses(1, 0);
 			return addr[0].stringify();
 		}
 
 		std::vector<std::string> Wallet::getAllAddresses() {
 
-			std::vector<Address> addrs = WalletAllAddrs(INT64_MAX);
+			std::vector<Address> addrs = _subAccount->GetAllAddresses(INT64_MAX);
 
 			std::vector<std::string> results;
 			for (int i = 0; i < addrs.size(); i++) {
@@ -1011,17 +1020,6 @@ namespace Elastos {
 			return r;
 		}
 
-		void Wallet::WalletAddUsedAddrs(const TransactionPtr &tx) {
-			if (tx == nullptr)
-				return;
-
-			for (size_t j = 0; j < tx->getOutputs().size(); j++) {
-				//fixme [refactor]
-//				if (!tx->getOutputs()[j].getAddress().empty())
-//					usedAddrs.insert(tx->getOutputs()[j].getAddress());
-			}
-		}
-
 		void Wallet::setApplyFreeTx(void *info, void *tx) {
 		}
 
@@ -1057,13 +1055,6 @@ namespace Elastos {
 			return blockHeight;
 		}
 
-		std::vector<Address> Wallet::WalletUnusedAddrs(uint32_t gapLimit, bool internal) const {
-			{
-				boost::mutex::scoped_lock scoped_lock(lock);
-				return _subAccount->UnusedAddresses(gapLimit, internal);
-			}
-		}
-
 		uint64_t Wallet::BalanceAfterTx(const TransactionPtr &tx) {
 			uint64_t result;
 
@@ -1083,15 +1074,9 @@ namespace Elastos {
 			return result;
 		}
 
-		std::vector<Address> Wallet::WalletAllAddrs(size_t addrsCount) {
-			boost::mutex::scoped_lock scoped_lock(lock);
-			return  _subAccount->GetAllAddresses(addrsCount);
-		}
-
 		void Wallet::signTransaction(const TransactionPtr &transaction, int forkId, const std::string &payPassword) {
-			//fixme [refactor]
-//			ParamChecker::checkNullPointer(transaction.get());
-//			_subAccount->SignTransaction(transaction, _wallet, payPassword);
+			ParamChecker::checkNullPointer(transaction.get());
+			_subAccount->SignTransaction(transaction, payPassword);
 		}
 
 		void Wallet::sortTransations() {

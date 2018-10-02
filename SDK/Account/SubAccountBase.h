@@ -14,7 +14,11 @@ namespace Elastos {
 		public:
 			SubAccountBase(IAccount *account);
 
+			virtual void InitAccount(const std::vector<TransactionPtr> &transactions, Lockable *lock);
+
 			virtual IAccount *GetParent() const;
+
+			virtual void AddUsedAddrs(const TransactionPtr &tx);
 
 			Address KeyToAddress(const BRKey *key) const;
 

@@ -28,7 +28,17 @@
 namespace Elastos {
 	namespace ElaWallet {
 
-		class Wallet {
+		class Lockable {
+		public:
+			void Lock() const { lock.lock(); }
+
+			void Unlock() const { lock.unlock(); }
+
+		protected:
+			mutable boost::mutex lock;
+		};
+
+		class Wallet : public Lockable {
 
 		public:
 			class Listener {
@@ -111,7 +121,7 @@ namespace Elastos {
 			bool registerTransaction(const TransactionPtr &transaction);
 
 			void removeTransaction(const UInt256 &transactionHash);
-				//fixme [refactor]
+			//fixme [refactor]
 
 			void updateTransactions(const std::vector<UInt256> &transactionsHashes, uint32_t blockHeight,
 									uint32_t timestamp);
@@ -214,8 +224,6 @@ namespace Elastos {
 
 			bool WalletContainsTx(const TransactionPtr &tx);
 
-			void WalletAddUsedAddrs(const TransactionPtr &tx);
-
 			void setApplyFreeTx(void *info, void *tx);
 
 			void balanceChanged(uint64_t balance);
@@ -226,11 +234,7 @@ namespace Elastos {
 
 			void txDeleted(const UInt256 &txHash, int notifyUser, int recommendRescan);
 
-			std::vector<Address> WalletUnusedAddrs(uint32_t gapLimit, bool internal) const;
-
 			uint64_t BalanceAfterTx(const TransactionPtr &tx);
-
-			std::vector<Address> WalletAllAddrs(size_t addrsCount);
 
 			void sortTransations();
 
@@ -253,8 +257,6 @@ namespace Elastos {
 
 			SubAccountPtr _subAccount;
 			boost::weak_ptr<Listener> _listener;
-
-			mutable boost::mutex lock;
 		};
 
 		typedef boost::shared_ptr<Wallet> WalletPtr;

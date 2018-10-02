@@ -19,16 +19,17 @@ namespace Elastos {
 
 			virtual nlohmann::json GetBasicInfo() const;
 
-			virtual void InitWallet(const std::vector<Transaction> &transactions, size_t txCount, ELAWallet *wallet);
+			virtual void InitAccount(const std::vector<TransactionPtr> &transactions, Lockable *lock);
 
 			virtual Key DeriveMainAccountKey(const std::string &payPassword);
 
-			virtual void
-			SignTransaction(const TransactionPtr &transaction, ELAWallet *wallet, const std::string &payPassword);
+			virtual void SignTransaction(const TransactionPtr &transaction, const std::string &payPassword);
 
 			virtual std::string GetMainAccountPublicKey() const;
 
 			virtual bool IsSingleAddress() const;
+
+			virtual void AddUsedAddrs(const TransactionPtr &tx);
 
 			virtual std::vector<Address> GetAllAddresses(size_t addrsCount) const;
 
@@ -36,7 +37,7 @@ namespace Elastos {
 
 		private:
 
-			WrapperList<Key, BRKey> DeriveAccountAvailableKeys(ELAWallet *wallet, const std::string &payPassword,
+			WrapperList<Key, BRKey> DeriveAccountAvailableKeys(const std::string &payPassword,
 															   const TransactionPtr &transaction);
 
 		private:
@@ -44,6 +45,7 @@ namespace Elastos {
 			uint32_t _coinIndex;
 			std::vector<Address> internalChain, externalChain;
 			std::set<Address> usedAddrs, allAddrs;
+			Lockable *_lock;
 		};
 	}
 }

@@ -20,34 +20,31 @@ namespace Elastos {
 			}
 		}
 
-		void MultiSignSubAccount::SignTransaction(const TransactionPtr &transaction, ELAWallet *wallet,
-												  const std::string &payPassword) {
-			//fixme [refactor] complete me
-//			ELATransaction *elaTransaction = (ELATransaction *) transaction->getRaw();
-//			if (elaTransaction->programs.empty()) {
-//				Program *program = new Program;
-//				program->setCode(_multiSignAccount->GenerateRedeemScript());
-//				elaTransaction->programs.push_back(program);
-//			}
-//
-//			if (elaTransaction->programs.size() != 1)
-//				ErrorCode::StandardLogicError(ErrorCode::TransactionContentError,
-//											  "Multi-sign program should be unique.");
-//
-//			ByteStream stream;
-//			if (elaTransaction->programs[0]->getParameter().GetSize() > 0) {
-//				stream.putBytes(elaTransaction->programs[0]->getParameter(),
-//								elaTransaction->programs[0]->getParameter().GetSize());
-//			}
-//
-//			CMBlock shaData = transaction->GetShaData();
-//			CMBlock signData = DeriveMainAccountKey(payPassword).compactSign(shaData);
-//			uint8_t buff[65];
-//			memset(buff, 0, 65);
-//			memcpy(buff, signData, signData.GetSize());
-//			stream.putBytes(buff, 65);
-//
-//			elaTransaction->programs[0]->setParameter(stream.getBuffer());
+		void MultiSignSubAccount::SignTransaction(const TransactionPtr &transaction, const std::string &payPassword) {
+			if (transaction->getPrograms().empty()) {
+				Program program;
+				program.setCode(_multiSignAccount->GenerateRedeemScript());
+				transaction->addProgram(program);
+			}
+
+			if (transaction->getPrograms().size() != 1)
+				ErrorCode::StandardLogicError(ErrorCode::TransactionContentError,
+											  "Multi-sign program should be unique.");
+
+			ByteStream stream;
+			Program &program = transaction->getPrograms()[0];
+			if (program.getParameter().GetSize() > 0) {
+				stream.putBytes(program.getParameter(), program.getParameter().GetSize());
+			}
+
+			CMBlock shaData = transaction->GetShaData();
+			CMBlock signData = DeriveMainAccountKey(payPassword).compactSign(shaData);
+			uint8_t buff[65];
+			memset(buff, 0, 65);
+			memcpy(buff, signData, signData.GetSize());
+			stream.putBytes(buff, 65);
+
+			program.setParameter(stream.getBuffer());
 		}
 
 		nlohmann::json MultiSignSubAccount::GetBasicInfo() const {
