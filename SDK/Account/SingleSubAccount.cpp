@@ -60,6 +60,14 @@ namespace Elastos {
 			result.push_back(GetParent()->GetAddress());
 			return result;
 		}
+
+		bool SingleSubAccount::IsAddressUsed(const Address &address) const {
+			return true;
+		}
+
+		bool SingleSubAccount::ContainsAddress(const Address &address) const {
+			return address.IsEqual(GetParent()->GetAddress());
+		}
 	}
 }
 

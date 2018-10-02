@@ -43,6 +43,10 @@ namespace Elastos {
 			virtual std::vector<Address> UnusedAddresses(uint32_t gapLimit, bool internal) = 0;
 
 			virtual std::vector<Address> GetAllAddresses(size_t addrsCount) const = 0;
+
+			virtual bool ContainsAddress(const Address &address) const = 0;
+
+			virtual bool IsAddressUsed(const Address &address) const = 0;
 		};
 
 		typedef boost::shared_ptr<ISubAccount> SubAccountPtr;

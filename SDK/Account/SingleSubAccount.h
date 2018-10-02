@@ -28,6 +28,10 @@ namespace Elastos {
 
 			virtual std::vector<Address> GetAllAddresses(size_t addrsCount) const;
 
+			virtual bool ContainsAddress(const Address &address) const;
+
+			virtual bool IsAddressUsed(const Address &address) const;
+
 		protected:
 			WrapperList<Key, BRKey>
 			DeriveAccountAvailableKeys(const std::string &payPassword,
