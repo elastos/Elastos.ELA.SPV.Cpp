@@ -161,10 +161,6 @@ namespace Elastos {
 //				orphan.prevBlock = block->blockHash;
 //				block = (BRMerkleBlock *)BRSetGet(orphans, &orphan);
 //			}
-
-			array_new(txRelays, 10);
-			array_new(txRequests, 10);
-			array_new(publishedTx, 10);
 		}
 
 		PeerManager::~PeerManager() {
@@ -489,9 +485,9 @@ namespace Elastos {
 
 			{
 				boost::mutex::scoped_lock scoped_lock(lock);
-				for (size_t i = array_count(txRelays); i > 0; i--) {
-					if (!UInt256Eq(&txRelays[i - 1].txHash, &txHash)) continue;
-					count = array_count(txRelays[i - 1].peers);
+				for (size_t i = txRelays.size(); i > 0; i--) {
+					if (!UInt256Eq(&txRelays[i - 1].GetTransactionHash(), &txHash)) continue;
+					count = txRelays[i - 1].GetPeers().size();
 					break;
 				}
 			}
@@ -734,8 +730,8 @@ namespace Elastos {
 
 			if (downloadPeer != nullptr) {
 				// don't cancel timeout if there's a pending tx publish callback
-				for (size_t i = array_count(publishedTx); i > 0; i--) {
-					if (publishedTx[i - 1].callback != NULL) return;
+				for (size_t i = publishedTx.size(); i > 0; i--) {
+					if (publishedTx[i - 1].HasCallback()) return;
 				}
 
 				downloadPeer->scheduleDisconnect(-1); // cancel sync timeout
