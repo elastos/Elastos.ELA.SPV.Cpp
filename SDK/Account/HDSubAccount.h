@@ -5,6 +5,8 @@
 #ifndef __ELASTOS_SDK_HDSUBACCOUNT_H__
 #define __ELASTOS_SDK_HDSUBACCOUNT_H__
 
+#include <set>
+
 #include "SubAccountBase.h"
 #include "MasterPubKey.h"
 
@@ -28,6 +30,10 @@ namespace Elastos {
 
 			virtual bool IsSingleAddress() const;
 
+			virtual std::vector<Address> GetAllAddresses(size_t addrsCount) const;
+
+			virtual std::vector<Address> UnusedAddresses(uint32_t gapLimit, bool internal);
+
 		private:
 
 			WrapperList<Key, BRKey> DeriveAccountAvailableKeys(ELAWallet *wallet, const std::string &payPassword,
@@ -36,6 +42,8 @@ namespace Elastos {
 		private:
 			MasterPubKey _masterPubKey;
 			uint32_t _coinIndex;
+			std::vector<Address> internalChain, externalChain;
+			std::set<Address> usedAddrs, allAddrs;
 		};
 	}
 }

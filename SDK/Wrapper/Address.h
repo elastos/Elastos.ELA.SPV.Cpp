@@ -22,6 +22,10 @@ namespace Elastos {
 
 			Address(const std::string &address);
 
+			Address &operator= (const std::string &address);
+
+			bool operator== (const std::string &address) const;
+
 			bool isValid();
 
 			CMBlock getPubKeyScript();
@@ -30,7 +34,9 @@ namespace Elastos {
 
 			std::string stringify() const;
 
-			bool operator< (const Address &address);
+			bool operator< (const Address &address) const;
+
+			bool IsEqual(const Address &address) const;
 
 		public:
 			static boost::shared_ptr<Address> createAddress(const std::string &address);
@@ -46,6 +52,8 @@ namespace Elastos {
 			static bool isValidIdAddress(const std::string &address);
 
 			static bool isValidProgramHash(const UInt168 &u168, const Transaction::Type &type);
+
+			static Address None;
 
 		private:
 			char _s[75];

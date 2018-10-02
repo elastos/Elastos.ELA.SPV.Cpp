@@ -143,5 +143,71 @@ namespace Elastos {
 			return false;
 		}
 
+		std::vector<Address> HDSubAccount::GetAllAddresses(size_t addrsCount) const {
+			std::vector<Address> result;
+			size_t i, internalCount = 0, externalCount = 0;
+			{
+				internalCount = internalChain.size() < addrsCount ? internalChain.size() : addrsCount;
+
+				for (i = 0; i < internalCount; i++) {
+					result.push_back(internalChain[i]);
+				}
+
+				externalCount = externalChain.size() < addrsCount - internalCount
+								? externalChain.size() : addrsCount - internalCount;
+
+				for (i = 0; i < externalCount; i++) {
+					result.push_back(externalChain[i]);
+				}
+			}
+
+			return result;
+		}
+
+		std::vector<Address> HDSubAccount::UnusedAddresses(uint32_t gapLimit, bool internal) {
+
+			size_t i, j = 0, count, startCount;
+			uint32_t chain = (internal) ? SEQUENCE_INTERNAL_CHAIN : SEQUENCE_EXTERNAL_CHAIN;
+
+			assert(gapLimit > 0);
+			std::vector<Address> &addrChain = internal ? internalChain : externalChain;
+			i = count = startCount = addrChain.size();
+
+			// keep only the trailing contiguous block of addresses with no transactions
+			while (i > 0 && usedAddrs.find(addrChain[i - 1]) == usedAddrs.end()) i--;
+
+			std::vector<Address> addrs;
+			while (i + gapLimit > count) { // generate new addresses up to gapLimit
+				Key key;
+
+				uint8_t pubKey[BRBIP32PubKey(NULL, 0, *_masterPubKey.getRaw(), chain, count)];
+				size_t len = BRBIP32PubKey(pubKey, sizeof(pubKey), *_masterPubKey.getRaw(), chain, count);
+
+				CMBlock publicKey(len);
+				memcpy(publicKey, pubKey, len);
+
+				if (!key.setPubKey(publicKey)) break;
+				Address address = KeyToAddress(key.getRaw());
+				if (address.IsEqual(Address::None))
+					break;
+
+				addrChain.push_back(address);
+				count++;
+				if (usedAddrs.find(address) != usedAddrs.end()) i = count;
+			}
+
+			if (i + gapLimit <= count) {
+				for (j = 0; j < gapLimit; j++) {
+					addrs.push_back(addrChain[i + j]);
+				}
+			}
+
+			for (i = startCount; i < count; i++) {
+				allAddrs.insert(addrChain[i]);
+			}
+
+			return std::vector<Address>();
+		}
+
 	}
 }

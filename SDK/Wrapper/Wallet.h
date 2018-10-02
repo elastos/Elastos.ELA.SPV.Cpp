@@ -195,8 +195,6 @@ namespace Elastos {
 			void signTransaction(const TransactionPtr &transaction, int forkId, const std::string &payPassword);
 
 		protected:
-
-		protected:
 			Wallet();
 
 			bool AddressFilter(const std::string &fromAddress, const std::string &filterAddress);
@@ -228,13 +226,11 @@ namespace Elastos {
 
 			void txDeleted(const UInt256 &txHash, int notifyUser, int recommendRescan);
 
-			size_t KeyToAddress(const BRKey *key, char *addr, size_t addrLen);
-
-			size_t WalletUnusedAddrs(std::vector<Address> &addrs, uint32_t gapLimit, int internal) const;
+			std::vector<Address> WalletUnusedAddrs(uint32_t gapLimit, bool internal) const;
 
 			uint64_t BalanceAfterTx(const TransactionPtr &tx);
 
-			size_t WalletAllAddrs(std::vector<Address> &addrs, size_t addrsCount);
+			std::vector<Address> WalletAllAddrs(size_t addrsCount);
 
 			void sortTransations();
 
@@ -248,11 +244,8 @@ namespace Elastos {
 			UTXOList utxos;
 			std::vector<TransactionPtr> transactions;
 			std::vector<uint64_t> balanceHist;
-			std::vector<Address> internalChain, externalChain;
-			//fixme [refator] set less than compare functor for allTx, invalidTx, pendingTx
 			TransactionSet allTx, invalidTx, pendingTx;
 			UTXOList spentOutputs;
-			std::set<Address> usedAddrs, allAddrs;
 
 			typedef std::map<std::string, std::string> TransactionRemarkMap;
 			TransactionRemarkMap TxRemarkMap;

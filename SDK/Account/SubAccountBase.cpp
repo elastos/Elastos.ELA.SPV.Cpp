@@ -12,8 +12,16 @@ namespace Elastos {
 
 		}
 
-		IAccount *SubAccountBase::GetParent() {
+		IAccount *SubAccountBase::GetParent() const {
 			return _parentAccount;
+		}
+
+		Address SubAccountBase::KeyToAddress(const BRKey *key) const {
+			BRKey *brKey = new BRKey;
+			memcpy(brKey, key, sizeof(BRKey));
+
+			Key keyPtr(brKey);
+			return keyPtr.address();
 		}
 
 	}

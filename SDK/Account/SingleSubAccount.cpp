@@ -14,7 +14,8 @@ namespace Elastos {
 
 		}
 
-		void SingleSubAccount::InitWallet(const std::vector<Transaction> &transactions, size_t txCount, ELAWallet *wallet) {
+		void
+		SingleSubAccount::InitWallet(const std::vector<Transaction> &transactions, size_t txCount, ELAWallet *wallet) {
 			//fixme [refactor]
 //			wallet->IsSingleAddress = true;
 //			wallet->SingleAddress = _parentAccount->GetAddress();
@@ -54,6 +55,20 @@ namespace Elastos {
 
 		bool SingleSubAccount::IsSingleAddress() const {
 			return true;
+		}
+
+		std::vector<Address> SingleSubAccount::GetAllAddresses(size_t addrsCount) const {
+			std::vector<Address> result;
+			if (addrsCount > 0) {
+				result.push_back(GetParent()->GetAddress());
+			}
+			return result;
+		}
+
+		std::vector<Address> SingleSubAccount::UnusedAddresses(uint32_t gapLimit, bool internal) {
+			std::vector<Address> result;
+			result.push_back(GetParent()->GetAddress());
+			return result;
 		}
 	}
 }
