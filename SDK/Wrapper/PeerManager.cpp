@@ -194,7 +194,7 @@ namespace Elastos {
 
 			for (size_t i = _connectedPeers.size(); i > 0; i--) {
 				if (_connectedPeers[i]->getConnectStatusValue() == Peer::Connecting)
-					_connectedPeers[i]->connect();
+					_connectedPeers[i]->Connect();
 			}
 
 			if (_connectedPeers.size() < maxConnectCount) {
@@ -262,7 +262,7 @@ namespace Elastos {
 
 				for (size_t i = peerCount; i > 0; i--) {
 					connectFailureCount = MAX_CONNECT_FAILURES; // prevent futher automatic reconnect attempts
-					_connectedPeers[i - 1]->disconnect();
+					_connectedPeers[i - 1]->Disconnect();
 				}
 			}
 
@@ -299,7 +299,7 @@ namespace Elastos {
 							_peers.erase(_peers.begin() + i - 1);
 					}
 
-					downloadPeer->disconnect();
+					downloadPeer->Disconnect();
 				}
 
 				syncStartHeight = 0; // a syncStartHeight of 0 indicates that syncing hasn't started yet

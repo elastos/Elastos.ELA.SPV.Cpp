@@ -115,9 +115,9 @@ namespace Elastos {
 
 			ConnectStatus getConnectStatusValue() const;
 
-			void connect();
+			void Connect();
 
-			void disconnect();
+			void Disconnect();
 
 			void scheduleDisconnect(double time);
 
