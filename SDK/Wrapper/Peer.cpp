@@ -174,8 +174,8 @@ namespace Elastos {
 
 		bool Peer::IsEqual(const Peer *otherPeer) const {
 			return (this == otherPeer ||
-					(UInt128Eq(&_info.address, &otherPeer->_info.address)) &&
-					(_info.port == otherPeer->_info.port));
+					(UInt128Eq(&_info.address, &otherPeer->_info.address) &&
+					_info.port == otherPeer->_info.port));
 		}
 
 		bool Peer::networkIsReachable() const {

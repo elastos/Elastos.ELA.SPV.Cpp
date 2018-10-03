@@ -20,6 +20,8 @@ namespace Elastos {
 
 			virtual void AddUsedAddrs(const TransactionPtr &tx);
 
+			virtual void ClearUsedAddresses();
+
 			Address KeyToAddress(const BRKey *key) const;
 
 		protected:

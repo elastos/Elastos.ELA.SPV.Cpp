@@ -270,7 +270,7 @@ namespace Elastos {
 																   const std::string &payPassword) {
 			TransactionPtr transaction(new Transaction());
 			transaction->fromJson(rawTransaction);
-			_walletManager->getWallet()->signTransaction(transaction, _info.getForkId(), payPassword);
+			_walletManager->getWallet()->signTransaction(transaction, payPassword);
 			transaction->removeDuplicatePrograms();
 			return transaction->toJson();
 		}

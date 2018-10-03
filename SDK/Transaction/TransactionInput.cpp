@@ -9,7 +9,16 @@
 namespace Elastos {
 	namespace ElaWallet {
 
-		TransactionInput::TransactionInput() {
+		TransactionInput::TransactionInput() :
+				_txHash(UINT256_ZERO),
+				_index(0),
+				_sequence(0) {
+		}
+
+		TransactionInput::TransactionInput(const UInt256 &txHash, uint32_t index) :
+				_txHash(txHash),
+				_index(index),
+				_sequence(0) {
 
 		}
 

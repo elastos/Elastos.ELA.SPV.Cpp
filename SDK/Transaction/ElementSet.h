@@ -37,6 +37,10 @@ namespace Elastos {
 				//fixme [refactor]
 			}
 
+			void Clear() {
+				//fixme [refactor]
+			}
+
 		private:
 
 		};

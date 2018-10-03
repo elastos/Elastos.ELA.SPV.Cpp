@@ -91,9 +91,9 @@ namespace Elastos {
 			// int BRWalletAddressIsUsed(BRWallet *wallet, const char *addr);
 			bool addressIsUsed(const std::string &address);
 
-			std::vector<TransactionPtr> getTransactions() const;
+//			std::vector<TransactionPtr> getTransactions() const;
 
-			std::vector<TransactionPtr> getTransactionsConfirmedBefore(uint32_t blockHeight) const;
+//			std::vector<TransactionPtr> getTransactionsConfirmedBefore(uint32_t blockHeight) const;
 
 			uint64_t getBalance() const;
 
@@ -136,7 +136,7 @@ namespace Elastos {
 			 * @param transactionHash
 			 * @return
 			 */
-			const TransactionPtr &transactionForHash(const UInt256 &transactionHash);
+			TransactionPtr transactionForHash(const UInt256 &transactionHash);
 
 			/**
 			 * Check if a transaction is valid - THIS METHOD WILL FATAL if the transaction is not signed.
@@ -168,53 +168,22 @@ namespace Elastos {
 
 			uint64_t getBalanceAfterTransaction(const TransactionPtr &transaction);
 
-			/**
-			 * Return a BRCoreAddress for a) the receiver (if we sent an amount) or b) the sender (if
-			 * we received an amount).  The returned address will be the first address that is not in
-			 * this wallet from the outputs or the inputs, respectively.
-			 *
-			 * @param transaction
-			 * @return
-			 */
-			std::string getTransactionAddress(const TransactionPtr &transaction);
-
-			/**
-			 * Return the first BRCoreAddress from the `transaction` inputs that is not an address
-			 * in this wallet.
-			 *
-			 * @param transaction
-			 * @return The/A BRCoreAddress that received an amount from us (that we sent to)
-			 */
-			std::string getTransactionAddressInputs(const TransactionPtr &transaction);
-
-			/**
-			 * Return the first BRCoreAddress from the `transaction` outputs this is not an address
-			 * in this wallet.
-			 *
-			 * @param transaction
-			 * @return The/A BRCoreAddress that sent to us.
-			 */
-			std::string getTransactionAddressOutputs(const TransactionPtr &transaction);
-
 			uint64_t getFeeForTransactionSize(size_t size);
 
 			uint64_t getMinOutputAmount();
 
 			uint64_t getMaxOutputAmount();
 
-			void signTransaction(const TransactionPtr &transaction, int forkId, const std::string &payPassword);
+			void signTransaction(const TransactionPtr &transaction, const std::string &payPassword);
 
 		protected:
 			Wallet();
 
 			bool AddressFilter(const std::string &fromAddress, const std::string &filterAddress);
 
-			TransactionPtr CreateTxForOutputs(const std::vector<TransactionOutput> &outputs, size_t outCount,
-											  uint64_t fee, const std::string &fromAddress,
-											  bool(*filter)(const std::string &fromAddress,
-															const std::string &addr));
-
-			TransactionPtr WalletCreateTxForOutputs(const std::vector<TransactionOutput> &outputs, size_t outCount);
+			TransactionPtr CreateTxForOutputs(const std::vector<TransactionOutput> &outputs,
+											  const std::string &fromAddress,
+											  const boost::function<bool (const std::string &, const std::string &)> &filter);
 
 			uint64_t WalletMaxOutputAmount();
 
@@ -223,8 +192,6 @@ namespace Elastos {
 			void WalletUpdateBalance();
 
 			bool WalletContainsTx(const TransactionPtr &tx);
-
-			void setApplyFreeTx(void *info, void *tx);
 
 			void balanceChanged(uint64_t balance);
 
@@ -243,17 +210,17 @@ namespace Elastos {
 			uint64_t AmountSentByTx(const TransactionPtr &tx);
 
 		protected:
-			uint64_t balance, totalSent, totalReceived, feePerKb;
-			uint32_t blockHeight;
-			UTXOList utxos;
-			std::vector<TransactionPtr> transactions;
-			std::vector<uint64_t> balanceHist;
-			TransactionSet allTx, invalidTx, pendingTx;
-			UTXOList spentOutputs;
+			uint64_t _balance, _totalSent, _totalReceived, _feePerKb;
+			uint32_t _blockHeight;
+			UTXOList _utxos;
+			std::vector<TransactionPtr> _transactions;
+			std::vector<uint64_t> _balanceHist;
+			TransactionSet _allTx, _invalidTx, _pendingTx;
+			UTXOList _spentOutputs;
 
 			typedef std::map<std::string, std::string> TransactionRemarkMap;
-			TransactionRemarkMap TxRemarkMap;
-			std::vector<std::string> ListeningAddrs;
+			TransactionRemarkMap _txRemarkMap;
+			std::vector<std::string> _listeningAddrs;
 
 			SubAccountPtr _subAccount;
 			boost::weak_ptr<Listener> _listener;

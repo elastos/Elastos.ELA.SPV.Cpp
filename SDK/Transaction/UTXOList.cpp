@@ -3,11 +3,12 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "UTXOList.h"
+#include "TransactionInput.h"
 
 namespace Elastos {
 	namespace ElaWallet {
 
-		bool UTXOList::Constains(const UInt256 &hash) {
+		bool UTXOList::Constains(const UInt256 &hash) const {
 			//fixme [refactor]
 			return false;
 		}
@@ -21,6 +22,22 @@ namespace Elastos {
 		size_t UTXOList::size() const {
 			//fixme [refactor]
 			return 0;
+		}
+
+		void UTXOList::Clear() {
+			//fixme [refactor]
+		}
+
+		void UTXOList::AddByTxInput(const TransactionInput &input) {
+			//fixme [refactor]
+		}
+
+		void UTXOList::AddUTXO(const UInt256 &hash, uint32_t index) {
+			//fixme [refactor]
+		}
+
+		void UTXOList::RemoveAt(size_t index) {
+			//fixme [refactor]
 		}
 	}
 }

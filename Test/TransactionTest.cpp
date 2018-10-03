@@ -102,7 +102,7 @@ static Transaction *createELATransaction() {
 //		REQUIRE(tx1->raw.timestamp == tx->raw.timestamp);
 //	}
 //	REQUIRE(tx1->type == tx->type);
-//	REQUIRE(tx1->payloadVersion == tx->payloadVersion);
+//	REQUIRE(tx1->_payloadVersion == tx->_payloadVersion);
 //	if (checkAll) {
 //		REQUIRE(tx1->fee == tx->fee);
 //		REQUIRE(tx1->Remark == tx->Remark);
@@ -178,7 +178,7 @@ static Transaction *createELATransaction() {
 //		ela->raw.blockHeight = rand();
 //		ela->raw.timestamp = rand();
 //		ela->type = Transaction::Type::TransferAsset;// Transaction::Type(rand() % Transaction::Type::TypeMaxCount);
-//		ela->payloadVersion = rand() % sizeof(ela->payloadVersion);
+//		ela->_payloadVersion = rand() % sizeof(ela->_payloadVersion);
 //		ela->fee = rand();
 //		delete ela->payload;
 //		ela->payload = ELAPayloadNew(ela->type);
