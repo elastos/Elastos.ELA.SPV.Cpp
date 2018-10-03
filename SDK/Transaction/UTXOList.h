@@ -16,6 +16,11 @@ namespace Elastos {
 		struct UTXO {
 			UTXO() : hash(UINT256_ZERO), n(0) {}
 
+			UTXO(const UInt256 &h, uint32_t i) :
+					n(i) {
+				memcpy(hash.u8, h.u8, sizeof(h));
+			}
+
 			bool operator<(const UTXO &otherUtxo) {
 				if (UInt256Eq(&hash, &otherUtxo.hash))
 					return UInt256LessThan(&hash, &otherUtxo.hash) == 1;
@@ -29,7 +34,6 @@ namespace Elastos {
 
 		class UTXOList {
 		public:
-
 			bool Constains(const UInt256 &hash) const;
 
 			UTXO &operator[](size_t i);
@@ -43,6 +47,9 @@ namespace Elastos {
 			void AddUTXO(const UInt256 &hash, uint32_t index);
 
 			void RemoveAt(size_t index);
+
+		private:
+			std::vector<UTXO> _utxos;
 		};
 
 	}

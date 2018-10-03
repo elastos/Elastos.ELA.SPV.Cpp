@@ -5,7 +5,7 @@
 #ifndef __ELASTOS_SDK_TRANSACTIONSET_H__
 #define __ELASTOS_SDK_TRANSACTIONSET_H__
 
-#include <map>
+#include <set>
 
 #include "Transaction.h"
 #include "Plugin/Interface/IMerkleBlock.h"
@@ -13,36 +13,53 @@
 namespace Elastos {
 	namespace ElaWallet {
 
-		template <class T>
+		template<class T>
 		class ElementSet {
 		public:
 
-			const T &GetTransaction(const UInt256 &hash) const {
-				//fixme [refactor]
+			const T &Get(const UInt256 &hash) const {
+				if (!Contains(hash)) return nullptr;
+
+				typename std::set<T>::const_iterator it;
+				it = std::find_if(_elements.begin(), _elements.end(), [&hash](const T &e) {
+					return UInt256Eq(&hash, &e->getHash()) == 1;
+				});
+				return *it;
 			}
 
 			bool Contains(const T &tx) const {
-				//fixme [refactor]
+				return _elements.find(tx) != _elements.end();
 			}
 
 			bool Contains(const UInt256 &hash) const {
-				//fixme [refactor]
+				typename std::set<T>::const_iterator it;
+				it = std::find_if(_elements.begin(), _elements.end(), [&hash](const T &e) {
+					return UInt256Eq(&hash, &e->getHash()) == 1;
+				});
+				return it != _elements.end();
 			}
 
 			void Insert(const T &tx) {
-				//fixme [refactor]
+				_elements.insert(tx);
 			}
 
 			void Remove(const T &tx) {
-				//fixme [refactor]
+				typename std::set<T>::const_iterator it;
+				for(it = _elements.cbegin(); it != _elements.cend();) {
+					if (UInt256Eq(&tx->getHash(), &(*it)->getHash())) {
+						it = _elements.erase(it);
+					} else {
+						++it;
+					}
+				}
 			}
 
 			void Clear() {
-				//fixme [refactor]
+				_elements.clear();
 			}
 
 		private:
-
+			std::set<T> _elements;
 		};
 
 		typedef ElementSet<TransactionPtr> TransactionSet;

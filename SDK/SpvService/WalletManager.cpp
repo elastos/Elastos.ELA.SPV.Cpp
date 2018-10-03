@@ -210,7 +210,7 @@ namespace Elastos {
 //							 "%s: checkpoint ====> { %d,  uint256(\"%s\"), %d, %d },",
 //							 tbuf,
 //							 blocks[i]->getHeight(),
-//							 Utils::UInt256ToString(blocks[i]->getBlockHash(), true).c_str(),
+//							 Utils::UInt256ToString(blocks[i]->getHash(), true).c_str(),
 //							 blocks[i]->getRawBlock()->timestamp,
 //							 blocks[i]->getRawBlock()->target);
 				}

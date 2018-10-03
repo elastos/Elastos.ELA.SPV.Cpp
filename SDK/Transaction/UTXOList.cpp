@@ -9,35 +9,36 @@ namespace Elastos {
 	namespace ElaWallet {
 
 		bool UTXOList::Constains(const UInt256 &hash) const {
-			//fixme [refactor]
-			return false;
+			std::vector<UTXO>::const_iterator itr = std::find_if(_utxos.begin(), _utxos.end(),
+																 [&hash](const UTXO &h) {
+																	 return UInt256Eq(&hash, &h.hash) == 1;
+																 });
+			return itr != _utxos.end();
 		}
 
 		UTXO &UTXOList::operator[](size_t i) {
-			//fixme [refactor]
-			static UTXO temp;
-			return temp;
+			return _utxos[i];
 		}
 
 		size_t UTXOList::size() const {
-			//fixme [refactor]
-			return 0;
+			return _utxos.size();
 		}
 
 		void UTXOList::Clear() {
-			//fixme [refactor]
+			_utxos.clear();
 		}
 
 		void UTXOList::AddByTxInput(const TransactionInput &input) {
-			//fixme [refactor]
+			_utxos.push_back(UTXO(input.getTransctionHash(), input.getIndex()));
 		}
 
 		void UTXOList::AddUTXO(const UInt256 &hash, uint32_t index) {
-			//fixme [refactor]
+			_utxos.push_back(UTXO(hash, index));
 		}
 
 		void UTXOList::RemoveAt(size_t index) {
-			//fixme [refactor]
+			if (index < _utxos.size())
+				_utxos.erase(_utxos.begin() + index);
 		}
 	}
 }

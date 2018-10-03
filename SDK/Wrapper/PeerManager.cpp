@@ -288,7 +288,7 @@ namespace Elastos {
 					if (i - 1 == 0 ||
 						_chainParams.getRaw()->checkpoints[i - 1].timestamp + 7 * 24 * 60 * 60 < _earliestKeyTime) {
 						UInt256 hash = UInt256Reverse(&_chainParams.getRaw()->checkpoints[i - 1].hash);
-						lastBlock = _blocks.GetTransaction(hash);
+						lastBlock = _blocks.Get(hash);
 						break;
 					}
 				}

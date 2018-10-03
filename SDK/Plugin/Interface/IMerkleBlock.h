@@ -17,7 +17,7 @@ namespace Elastos {
 		public:
 			virtual ~IMerkleBlock() {}
 
-			virtual const UInt256 &getBlockHash() const = 0;
+			virtual const UInt256 &getHash() const = 0;
 
 			virtual uint32_t getHeight() const = 0;
 

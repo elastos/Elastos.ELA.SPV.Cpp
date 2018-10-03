@@ -119,7 +119,7 @@ namespace Elastos {
 				for (size_t i = 0; i < _utxos.size(); ++i) {
 					if (!_allTx.Contains(_utxos[i].hash)) continue;
 
-					const TransactionPtr &t = _allTx.GetTransaction(_utxos[i].hash);
+					const TransactionPtr &t = _allTx.Get(_utxos[i].hash);
 					if (addressesBalanceMap.find(t->getOutputs()[_utxos[i].n].getAddress()) !=
 						addressesBalanceMap.end()) {
 						addressesBalanceMap[t->getOutputs()[_utxos[i].n].getAddress()] += t->getOutputs()[_utxos[i].n].getAmount();
@@ -147,7 +147,7 @@ namespace Elastos {
 			{
 				boost::mutex::scoped_lock scopedLock(lock);
 				for (size_t i = 0; i < _utxos.size(); ++i) {
-					const TransactionPtr &t = _allTx.GetTransaction(_utxos[i].hash);
+					const TransactionPtr &t = _allTx.Get(_utxos[i].hash);
 					if (t == nullptr) continue;
 					if (t->getOutputs()[_utxos[i].n].getAddress() == address) {
 						balance += t->getOutputs()[_utxos[i].n].getAmount();
@@ -270,7 +270,7 @@ namespace Elastos {
 			// TODO: use up UTXOs received from any of the output scripts that this transaction sends funds to, to mitigate an
 			//       attacker double spending and requesting a refund
 			for (i = 0; i < _utxos.size(); i++) {
-				const TransactionPtr &tx = _allTx.GetTransaction(_utxos[i].hash);
+				const TransactionPtr &tx = _allTx.Get(_utxos[i].hash);
 				if (!tx || _utxos[i].n >= tx->getOutputs().size()) continue;
 				if (filter && !fromAddress.empty() &&
 					!filter(fromAddress, tx->getOutputs()[_utxos[i].n].getAddress())) {
@@ -457,7 +457,7 @@ namespace Elastos {
 
 			assert(!UInt256IsZero(&transactionHash));
 			lock.lock();
-			const TransactionPtr &tx = _allTx.GetTransaction(transactionHash);
+			const TransactionPtr &tx = _allTx.Get(transactionHash);
 
 			TransactionPtr t;
 			if (tx) {
@@ -525,7 +525,7 @@ namespace Elastos {
 				if (height > _blockHeight) _blockHeight = height;
 
 				for (i = 0, j = 0; i < transactionsHashes.size(); i++) {
-					const TransactionPtr &tx = _allTx.GetTransaction(transactionsHashes[i]);
+					const TransactionPtr &tx = _allTx.Get(transactionsHashes[i]);
 					if (!tx || (tx->getBlockHeight() == height && tx->getTimestamp() == timestamp)) continue;
 
 					if (tx->getBlockHeight() == TX_UNCONFIRMED) needsUpdate = 1;
@@ -559,7 +559,7 @@ namespace Elastos {
 			TransactionPtr tx;
 			{
 				boost::mutex::scoped_lock scoped_lock(lock);
-				tx = _allTx.GetTransaction(transactionHash);
+				tx = _allTx.Get(transactionHash);
 			}
 			return tx;
 		}
@@ -669,7 +669,7 @@ namespace Elastos {
 			{
 				boost::mutex::scoped_lock scoped_lock(lock);
 				for (size_t i = 0; tx && i < tx->getInputs().size(); i++) {
-					const TransactionPtr &t = _allTx.GetTransaction(tx->getInputs()[i].getTransctionHash());
+					const TransactionPtr &t = _allTx.Get(tx->getInputs()[i].getTransctionHash());
 					uint32_t n = tx->getInputs()[i].getIndex();
 
 					if (t && n < t->getOutputs().size() &&
@@ -768,7 +768,7 @@ namespace Elastos {
 				boost::mutex::scoped_lock scoped_lock(lock);
 				for (i = _utxos.size(); i > 0; i--) {
 					UTXO &o = _utxos[i - 1];
-					const TransactionPtr &tx = _allTx.GetTransaction(o.hash);
+					const TransactionPtr &tx = _allTx.Get(o.hash);
 					if (!tx || o.n >= tx->getOutputs().size()) continue;
 					inCount++;
 					amount += tx->getOutputs()[o.n].getAmount();
@@ -797,7 +797,7 @@ namespace Elastos {
 			{
 				boost::mutex::scoped_lock scoped_lock(lock);
 				for (size_t i = 0; i < tx->getInputs().size() && amount != UINT64_MAX; i++) {
-					const TransactionPtr &t = _allTx.GetTransaction(tx->getInputs()[i].getTransctionHash());
+					const TransactionPtr &t = _allTx.Get(tx->getInputs()[i].getTransctionHash());
 					uint32_t n = tx->getInputs()[i].getIndex();
 
 					if (t && n < t->getOutputs().size()) {
@@ -896,7 +896,7 @@ namespace Elastos {
 				// transaction ordering is not guaranteed, so check the entire UTXO set against the entire spent output set
 				for (j = _utxos.size(); j > 0; j--) {
 					if (!_spentOutputs.Constains(_utxos[j - 1].hash)) continue;
-					const TransactionPtr &t = _allTx.GetTransaction(_utxos[j - 1].hash);
+					const TransactionPtr &t = _allTx.Get(_utxos[j - 1].hash);
 					balance -= t->getOutputs()[_utxos[j - 1].n].getAmount();
 					_utxos.RemoveAt(j - 1);
 				}
@@ -932,7 +932,7 @@ namespace Elastos {
 			}
 
 			for (size_t i = 0; !r && i < tx->getInputs().size(); i++) {
-				const TransactionPtr &t = _allTx.GetTransaction(tx->getInputs()[i].getTransctionHash());
+				const TransactionPtr &t = _allTx.Get(tx->getInputs()[i].getTransctionHash());
 				uint32_t n = tx->getInputs()[i].getIndex();
 
 				if (t == nullptr || n >= t->getOutputs().size()) {
@@ -1020,7 +1020,7 @@ namespace Elastos {
 			{
 				boost::mutex::scoped_lock scoped_lock(lock);
 				for (size_t i = 0; tx && i < tx->getInputs().size(); i++) {
-					const TransactionPtr &t = _allTx.GetTransaction(tx->getInputs()[i].getTransctionHash());
+					const TransactionPtr &t = _allTx.Get(tx->getInputs()[i].getTransctionHash());
 					uint32_t n = tx->getInputs()[i].getIndex();
 
 					if (t && n < t->getOutputs().size() &&
