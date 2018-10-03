@@ -16,9 +16,8 @@
 namespace Elastos {
 	namespace ElaWallet {
 
-		struct ELAWallet;
-
 		class Lockable;
+		class Wallet;
 
 		class ISubAccount {
 		public:
@@ -36,7 +35,8 @@ namespace Elastos {
 
 			virtual Key DeriveMainAccountKey(const std::string &payPassword) = 0;
 
-			virtual void SignTransaction(const TransactionPtr &transaction, const std::string &payPassword) = 0;
+			virtual void SignTransaction(const TransactionPtr &transaction, Wallet *wallet,
+										 const std::string &payPassword) = 0;
 
 			virtual void AddUsedAddrs(const TransactionPtr &tx) = 0;
 
@@ -47,6 +47,8 @@ namespace Elastos {
 			virtual bool ContainsAddress(const Address &address) const = 0;
 
 			virtual bool IsAddressUsed(const Address &address) const = 0;
+
+			virtual void ClearUsedAddresses() = 0;
 		};
 
 		typedef boost::shared_ptr<ISubAccount> SubAccountPtr;

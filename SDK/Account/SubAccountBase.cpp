@@ -32,5 +32,9 @@ namespace Elastos {
 
 		}
 
+		void SubAccountBase::ClearUsedAddresses() {
+
+		}
+
 	}
 }

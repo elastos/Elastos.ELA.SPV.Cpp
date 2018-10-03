@@ -30,9 +30,11 @@ namespace Elastos {
 			return result;
 		}
 
-		void SingleSubAccount::SignTransaction(const TransactionPtr &transaction, const std::string &payPassword) {
+		void
+		SingleSubAccount::SignTransaction(const TransactionPtr &transaction, Wallet *wallet,
+										  const std::string &payPassword) {
 			WrapperList<Key, BRKey> keyList = DeriveAccountAvailableKeys(payPassword, transaction);
-			if (!transaction->sign(keyList, 0)) {
+			if (!transaction->sign(keyList, wallet)) {
 				throw std::logic_error("Transaction Sign error!");
 			}
 		}

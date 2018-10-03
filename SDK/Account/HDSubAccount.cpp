@@ -35,9 +35,10 @@ namespace Elastos {
 			return key;
 		}
 
-		void HDSubAccount::SignTransaction(const TransactionPtr &transaction, const std::string &payPassword) {
+		void HDSubAccount::SignTransaction(const TransactionPtr &transaction, Wallet *wallet,
+										   const std::string &payPassword) {
 			WrapperList<Key, BRKey> keyList = DeriveAccountAvailableKeys(payPassword, transaction);
-			if (!transaction->sign(keyList, 0)) {
+			if (!transaction->sign(keyList, wallet)) {
 				throw std::logic_error("Transaction Sign error!");
 			}
 		}
@@ -194,6 +195,10 @@ namespace Elastos {
 
 		bool HDSubAccount::ContainsAddress(const Address &address) const {
 			return allAddrs.find(address) != allAddrs.end();
+		}
+
+		void HDSubAccount::ClearUsedAddresses() {
+			usedAddrs.clear();
 		}
 
 	}

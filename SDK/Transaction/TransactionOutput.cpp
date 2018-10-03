@@ -17,13 +17,12 @@ namespace Elastos {
 
 		TransactionOutput::TransactionOutput() :
 				_assetId(UINT256_ZERO),
+				_amount(0),
 				_outputLock(0),
-				_programHash(UINT168_ZERO),
-				_signType(ELA_STANDARD) {
+				_programHash(UINT168_ZERO) {
 		}
 
 		TransactionOutput::TransactionOutput(const TransactionOutput &output) {
-			SetScript(output.getScript(), output.getAddressSignType());
 			_amount = output.getAmount();
 			_assetId = output.getAssetId();
 			_programHash = output.getProgramHash();
@@ -31,40 +30,18 @@ namespace Elastos {
 
 		}
 
-		TransactionOutput::TransactionOutput(uint64_t a, const CMBlock &script, int _signType) {
-			SetScript(script, _signType);
-			_amount = a;
+		TransactionOutput::TransactionOutput(uint64_t a, const UInt168 &programHash) :
+			_amount(a),
+			_outputLock(0) {
 			_assetId = Key::getSystemAssetId();
-			if (!Utils::UInt168FromAddress(_programHash, _address)) {
-				Log::getLogger()->error("Invalid receiver _address: {}", _address);
-			}
+			memcpy(_programHash.u8, programHash.u8, sizeof(_programHash.u8));
 		}
 
 		TransactionOutput::~TransactionOutput() {
 		}
 
 		std::string TransactionOutput::getAddress() const {
-			return _address;
-		}
-
-		void TransactionOutput::setAddress(const std::string &addr) {
-			_script.Zero();
-			memset(_address, 0, sizeof(_address));
-
-			if (!addr.empty()) {
-				strncpy(_address, addr.data(), sizeof(_address) - 1);
-				size_t len = BRAddressScriptPubKey(NULL, 0, _address);
-				_script.Resize(len);
-				BRAddressScriptPubKey(_script, _script.GetSize(), _address);
-			}
-		}
-
-		void TransactionOutput::setAddressSignType(int type) {
-			_signType = type;
-		}
-
-		int TransactionOutput::getAddressSignType() const {
-			return _signType;
+			return Utils::UInt168ToAddress(_programHash);
 		}
 
 		uint64_t TransactionOutput::getAmount() const {
@@ -73,10 +50,6 @@ namespace Elastos {
 
 		void TransactionOutput::setAmount(uint64_t a) {
 			_amount = a;
-		}
-
-		const CMBlock &TransactionOutput::getScript() const {
-			return _script;
 		}
 
 		void TransactionOutput::Serialize(ByteStream &ostream) const {
@@ -106,8 +79,6 @@ namespace Elastos {
 				Log::getLogger()->error("deserialize output program hash error");
 				return false;
 			}
-
-			setAddress(Utils::UInt168ToAddress(_programHash));
 
 			return true;
 		}
@@ -139,56 +110,18 @@ namespace Elastos {
 		nlohmann::json TransactionOutput::toJson() const {
 			nlohmann::json jsonData;
 
-			std::string addr = _address;
-			jsonData["Address"] = addr;
 			jsonData["Amount"] = _amount;
-			jsonData["ScriptLen"] = _script.GetSize();
-			jsonData["Script"] = Utils::encodeHex(_script);
 			jsonData["AssetId"] = Utils::UInt256ToString(_assetId);
 			jsonData["OutputLock"] = _outputLock;
 			jsonData["ProgramHash"] = Utils::UInt168ToString(_programHash);
-			jsonData["SignType"] = _signType;
 			return jsonData;
 		}
 
 		void TransactionOutput::fromJson(const nlohmann::json &jsonData) {
-			std::string addr = jsonData["Address"].get<std::string>();
-			size_t addressSize = sizeof(addr);
-			strncpy(_address, addr.c_str(), addressSize - 1);
-			_address[addressSize - 1] = 0;
-
 			_amount = jsonData["Amount"].get<uint64_t>();
-			_signType = jsonData["SignType"].get<int>();
-			
-			size_t scriptLen = jsonData["ScriptLen"].get<size_t>();
-			std::string scriptString = jsonData["Script"].get<std::string>();
-			if (scriptLen > 0) {
-				if (scriptLen == scriptString.length() / 2) {
-					SetScript(Utils::decodeHex(scriptString), _signType);
-				} else {
-					Log::getLogger()->error("scriptLen={} and script=\"{}\" do not match of json",
-											scriptLen, scriptString);
-				}
-			}
-
 			_assetId = Utils::UInt256FromString(jsonData["AssetId"].get<std::string>());
 			_outputLock = jsonData["OutputLock"].get<uint32_t>();
 			_programHash = Utils::UInt168FromString(jsonData["ProgramHash"].get<std::string>());
-		}
-
-		void TransactionOutput::SetScript(const CMBlock &script, int type) {
-			_script.Zero();
-			memset(_address, 0, sizeof(_address));
-			_signType = type;
-
-			if (script) {
-				_script.Resize(script.GetSize());
-				memcpy(_script, script, script.GetSize());
-
-				AddressPtr addressPtr = Address::fromScriptPubKey(_script, _signType);
-				std::string addr = addressPtr->stringify();
-				strncpy(_address, addr.c_str(), sizeof(addr) - 1);
-			}
 		}
 
 		size_t TransactionOutput::GetSize() const {

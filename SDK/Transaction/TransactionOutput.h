@@ -22,7 +22,7 @@ namespace Elastos {
 
 			TransactionOutput(const TransactionOutput &output);
 
-			TransactionOutput(uint64_t amount, const CMBlock &script, int signType);
+			TransactionOutput(uint64_t amount, const UInt168 &programHash);
 
 			~TransactionOutput();
 
@@ -32,17 +32,9 @@ namespace Elastos {
 
 			std::string getAddress() const;
 
-			void setAddress(const std::string &address);
-
-			void setAddressSignType(int signType);
-
-			int getAddressSignType() const;
-
 			uint64_t getAmount() const;
 
 			void setAmount(uint64_t amount);
-
-			const CMBlock &getScript() const;
 
 			const UInt256 &getAssetId() const;
 
@@ -60,18 +52,13 @@ namespace Elastos {
 
 			virtual void fromJson(const nlohmann::json &jsonData);
 
-			void SetScript(const CMBlock &script, int signType);
-
 			size_t GetSize() const;
 
 		private:
-			char _address[75];
 			uint64_t _amount;
-			CMBlock _script;
 			UInt256 _assetId;
 			uint32_t _outputLock;
 			UInt168 _programHash;
-			int _signType;
 		};
 
 		typedef boost::shared_ptr<TransactionOutput> TransactionOutputPtr;

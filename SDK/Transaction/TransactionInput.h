@@ -19,6 +19,8 @@ namespace Elastos {
 		public:
 			TransactionInput();
 
+			TransactionInput(const UInt256 &txHash, uint32_t index);
+
 			~TransactionInput();
 
 			const UInt256 &getTransctionHash() const;

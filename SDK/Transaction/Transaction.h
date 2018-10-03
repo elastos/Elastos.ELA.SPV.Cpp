@@ -75,6 +75,8 @@ namespace Elastos {
 
 			const std::vector<TransactionInput> &getInputs() const;
 
+			std::vector<TransactionInput> &getInputs();
+
 			std::vector<std::string> getOutputAddresses();
 
 			void setTransactionType(Type type);
@@ -123,9 +125,7 @@ namespace Elastos {
 			 */
 			bool isSigned() const;
 
-			bool sign(const WrapperList<Key, BRKey> &keys, int forkId);
-
-			bool sign(const Key &key, int forkId);
+			bool sign(const WrapperList<Key, BRKey> &keys, Wallet *wallet);
 
 			UInt256 getReverseHash();
 
@@ -182,7 +182,7 @@ namespace Elastos {
 
 			void reinit();
 
-			bool transactionSign(int forkId, const WrapperList<Key, BRKey> keys);
+			bool transactionSign(const WrapperList<Key, BRKey> keys, Wallet *wallet);
 
 			std::string getConfirmInfo(uint32_t blockHeight);
 
@@ -190,21 +190,21 @@ namespace Elastos {
 
 		private:
 			bool _isRegistered;
-			UInt256 txHash;
-			uint32_t version;
-			uint32_t lockTime;
-			uint32_t blockHeight;
-			uint32_t timestamp; // time interval since unix epoch
+			mutable UInt256 _txHash;
+			uint32_t _version;
+			uint32_t _lockTime;
+			uint32_t _blockHeight;
+			uint32_t _timestamp; // time interval since unix epoch
 
-			Type type;
-			uint8_t payloadVersion;
-			uint64_t fee;
-			PayloadPtr payload;
-			std::vector<TransactionOutput> outputs;
-			std::vector<TransactionInput> inputs;
-			std::vector<Attribute> attributes;
-			std::vector<Program> programs;
-			std::string Remark;
+			Type _type;
+			uint8_t _payloadVersion;
+			uint64_t _fee;
+			PayloadPtr _payload;
+			std::vector<TransactionOutput> _outputs;
+			std::vector<TransactionInput> _inputs;
+			std::vector<Attribute> _attributes;
+			std::vector<Program> _programs;
+			std::string _remark;
 		};
 
 		typedef boost::shared_ptr<Transaction> TransactionPtr;

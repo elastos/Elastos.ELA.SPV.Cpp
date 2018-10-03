@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "BRInt.h"
+#include "Transaction/TransactionInput.h"
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -29,11 +30,19 @@ namespace Elastos {
 		class UTXOList {
 		public:
 
-			bool Constains(const UInt256 &hash);
+			bool Constains(const UInt256 &hash) const;
 
 			UTXO &operator[](size_t i);
 
 			size_t size() const;
+
+			void Clear();
+
+			void AddByTxInput(const TransactionInput &input);
+
+			void AddUTXO(const UInt256 &hash, uint32_t index);
+
+			void RemoveAt(size_t index);
 		};
 
 	}

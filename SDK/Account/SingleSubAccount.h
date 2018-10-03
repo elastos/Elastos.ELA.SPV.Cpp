@@ -20,7 +20,8 @@ namespace Elastos {
 
 			virtual std::string GetMainAccountPublicKey() const;
 
-			virtual void SignTransaction(const TransactionPtr &transaction, const std::string &payPassword);
+			virtual void SignTransaction(const TransactionPtr &transaction, Wallet *wallet,
+										 const std::string &payPassword);
 
 			virtual bool IsSingleAddress() const;
 

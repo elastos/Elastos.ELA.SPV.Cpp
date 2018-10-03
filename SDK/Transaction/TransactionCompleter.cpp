@@ -89,7 +89,6 @@ namespace Elastos {
 
 				std::string changeAddress = _wallet->getAllAddresses()[0];
 				TransactionOutput output;
-				output.setAddress(changeAddress);
 				output.setAmount(actualChange);
 				output.setAssetId(Key::getSystemAssetId());
 				output.setOutputLock(0);
