@@ -61,7 +61,7 @@ namespace Elastos {
 
 			virtual void deleteRawBlock() {}
 
-			virtual const UInt256 &getBlockHash() const { return _blockHash;}
+			virtual const UInt256 &getHash() const { return _blockHash;}
 
 			virtual uint32_t getHeight() const;
 

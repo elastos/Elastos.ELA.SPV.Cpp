@@ -37,7 +37,7 @@ namespace Elastos {
 			if (!MerkleBlockBase::deserializeAfterAux(istream))
 				return false;
 
-			getBlockHash();
+			getHash();
 
 			return true;
 		}
@@ -55,7 +55,7 @@ namespace Elastos {
 			idAuxPow.fromJson(auxPowJson);
 		}
 
-		const UInt256 &SidechainMerkleBlock::getBlockHash() const {
+		const UInt256 &SidechainMerkleBlock::getHash() const {
 			UInt256 zero = UINT256_ZERO;
 			if (UInt256Eq(&_blockHash, &zero)) {
 				ByteStream ostream;

@@ -45,7 +45,7 @@ namespace Elastos {
 			return *this;
 		}
 
-		const UInt256 &MerkleBlock::getBlockHash() const {
+		const UInt256 &MerkleBlock::getHash() const {
 			UInt256 zero = UINT256_ZERO;
 			if (UInt256Eq(&_blockHash, &zero)) {
 				ByteStream ostream;
@@ -104,7 +104,7 @@ namespace Elastos {
 				!MerkleBlockBase::deserializeAfterAux(istream))
 				return false;
 
-			getBlockHash();
+			getHash();
 			return true;
 		}
 

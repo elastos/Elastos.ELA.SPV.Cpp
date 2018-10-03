@@ -38,7 +38,7 @@ namespace Elastos {
 
 			virtual void fromJson(const nlohmann::json &);
 
-			virtual const UInt256 &getBlockHash() const;
+			virtual const UInt256 &getHash() const;
 
 			virtual bool isValid(uint32_t currentTime) const;
 

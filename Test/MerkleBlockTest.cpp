@@ -76,7 +76,7 @@ TEST_CASE("Json convert", "[json]") {
 
 		mb.setHeight(1000);
 
-		std::string blockHash = Utils::UInt256ToString(mb.getBlockHash());
+		std::string blockHash = Utils::UInt256ToString(mb.getHash());
 
 		nlohmann::json j = mb.toJson();
 
@@ -127,7 +127,7 @@ TEST_CASE("Json convert", "[json]") {
 
 		mb.fromJson(j);
 
-		REQUIRE(0 == memcmp(mb.getBlockHash().u8, Utils::UInt256FromString(j["BlockHash"].get<std::string>()).u8,
+		REQUIRE(0 == memcmp(mb.getHash().u8, Utils::UInt256FromString(j["BlockHash"].get<std::string>()).u8,
 							sizeof(UInt256)));
 		REQUIRE(j["Version"].get<uint32_t>() == mb.getVersion());
 		REQUIRE(0 == memcmp(mb.getPrevBlockHash().u8, Utils::UInt256FromString(j["PrevBlock"].get<std::string>()).u8,
