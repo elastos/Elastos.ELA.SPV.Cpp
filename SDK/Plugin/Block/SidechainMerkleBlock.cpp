@@ -103,10 +103,13 @@ namespace Elastos {
 			return "SideStandard";
 		}
 
-		fruit::Component<IMerkleBlock> GetSidechainMerkleBlockComponent() {
+		MerkleBlockPtr SidechainMerkleBlockFactory::createBlock() {
+			return MerkleBlockPtr(new SidechainMerkleBlock);
+		}
+
+		fruit::Component<ISidechainMerkleBlockFactory> getSidechainMerkleBlockFactoryComponent() {
 			return fruit::createComponent()
-					.registerConstructor<SidechainMerkleBlock()>()
-					.bind<IMerkleBlock, SidechainMerkleBlock>();
+					.bind<ISidechainMerkleBlockFactory, SidechainMerkleBlockFactory>();
 		}
 	}
 }

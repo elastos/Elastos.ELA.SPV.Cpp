@@ -253,7 +253,7 @@ namespace Elastos {
 
 		static void verifyELAMerkleBlock(const MerkleBlock &newBlock, const MerkleBlock &block) {
 
-			REQUIRE(UInt256Eq(&newBlock.getBlockHash(), &block.getBlockHash()));
+			REQUIRE(UInt256Eq(&newBlock.getHash(), &block.getHash()));
 			REQUIRE(newBlock.getHeight() == block.getHeight());
 			REQUIRE(newBlock.getTimestamp() == block.getTimestamp());
 			REQUIRE(newBlock.getVersion() == block.getVersion());

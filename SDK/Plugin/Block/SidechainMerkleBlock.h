@@ -38,7 +38,19 @@ namespace Elastos {
 			IdAuxPow idAuxPow;
 		};
 
-		fruit::Component<IMerkleBlock> GetSidechainMerkleBlockComponent();
+		class ISidechainMerkleBlockFactory {
+		public:
+			virtual MerkleBlockPtr createBlock() = 0;
+		};
+
+		class SidechainMerkleBlockFactory : public ISidechainMerkleBlockFactory {
+		public:
+			INJECT(SidechainMerkleBlockFactory()) = default;
+
+			virtual MerkleBlockPtr createBlock();
+		};
+
+		fruit::Component<ISidechainMerkleBlockFactory> getSidechainMerkleBlockFactoryComponent();
 
 	}
 }

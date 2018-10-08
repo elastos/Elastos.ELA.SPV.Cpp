@@ -6,14 +6,24 @@
 #include <boost/make_shared.hpp>
 
 #include "Registry.h"
-#include "Block/MerkleBlock.h"
-#include "Block/SidechainMerkleBlock.h"
 
 namespace Elastos {
 	namespace ElaWallet {
 
-		Registry::Registry() {
+		MerkleBlockPtr PluginHub::CreateMerkleBlock(const std::string &pluginType) {
+			if (pluginType == "ELA")
+				return _elaPlugin.get()->CreateBlock();
+			else if (pluginType == "SideStandard")
+				return _idPlugin.get()->CreateBlock();
 
+			return nullptr;
+		}
+
+		fruit::Component<IPluginHub> getPluginHubComponent() {
+			return fruit::createComponent()
+					.bind<IPluginHub, PluginHub>()
+					.install(getELAPluginComponent)
+					.install(getIDPluginComponent);
 		}
 
 		Registry *Registry::Instance(bool erase) {
@@ -25,17 +35,13 @@ namespace Elastos {
 			return instance.get();
 		}
 
-		IMerkleBlock * Registry::CreateMerkleBlock(const std::string &blockType) {
-//			IMerkleBlock *result = nullptr;
-//			if (blockType == "ELA") {
-//				fruit::Injector<IMerkleBlock> injector(GetMerkleBlockComponent);
-//				result = injector.get<IMerkleBlock*>();
-//			} else if (blockType == "SideStandard") {
-//					injector = boost::make_shared<MerkleBlockInj>(GetSidechainMerkleBlockComponent);
-//			}
+		MerkleBlockPtr Registry::CreateMerkleBlock(const std::string &blockType) {
+			return _pluginHub->CreateMerkleBlock(blockType);
+		}
 
-//			return result;
-			return new MerkleBlock();
+		Registry::Registry() :
+				_pluginHubInjector(getPluginHubComponent) {
+			_pluginHub = _pluginHubInjector.get<IPluginHub *>();
 		}
 
 	}

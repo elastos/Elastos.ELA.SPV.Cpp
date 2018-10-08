@@ -52,7 +52,20 @@ namespace Elastos {
 			AuxPow _auxPow;
 		};
 
-		fruit::Component<IMerkleBlock> GetMerkleBlockComponent();
+		class IMerkleBlockFactory {
+		public:
+			virtual MerkleBlockPtr createBlock() = 0;
+		};
+
+		class MerkleBlockFactory : public IMerkleBlockFactory {
+		public:
+			INJECT(MerkleBlockFactory()) = default;
+
+			virtual MerkleBlockPtr createBlock();
+		};
+
+		fruit::Component<IMerkleBlockFactory> getMerkleBlockFactoryComponent();
+
 	}
 }
 

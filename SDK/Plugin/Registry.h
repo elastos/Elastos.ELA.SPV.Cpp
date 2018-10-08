@@ -10,20 +10,50 @@
 #include <fruit/fruit.h>
 #include <boost/noncopyable.hpp>
 
-#include "Interface/IMerkleBlock.h"
+#include "Interface/IPlugin.h"
+#include "ELAPlugin.h"
+#include "IDPlugin.h"
 
 namespace Elastos {
 	namespace ElaWallet {
 
-	class Registry : public boost::noncopyable {
+		class IPluginHub {
+		public:
+			virtual ~IPluginHub() {}
+
+			virtual MerkleBlockPtr CreateMerkleBlock(const std::string &pluginType) = 0;
+		};
+
+		class PluginHub : public IPluginHub {
+		public:
+			INJECT(PluginHub(
+					ANNOTATED(ELAPluginTag, fruit::Provider<IPlugin>) elaPlugin,
+					ANNOTATED(IDPluginTag, fruit::Provider<IPlugin>) idPlugin)) :
+				_elaPlugin(elaPlugin),
+				_idPlugin(idPlugin) {
+			}
+
+			virtual MerkleBlockPtr CreateMerkleBlock(const std::string &pluginType);
+
+		private:
+			fruit::Provider<IPlugin> _elaPlugin;
+			fruit::Provider<IPlugin> _idPlugin;
+		};
+
+		fruit::Component<IPluginHub> getPluginHubComponent();
+
+
+		class Registry : public boost::noncopyable {
 		public:
 			static Registry *Instance(bool erase = false);
 
-			IMerkleBlock *CreateMerkleBlock(const std::string &blockType);
+			MerkleBlockPtr CreateMerkleBlock(const std::string &blockType);
 
 		private:
 			Registry();
 
+			fruit::Injector<IPluginHub> _pluginHubInjector;
+			IPluginHub *_pluginHub;
 		};
 	}
 
