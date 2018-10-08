@@ -128,39 +128,53 @@ namespace Elastos {
 			sortPeers();
 
 			time_t now = time(nullptr);
-			//fixme [refactor] set block
-//			for (size_t i = 0; i < params->checkpointsCount; i++) {
-//				MerkleBlockPtr checkBlock = MerkleBlockPtr(Registry::CreateMerkleBlock(_pluginTypes.BlockType));
-//				checkBlock->setHeight(params->checkpoints[i].height);
-//				block->blockHash = UInt256Reverse(&params->checkpoints[i].hash);
-//				block->timestamp = params->checkpoints[i].timestamp;
-//				block->target = params->checkpoints[i].target;
-//				_checkpoints.Insert(checkBlock);
-//				_blocks.Insert(checkBlock);
-//				if (i == 0 || block->timestamp + 1*24*60*60 < earliestKeyTime ||
-//					(earliestKeyTime == 0 && block->timestamp + 1*24*60*60 < now))
-//					lastBlock = block;
-//			}
+			for (size_t i = 0; i < params.getRaw()->checkpointsCount; i++) {
+				MerkleBlockPtr checkBlock = Registry::Instance()->CreateMerkleBlock(_pluginTypes.BlockType);
+				checkBlock->setHeight(params.getRaw()->checkpoints[i].height);
+				checkBlock->setHash(UInt256Reverse(&params.getRaw()->checkpoints[i].hash));
+				checkBlock->setTimestamp(params.getRaw()->checkpoints[i].timestamp);
+				checkBlock->setTarget(params.getRaw()->checkpoints[i].target);
+				_checkpoints.Insert(checkBlock);
+				_blocks.Insert(checkBlock);
+				if (i == 0 || checkBlock->getTimestamp() + 1 * 24 * 60 * 60 < earliestKeyTime ||
+					(earliestKeyTime == 0 && checkBlock->getTimestamp() + 1 * 24 * 60 * 60 < now))
+					lastBlock = checkBlock;
+			}
 
 			MerkleBlockPtr block;
 			for (size_t i = 0; i < blocks.size(); i++) {
 				assert(blocks[i]->getHeight() !=
 					   BLOCK_UNKNOWN_HEIGHT); // height must be saved/restored along with serialized block
-				_orphans.Insert(blocks[i]);
+				_orphans.insert(blocks[i]);
 
 				if ((blocks[i]->getHeight() % BLOCK_DIFFICULTY_INTERVAL) == 0 &&
 					(block == nullptr || blocks[i]->getHeight() > block->getHeight()))
 					block = blocks[i]; // find last transition block
 			}
-//fixme [refactor]
-//			while (block != nullptr) {
-//				_blocks.Insert(block);
-//				lastBlock = block;
-//				orphan.prevBlock = block->prevBlock;
-//				BRSetRemove(orphans, &orphan);
-//				orphan.prevBlock = block->blockHash;
-//				block = (BRMerkleBlock *)BRSetGet(orphans, &orphan);
-//			}
+
+			MerkleBlockPtr orphan = Registry::Instance()->CreateMerkleBlock(_pluginTypes.BlockType);
+			while (block != nullptr) {
+				_blocks.Insert(block);
+				lastBlock = block;
+
+				orphan->setPrevBlockHash(block->getPrevBlockHash());
+				for (std::set<MerkleBlockPtr>::const_iterator it = _orphans.cbegin(); it != _orphans.cend();) {
+					if (UInt256Eq(&orphan->getPrevBlockHash(), &(*it)->getPrevBlockHash())) {
+						it = _orphans.erase(it);
+						break;
+					} else {
+						++it;
+					}
+				}
+
+				orphan->setPrevBlockHash(block->getHash());
+				block = nullptr;
+				for (std::set<MerkleBlockPtr>::const_iterator it = _orphans.cbegin(); it != _orphans.cend(); ++it) {
+					if (UInt256Eq(&orphan->getPrevBlockHash(), &(*it)->getPrevBlockHash())) {
+						block = *it;
+					}
+				}
+			}
 		}
 
 		PeerManager::~PeerManager() {
@@ -493,18 +507,6 @@ namespace Elastos {
 			}
 
 			return count;
-		}
-
-		void PeerManager::createGenesisBlock() const {
-			//fixme [refactor]
-//			ELAMerkleBlock *block = ELAMerkleBlockNew();
-//			block->raw.height = 0;
-//			block->raw.blockHash = Utils::UInt256FromString(
-//					"8d7014f2f941caa1972c8033b2f0a860ec8d4938b12bae2c62512852a558f405");
-//			block->raw.timestamp = 1513936800;
-//			block->raw.target = 486801407;
-//			BRSetAdd(_manager->Raw.blocks, block);
-//			_manager->Raw.lastBlock = (BRMerkleBlock *) block;
 		}
 
 		int PeerManager::verifyDifficultyWrapper(const BRChainParams *params, const BRMerkleBlock *block,

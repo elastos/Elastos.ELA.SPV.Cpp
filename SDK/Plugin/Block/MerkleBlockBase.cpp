@@ -280,5 +280,9 @@ namespace Elastos {
 
 			return md;
 		}
+
+		void MerkleBlockBase::setHash(const UInt256 &hash) {
+			memcpy(_blockHash.u8, hash.u8, sizeof(_blockHash));
+		}
 	}
 }

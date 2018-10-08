@@ -25,13 +25,13 @@ namespace Elastos {
 
 			void setPrevBlockHash(const UInt256 &hash);
 
-			const UInt256 &getRootBlockHash() const;
+			virtual const UInt256 &getRootBlockHash() const;
 
-			void setRootBlockHash(const UInt256 &hash);
+			virtual void setRootBlockHash(const UInt256 &hash);
 
-			uint32_t getTimestamp() const;
+			virtual uint32_t getTimestamp() const;
 
-			void setTimestamp(uint32_t timestamp);
+			virtual void setTimestamp(uint32_t timestamp);
 
 			uint32_t getTarget() const;
 
@@ -57,11 +57,9 @@ namespace Elastos {
 
 			virtual void fromJson(const nlohmann::json &);
 
-			virtual BRMerkleBlock *getRawBlock() const { return nullptr;}
-
-			virtual void deleteRawBlock() {}
-
 			virtual const UInt256 &getHash() const { return _blockHash;}
+
+			virtual void setHash(const UInt256 &hash);
 
 			virtual uint32_t getHeight() const;
 

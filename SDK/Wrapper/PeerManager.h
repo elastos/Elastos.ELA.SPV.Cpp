@@ -158,8 +158,6 @@ namespace Elastos {
 
 			void sortPeers();
 
-			void createGenesisBlock() const;
-
 			void syncStopped();
 
 			void addTxToPublishList(const TransactionPtr &tx, void (*callback)(void *, int));
@@ -175,7 +173,7 @@ namespace Elastos {
 			BRBloomFilter *bloomFilter;
 			double fpRate, averageTxPerBlock;
 			BlockSet _blocks;
-			BlockSet _orphans;
+			std::set<MerkleBlockPtr> _orphans;
 			BlockSet _checkpoints;
 			MerkleBlockPtr lastBlock, lastOrphan;
 			std::vector<TransactionPeerList> txRelays, txRequests;
