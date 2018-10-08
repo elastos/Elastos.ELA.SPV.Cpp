@@ -124,11 +124,13 @@ namespace Elastos {
 			MerkleBlockBase::fromJson(j);
 		}
 
-		fruit::Component<IMerkleBlock> GetMerkleBlockComponent() {
-			return fruit::createComponent()
-					.bind<IMerkleBlock, MerkleBlockBase>()
-					.bind<MerkleBlockBase, MerkleBlock>();
+		MerkleBlockPtr MerkleBlockFactory::createBlock() {
+			return MerkleBlockPtr(new MerkleBlock);
 		}
 
+		fruit::Component<IMerkleBlockFactory> getMerkleBlockFactoryComponent() {
+			return fruit::createComponent()
+					.bind<IMerkleBlockFactory, MerkleBlockFactory>();
+		}
 	}
 }

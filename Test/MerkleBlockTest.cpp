@@ -8,7 +8,7 @@
 #include "catch.hpp"
 #include "Log.h"
 #include "SDK/Plugin/Block/MerkleBlock.h"
-//#include "SDK/Plugin/Registry.h"
+#include "SDK/Plugin/Registry.h"
 #include "TestHelper.h"
 
 using namespace Elastos::ElaWallet;
@@ -18,12 +18,9 @@ TEST_CASE("MerkleBlock construct test", "[MerkleBlock]") {
 	srand(time(nullptr));
 
 	SECTION("serialize and deserialize") {
-		fruit::Injector<IMerkleBlock> injector(GetMerkleBlockComponent);
-		MerkleBlock *merkleBlock = dynamic_cast<MerkleBlock *>(injector.get<IMerkleBlock *>());
-//		IMerkleBlock *iMerkleBlock = Registry::Instance()->CreateMerkleBlock("ELA");
-//		MerkleBlock *merkleBlock = dynamic_cast<MerkleBlock *>(iMerkleBlock);
+		MerkleBlockPtr merkleBlock = Registry::Instance()->CreateMerkleBlock("ELA");
 		REQUIRE(merkleBlock != nullptr);
-		setMerkleBlockValues(merkleBlock);
+		setMerkleBlockValues(static_cast<MerkleBlock *>(merkleBlock.get()));
 
 		ByteStream stream;
 		merkleBlock->Serialize(stream);
@@ -32,7 +29,7 @@ TEST_CASE("MerkleBlock construct test", "[MerkleBlock]") {
 		stream.setPosition(0);
 		mb.Deserialize(stream);
 
-		verifyELAMerkleBlock(*merkleBlock, mb);
+		verifyELAMerkleBlock(static_cast<const MerkleBlock &>(*merkleBlock), mb);
 	}
 }
 
