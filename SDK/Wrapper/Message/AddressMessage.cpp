@@ -49,7 +49,7 @@ namespace Elastos {
 					off += sizeof(uint16_t);
 					uint64_t id = UInt64GetLE(&msg[off]);
 					off += sizeof(uint64_t);
-					PeerPtr p(new Peer(address, port, timestamp, services));
+					PeerPtr p(new Peer(_peer->getPeerManager(), address, port, timestamp, services));
 
 					if (!(p->getServices() & SERVICES_NODE_NETWORK)) continue; // skip peers that don't carry full blocks
 					if (!(_peer->getAddress().u64[0] == 0 && _peer->getAddress().u16[4] == 0 &&
