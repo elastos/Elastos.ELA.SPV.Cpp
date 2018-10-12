@@ -62,9 +62,9 @@ namespace Elastos {
 			sleep(1);
 		}
 
-		SharedWrapperList<Transaction, BRTransaction *> WalletManager::getTransactions(
+		std::vector<TransactionPtr> WalletManager::getTransactions(
 				const boost::function<bool(const TransactionPtr &)> filter) const {
-			SharedWrapperList<Transaction, BRTransaction *> txs;
+			std::vector<TransactionPtr> txs;
 
 			//fixme [refactor] complete me
 //			std::vector<TransactionEntity> txsEntity = _databaseManager.getAllTransactions(ISO);
@@ -298,8 +298,8 @@ namespace Elastos {
 		}
 
 		// override protected methods
-		SharedWrapperList<Transaction, BRTransaction *> WalletManager::loadTransactions() {
-			SharedWrapperList<Transaction, BRTransaction *> txs;
+		std::vector<TransactionPtr> WalletManager::loadTransactions() {
+			std::vector<TransactionPtr> txs;
 
 			//fixme [refactor] complte me
 //			std::vector<TransactionEntity> txsEntity = _databaseManager.getAllTransactions(ISO);
@@ -322,8 +322,8 @@ namespace Elastos {
 			return txs;
 		}
 
-		SharedWrapperList<IMerkleBlock, BRMerkleBlock *> WalletManager::loadBlocks() {
-			SharedWrapperList<IMerkleBlock, BRMerkleBlock *> blocks;
+		std::vector<MerkleBlockPtr> WalletManager::loadBlocks() {
+			std::vector<MerkleBlockPtr> blocks;
 
 			std::vector<MerkleBlockEntity> blocksEntity = _databaseManager.getAllMerkleBlocks(ISO);
 
@@ -341,14 +341,13 @@ namespace Elastos {
 			return blocks;
 		}
 
-		SharedWrapperList<Peer, BRPeer *> WalletManager::loadPeers() {
-			SharedWrapperList<Peer, BRPeer *> peers;
+		std::vector<PeerInfo> WalletManager::loadPeers() {
+			std::vector<PeerInfo> peers;
 
 			std::vector<PeerEntity> peersEntity = _databaseManager.getAllPeers(ISO);
 
 			for (size_t i = 0; i < peersEntity.size(); ++i) {
-				peers.push_back(
-						PeerPtr(new Peer(_peerManager.get(), peersEntity[i].address, peersEntity[i].port, peersEntity[i].timeStamp)));
+				peers.push_back(PeerInfo(peersEntity[i].address, peersEntity[i].port, peersEntity[i].timeStamp));
 			}
 
 			return peers;

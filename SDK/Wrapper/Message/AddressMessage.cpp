@@ -30,7 +30,7 @@ namespace Elastos {
 			} else if (count > 1000) {
 				_peer->Perror("dropping addr message, {} is too many addresses, max is 1000", count);
 			} else if (_peer->SentGetaddr()) { // simple anti-tarpitting tactic, don't accept unsolicited addresses
-				std::vector<PeerPtr> peers;
+				std::vector<PeerInfo> peers;
 				peers.reserve(count);
 
 				time_t now = time(NULL);
@@ -49,16 +49,16 @@ namespace Elastos {
 					off += sizeof(uint16_t);
 					uint64_t id = UInt64GetLE(&msg[off]);
 					off += sizeof(uint64_t);
-					PeerPtr p(new Peer(_peer->getPeerManager(), address, port, timestamp, services));
+					PeerInfo p(address, port, timestamp, services);
 
-					if (!(p->getServices() & SERVICES_NODE_NETWORK)) continue; // skip peers that don't carry full blocks
+					if (!(p.Services & SERVICES_NODE_NETWORK)) continue; // skip peers that don't carry full blocks
 					if (!(_peer->getAddress().u64[0] == 0 && _peer->getAddress().u16[4] == 0 &&
 						  _peer->getAddress().u16[5] == 0xffff))
 						continue; // ignore IPv6 for now
 
 					// if address time is more than 10 min in the future or unknown, set to 5 days old
-					if (p->getTimestamp() > now + 10 * 60 || p->getTimestamp() == 0) p->setTimestamp(uint64_t(now - 5 * 24 * 60 * 60));
-					p->setTimestamp(p->getTimestamp() - 2 * 60 * 60); // subtract two hours
+					if (p.Timestamp > now + 10 * 60 || p.Timestamp == 0) p.Timestamp = uint64_t(now - 5 * 24 * 60 * 60);
+					p.Timestamp = p.Timestamp - 2 * 60 * 60; // subtract two hours
 
 					peers.push_back(p);
 				}

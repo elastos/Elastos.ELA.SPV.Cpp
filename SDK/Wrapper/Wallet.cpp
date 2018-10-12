@@ -54,7 +54,7 @@ namespace Elastos {
 			sortTransations();
 
 			_subAccount->InitAccount(_transactions, this);
-			WalletUpdateBalance();
+			UpdateBalance();
 
 			if (!_transactions.empty() &&
 				!WalletContainsTx(_transactions[0])) { // verify _transactions match master pubKey
@@ -421,7 +421,7 @@ namespace Elastos {
 							_allTx.Insert(transaction);
 							_transactions.push_back(transaction);
 							sortTransations();
-							WalletUpdateBalance();
+							UpdateBalance();
 							wasAdded = true;
 						} else { // keep track of unconfirmed non-wallet tx for invalid tx checks and child-pays-for-parent fees
 							// BUG: limit total non-wallet unconfirmed tx to avoid memory exhaustion attack
@@ -484,7 +484,7 @@ namespace Elastos {
 						break;
 					}
 
-					WalletUpdateBalance();
+					UpdateBalance();
 					lock.unlock();
 
 					// if this is for a transaction we sent, and it wasn't already known to be invalid, notify user
@@ -543,7 +543,7 @@ namespace Elastos {
 					}
 				}
 
-				if (needsUpdate) WalletUpdateBalance();
+				if (needsUpdate) UpdateBalance();
 			}
 
 			if (j > 0) txUpdated(hashes, _blockHeight, timestamp);
@@ -808,7 +808,7 @@ namespace Elastos {
 			return amount;
 		}
 
-		void Wallet::WalletUpdateBalance() {
+		void Wallet::UpdateBalance() {
 			int isInvalid, isPending;
 			uint64_t balance = 0, prevBalance = 0;
 			time_t now = time(NULL);
