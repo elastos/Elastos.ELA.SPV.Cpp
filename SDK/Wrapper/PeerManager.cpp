@@ -1500,6 +1500,10 @@ namespace Elastos {
 			peer->Disconnect();
 		}
 
+		const PluginTypes &PeerManager::GetPluginTypes() const {
+			return _pluginTypes;
+		}
+
 		void PeerManager::updateBloomFilter() {
 
 			if (downloadPeer && (downloadPeer->GetFlags() & PEER_FLAG_NEEDSUPDATE) == 0) {

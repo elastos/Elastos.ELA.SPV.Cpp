@@ -134,6 +134,8 @@ namespace Elastos {
 
 			int &reconnectTaskCount();
 
+			const PluginTypes &GetPluginTypes() const;
+
 		public:
 			virtual void OnConnected(const PeerPtr &peer);
 
