@@ -302,12 +302,5 @@ namespace Elastos {
 
 			return ret;
 		}
-
-		bool Utils::UInt256SetContains(const std::set<UInt256> &set, const UInt256 &hash) {
-			return set.end() != std::find_if(set.begin(), set.end(),
-											 [&hash](const UInt256 &item) { return 0 != UInt256Eq(&hash, &item); });
-
-		}
-
 	}
 }
