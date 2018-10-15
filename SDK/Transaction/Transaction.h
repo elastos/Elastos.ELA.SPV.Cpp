@@ -124,7 +124,7 @@ namespace Elastos {
 			 */
 			bool isSigned() const;
 
-			bool sign(const WrapperList<Key, BRKey> &keys, Wallet *wallet);
+			bool sign(const WrapperList<Key, BRKey> &keys, const boost::shared_ptr<Wallet> &wallet);
 
 			UInt256 getReverseHash();
 
@@ -181,7 +181,7 @@ namespace Elastos {
 
 			void reinit();
 
-			bool transactionSign(const WrapperList<Key, BRKey> keys, Wallet *wallet);
+			bool transactionSign(const WrapperList<Key, BRKey> keys, const boost::shared_ptr<Wallet> &wallet);
 
 			std::string getConfirmInfo(uint32_t blockHeight);
 
