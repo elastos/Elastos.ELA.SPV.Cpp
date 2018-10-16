@@ -182,7 +182,7 @@ IMasterWallet *TestConnectPeer::createMultiSignWalletFromPrivKey(boost::shared_p
 	return walletManager->GetWallet("MultiSIgn");
 }
 
-void TestConnectPeer::runPeerConnectTest_WalletFactory() {
+void TestConnectPeer::RunPeerConnectTest() {
 
 	std::string payPassword = "s12345678";
 	boost::shared_ptr<MasterWalletManager> walletManager(new MasterWalletManager("Data"));
