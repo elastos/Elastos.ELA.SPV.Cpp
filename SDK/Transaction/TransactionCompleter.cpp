@@ -4,6 +4,7 @@
 
 #include <SDK/Common/Utils.h>
 #include <SDK/Common/ParamChecker.h>
+#include <SDK/ELACoreExt/Payload/Asset.h>
 #include "TransactionCompleter.h"
 
 namespace Elastos {
@@ -44,7 +45,7 @@ namespace Elastos {
 										 "Tx complete asset ID without output");
 
 			UInt256 zero = UINT256_ZERO;
-			UInt256 assetID = Key::getSystemAssetId();
+			UInt256 assetID = Asset::GetELAAsset();
 
 			for (size_t i = 0; i < transaction->getSize(); ++i) {
 				if (UInt256Eq(&transaction->getOutputs()[0].getAssetId(), &zero) == 1) {
@@ -89,7 +90,7 @@ namespace Elastos {
 				std::string changeAddress = _wallet->getAllAddresses()[0];
 				TransactionOutput output;
 				output.setAmount(actualChange);
-				output.setAssetId(Key::getSystemAssetId());
+				output.setAssetId(Asset::GetELAAsset());
 				output.setOutputLock(0);
 				UInt168 u168Address = UINT168_ZERO;
 				Utils::UInt168FromAddress(u168Address, changeAddress);

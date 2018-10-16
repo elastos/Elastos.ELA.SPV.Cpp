@@ -10,6 +10,7 @@
 #include <Core/BRAddress.h>
 #include <Core/BRBIP32Sequence.h>
 #include <SDK/Common/ParamChecker.h>
+#include <SDK/ELACoreExt/Payload/Asset.h>
 
 #include "BRAddress.h"
 #include "BRBIP39Mnemonic.h"
@@ -326,7 +327,7 @@ namespace Elastos {
 			TransactionOutput output;
 			output.setProgramHash(u168Address);
 			output.setAmount(amount);
-			output.setAssetId(Key::getSystemAssetId());
+			output.setAssetId(Asset::GetELAAsset());
 			output.setOutputLock(0);
 
 			std::vector<TransactionOutput> outputs = {output};
