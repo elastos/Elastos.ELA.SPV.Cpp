@@ -178,7 +178,7 @@ namespace Elastos {
 
 			void fireSavePeers(bool replace, const std::vector<PeerInfo> &peers);
 
-			int fireNetworkIsReachable();
+			bool fireNetworkIsReachable();
 
 			void fireTxPublished(int error);
 
