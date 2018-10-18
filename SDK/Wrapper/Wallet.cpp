@@ -31,7 +31,6 @@ namespace Elastos {
 						fee = (((size * feePerKb / 1000) + 99) / 100) *
 							  100; // fee using _feePerKb, rounded up to nearest 100 satoshi
 
-
 				return (fee > standardFee) ? fee : standardFee;
 			}
 		}
@@ -228,8 +227,8 @@ namespace Elastos {
 			minAmount = getMinOutputAmount();
 			lock.lock();
 			feeAmount = _txFee(_feePerKb, transaction->getSize() + TX_OUTPUT_SIZE);
-			transaction->setFee(feeAmount);
 
+			_utxos.SortBaseOnOutputAmount(amount, _feePerKb);
 			// TODO: use up all UTXOs for all used addresses to avoid leaving funds in addresses whose public key is revealed
 			// TODO: avoid combining addresses in a single transaction when possible to reduce information leakage
 			// TODO: use up UTXOs received from any of the output scripts that this transaction sends funds to, to mitigate an
@@ -244,29 +243,45 @@ namespace Elastos {
 
 				transaction->getInputs().push_back(TransactionInput(_utxos[i].hash, _utxos[i].n));
 
-				if (transaction->getSize() + TX_OUTPUT_SIZE >
-					TX_MAX_SIZE) { // transaction size-in-bytes too large
+				if (transaction->getSize() + TX_OUTPUT_SIZE > TX_MAX_SIZE) { // transaction size-in-bytes too large
+					feeAmount = transaction->calculateFee(_feePerKb) + _feePerKb;
 					transaction = nullptr;
 
 					// check for sufficient total funds before building a smaller transaction
-					if (balance < amount + transaction->getFee() > 0
-						? transaction->getFee()
-						: _txFee(_feePerKb,
+					if (balance < amount + _txFee(_feePerKb,
 								 10 + _utxos.size() * TX_INPUT_SIZE + (outputs.size() + 1) * TX_OUTPUT_SIZE +
 								 cpfpSize))
 						break;
 					lock.unlock();
 
 					if (outputs[outputs.size() - 1].getAmount() > amount + feeAmount + minAmount - balance) {
-						std::vector<TransactionOutput> newOutputs = outputs;
-						newOutputs[outputs.size() - 1].setAmount(newOutputs[outputs.size() - 1].getAmount() -
-																 amount + feeAmount -
-																 balance); // reduce last output amount
-						transaction = CreateTxForOutputs(newOutputs, fromAddress, filter);
+						uint64_t maxAmount = 0;
+						for (int k = 0; k < outputs.size() - 1; ++k) {
+							maxAmount += outputs[k].getAmount();
+						}
+						maxAmount += outputs[outputs.size() - 1].getAmount() - amount + feeAmount - balance;
+
+						ParamChecker::checkCondition(true, Error::CreateTransactionExceedSize,
+													 "Tx size too large, amount should less than " +
+													 std::to_string(maxAmount),
+													 maxAmount);
+//						std::vector<TransactionOutput> newOutputs = outputs;
+//						newOutputs[outputs.size() - 1].setAmount(newOutputs[outputs.size() - 1].getAmount() -
+//																 amount + feeAmount -
+//																 balance); // reduce last output amount
+//						transaction = CreateTxForOutputs(newOutputs, fromAddress, filter);
 					} else {
-						std::vector<TransactionOutput> newOutputs;
-						newOutputs.insert(newOutputs.end(), outputs.begin(), outputs.begin() + outputs.size() - 1);
-						transaction = CreateTxForOutputs(newOutputs, fromAddress, filter); // remove last output
+						uint64_t maxAmount = 0;
+						for (int k = 0; k < outputs.size() - 1; ++k) {
+							maxAmount += outputs[k].getAmount();
+						}
+						ParamChecker::checkCondition(true, Error::CreateTransactionExceedSize,
+													 "Tx size too large, amount should less than " +
+													 std::to_string(maxAmount),
+													 maxAmount);
+//						std::vector<TransactionOutput> newOutputs;
+//						newOutputs.insert(newOutputs.end(), outputs.begin(), outputs.begin() + outputs.size() - 1);
+//						transaction = CreateTxForOutputs(newOutputs, fromAddress, filter); // remove last output
 					}
 
 					balance = amount = feeAmount = 0;
@@ -300,14 +315,13 @@ namespace Elastos {
 											 "Output count is not enough");
 			} else if (transaction && balance - (amount + feeAmount) > minAmount) { // add change output
 				std::vector<Address> addrs = _subAccount->UnusedAddresses(1, 1);
-				if (addrs.empty())
-					throw std::logic_error("Get address failed.");
+				ParamChecker::checkCondition(addrs.empty(), Error::CreateTransaction, "Get address failed.");
 
 				UInt168 programHash;
-				if (Utils::UInt168FromAddress(programHash, addrs[i].stringify()))
-					transaction->getOutputs().push_back(TransactionOutput(balance - (amount + feeAmount), programHash));
-				else
-					throw std::logic_error("Convert from address to program hash error.");
+				ParamChecker::checkCondition(!Utils::UInt168FromAddress(programHash, addrs[i].stringify()),
+											 Error::CreateTransaction, "Convert from address to program hash error.");
+				transaction->getOutputs().push_back(TransactionOutput(balance - (amount + feeAmount), programHash));
+				transaction->setFee(feeAmount);
 			}
 
 			return transaction;
@@ -357,6 +371,13 @@ namespace Elastos {
 			return result;
 		}
 
+		bool Wallet::containsTransaction(const UInt256 &hash) {
+			bool result = false;
+			{
+			}
+			return result;
+		}
+
 		bool Wallet::registerTransaction(const TransactionPtr &transaction) {
 			bool wasAdded = false, r = true;
 
@@ -391,7 +412,6 @@ namespace Elastos {
 				// when a wallet address is used in a transaction, generate a new address to replace it
 				_subAccount->UnusedAddresses(SEQUENCE_GAP_LIMIT_EXTERNAL, 0);
 				_subAccount->UnusedAddresses(SEQUENCE_GAP_LIMIT_INTERNAL, 1);
-				balanceChanged(_balance);
 				txAdded(transaction);
 			}
 
@@ -500,6 +520,7 @@ namespace Elastos {
 			}
 
 			if (j > 0) txUpdated(hashes, _blockHeight, timestamp);
+			if (needsUpdate) balanceChanged(_balance);
 		}
 
 		TransactionPtr Wallet::transactionForHash(const UInt256 &transactionHash) {
@@ -1038,8 +1059,10 @@ namespace Elastos {
 				if (count > 0) UpdateBalance();
 			}
 
-			if (count > 0)
+			if (count > 0) {
 				txUpdated(hashes, TX_UNCONFIRMED, 0);
+				balanceChanged(_balance);
+			}
 		}
 
 	}

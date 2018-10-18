@@ -53,6 +53,12 @@ namespace Elastos {
 			_amount = a;
 		}
 
+		size_t TransactionOutput::getSize() const {
+			ByteStream stream;
+			Serialize(stream);
+			return stream.getBuffer().GetSize();
+		}
+
 		void TransactionOutput::Serialize(ByteStream &ostream) const {
 			ostream.writeBytes(_assetId.u8, sizeof(_assetId));
 			ostream.writeUint64(_amount);

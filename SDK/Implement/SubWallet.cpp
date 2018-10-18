@@ -30,8 +30,8 @@ namespace Elastos {
 	namespace ElaWallet {
 
 		SubWallet::SubWallet(const CoinInfo &info,
+							 const MasterPubKeyPtr &masterPubKey,
 							 const ChainParams &chainParams,
-							 const std::string &payPassword,
 							 const PluginTypes &pluginTypes,
 							 MasterWallet *parent) :
 				PeerManager::Listener(pluginTypes),
@@ -47,7 +47,7 @@ namespace Elastos {
 				SubAccountGenerator generator;
 				generator.SetCoinInfo(_info);
 				generator.SetParentAccount(_parent->_localStore.Account());
-				generator.SetPayPassword(payPassword);
+				generator.SetMasterPubKey(masterPubKey);
 				_subAccount = SubAccountPtr(generator.Generate());
 
 				_info.setChainCode(Utils::UInt256ToString(generator.GetResultChainCode()));
@@ -97,11 +97,17 @@ namespace Elastos {
 
 		nlohmann::json SubWallet::GetAllAddress(uint32_t start,
 												uint32_t count) {
-			std::vector<std::string> addresses = _walletManager->getWallet()->getAllAddresses();
-			uint32_t end = std::min(start + count, (uint32_t) addresses.size());
-			std::vector<std::string> results(addresses.begin() + start, addresses.begin() + end);
 			nlohmann::json j;
-			j["Addresses"] = results;
+			std::vector<std::string> addresses = _walletManager->getWallet()->getAllAddresses();
+			if (start >= addresses.size()) {
+				j["Addresses"] = {};
+				j["MaxCount"] = addresses.size();
+			} else {
+				uint32_t end = std::min(start + count, (uint32_t) addresses.size());
+				std::vector<std::string> results(addresses.begin() + start, addresses.begin() + end);
+				j["Addresses"] = results;
+				j["MaxCount"] = addresses.size();
+			}
 			return j;
 		}
 
@@ -132,11 +138,18 @@ namespace Elastos {
 
 		nlohmann::json SubWallet::GetAllTransaction(uint32_t start, uint32_t count, const std::string &addressOrTxid) {
 			const WalletPtr &wallet = _walletManager->getWallet();
-			Log::getLogger()->info("GetAllTransaction: start = {}, count = {}, addressOrTxid = {}", start, count,
-								   addressOrTxid);
 
 			std::vector<TransactionPtr> allTxs = wallet->getAllTransactions();
 			size_t fullTxCount = allTxs.size();
+			nlohmann::json j;
+
+
+			if (start >= fullTxCount) {
+				j["Transactions"] = {};
+				j["MaxCount"] = fullTxCount;
+				return j;
+			}
+
 			size_t pageCount = count;
 
 			if (fullTxCount < start + count)
@@ -152,13 +165,13 @@ namespace Elastos {
 
 			std::vector<nlohmann::json> jsonList(realCount);
 			for (size_t i = 0; i < realCount; ++i) {
-				nlohmann::json txJson = transactions[i]->toJson();
+				nlohmann::json txJson;
 				transactions[i]->generateExtraTransactionInfo(txJson, _walletManager->getWallet(),
 															 _walletManager->getPeerManager()->getLastBlockHeight());
 				jsonList[i] = txJson;
 			}
-			nlohmann::json j;
 			j["Transactions"] = jsonList;
+			j["MaxCount"] = fullTxCount;
 			return j;
 		}
 
@@ -388,7 +401,7 @@ namespace Elastos {
 			std::for_each(_callbacks.begin(), _callbacks.end(),
 						  [blockHeight, this](ISubWalletCallback *callback) {
 							  callback->OnBlockHeightIncreased(
-									  blockHeight, _walletManager->getPeerManager()->getSyncProgress(_syncStartHeight));
+									  blockHeight, (int)(_walletManager->getPeerManager()->getSyncProgress(_syncStartHeight) * 100));
 						  });
 		}
 

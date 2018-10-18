@@ -4,6 +4,7 @@
 
 #include <SDK/Wrapper/Wallet.h>
 #include <SDK/Common/ParamChecker.h>
+#include <SDK/Common/Utils.h>
 #include "SingleSubAccount.h"
 
 namespace Elastos {
@@ -11,6 +12,10 @@ namespace Elastos {
 
 		SingleSubAccount::SingleSubAccount(IAccount *account) :
 				SubAccountBase(account) {
+
+		}
+
+		SingleSubAccount::~SingleSubAccount() {
 
 		}
 

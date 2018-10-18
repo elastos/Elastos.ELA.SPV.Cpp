@@ -106,6 +106,8 @@ namespace Elastos {
 
 			bool containsTransaction(const TransactionPtr &transaction);
 
+			bool containsTransaction(const UInt256 &hash);
+
 			bool registerTransaction(const TransactionPtr &transaction);
 
 			void removeTransaction(const UInt256 &transactionHash);
@@ -173,6 +175,8 @@ namespace Elastos {
 
 			void SetTxUnconfirmedAfter(uint32_t blockHeight);
 
+
+
 			const std::vector<std::string> &getListeningAddrs() const;
 
 			std::vector<Address> UnusedAddresses(uint32_t gapLimit, bool internal);
@@ -180,6 +184,12 @@ namespace Elastos {
 		protected:
 
 			bool AddressFilter(const std::string &fromAddress, const std::string &filterAddress);
+
+			int UTXOCompareAscending(const void *o1, const void *o2);
+
+			int UTXOCompareDescending(const void *o1, const void *o2);
+
+			void SortUTXOForAmount(uint64_t amount);
 
 			TransactionPtr CreateTxForOutputs(const std::vector<TransactionOutput> &outputs,
 											  const std::string &fromAddress,

@@ -204,18 +204,9 @@ namespace Elastos {
 		}
 
 		size_t Transaction::getSize() {
-			size_t size;
-			size = 8 + BRVarIntSize(_inputs.size()) + BRVarIntSize(_outputs.size());
-
-			for (size_t i = 0; _inputs.size(); i++) {
-				size += _inputs[i].getSize();
-			}
-
-			for (size_t i = 0; _outputs.size(); i++) {
-				size += _outputs[i].GetSize();
-			}
-
-			return size;
+			ByteStream stream;
+			Serialize(stream);
+			return stream.getBuffer().GetSize();
 		}
 
 		bool Transaction::isSigned() const {
@@ -248,7 +239,6 @@ namespace Elastos {
 
 			ParamChecker::checkCondition(keysCount <= 0, Error::Transaction,
 										 "Transaction sign key not found");
-			SPDLOG_DEBUG(Log::getLogger(), "Transaction transactionSign method begin, key counts = {}.", keysCount);
 
 			for (i = 0; i < keysCount; i++) {
 				addrs[i] = Address::None;
@@ -258,7 +248,6 @@ namespace Elastos {
 				}
 			}
 
-			SPDLOG_DEBUG(Log::getLogger(), "Transaction transactionSign input sign begin.");
 			for (i = 0; i < _inputs.size(); i++) {
 				const TransactionPtr &tx = wallet->transactionForHash(_inputs[i].getTransctionHash());
 				address = tx->getOutputs()[_inputs[i].getIndex()].getAddress();
@@ -278,10 +267,8 @@ namespace Elastos {
 
 				}
 
-				SPDLOG_DEBUG(Log::getLogger(), "Transaction transactionSign begin sign the {} input.", i);
 				CMBlock signData = keys[j].compactSign(GetShaData());
 				_programs[i].setParameter(signData);
-				SPDLOG_DEBUG(Log::getLogger(), "Transaction transactionSign end sign the {} input.", i);
 			}
 
 			return isSigned();
@@ -601,65 +588,64 @@ namespace Elastos {
 		}
 
 		void
-		Transaction::generateExtraTransactionInfo(nlohmann::json &rawTxJson, const boost::shared_ptr<Wallet> &wallet,
-												  uint32_t _blockHeight) {
+		Transaction::generateExtraTransactionInfo(nlohmann::json &rawTxJson, const WalletPtr &wallet,
+												  uint32_t blockHeight) {
 
 			std::string remark = wallet->GetRemark(Utils::UInt256ToString(getHash()));
 			setRemark(remark);
 
 			nlohmann::json summary;
-			summary["TxHash"] = rawTxJson["TxHash"].get<std::string>();
-			summary["Status"] = getStatus(_blockHeight);
-			summary["ConfirmStatus"] = getConfirmInfo(_blockHeight);
-			summary["_remark"] = getRemark();
+			summary["TxHash"] = Utils::UInt256ToString(getHash(), true);
+			summary["Status"] = getStatus(blockHeight);
+			summary["ConfirmStatus"] = getConfirmInfo(blockHeight);
+			summary["Remark"] = getRemark();
 			summary["Fee"] = getTxFee(wallet);
+			summary["Timestamp"] = getTimestamp();
 			nlohmann::json jOut;
 			nlohmann::json jIn;
 
-			//fixme [refactor] get intput info from TransactionInput
-//			if (_inputs.size() > 0 && wallet->inputFromWallet(&_inputs[0])) {
-//				std::string toAddress = "";
-//
-//				if (wallet->containsAddress(_outputs[0]->getAddress())) {
-//					// transfer to my other address of wallet
-//					jOut["Amount"] = _outputs[0]->getAmount();
-//					jOut["ToAddress"] = _outputs[0]->getAddress();
-//					summary["Outcoming"] = jOut;
-//
-//					jIn["Amount"] = _outputs[0]->getAmount();
-//					jIn["ToAddress"] = _outputs[0]->getAddress();
-//					summary["Incoming"] = jIn;
-//				} else {
-//					jOut["Amount"] = _outputs[0]->getAmount();
-//					jOut["ToAddress"] = _outputs[0]->getAddress();
-//					summary["Outcoming"] = jOut;
-//
-//					jIn["Amount"] = 0;
-//					jIn["ToAddress"] = "";
-//					summary["Incoming"] = jIn;
-//				}
-//			} else {
-//				uint64_t inputAmount = 0;
-//				std::string toAddress = "";
-//
-//				for (size_t i = 0; i < _outputs.size(); ++i) {
-//					if (wallet->containsAddress(_outputs[i]->getAddress())) {
-//						inputAmount = _outputs[i]->getAmount();
-//						toAddress = _outputs[i]->getAddress();
-//					}
-//				}
-//
-//				jOut["Amount"] = 0;
-//				jOut["ToAddress"] = "";
-//				summary["Outcoming"] = jOut;
-//
-//				jIn["Amount"] = inputAmount;
-//				jIn["ToAddress"] = toAddress;
-//				summary["Incoming"] = jIn;
-//			}
+			if (_inputs.size() > 0 && wallet->containsTransaction(wallet->transactionForHash(_inputs[0].getTransctionHash()))) {
+				std::string toAddress = "";
+
+				if (wallet->containsAddress(_outputs[0].getAddress())) {
+					// transfer to my other address of wallet
+					jOut["Amount"] = _outputs[0].getAmount();
+					jOut["ToAddress"] = _outputs[0].getAddress();
+					summary["Outcoming"] = jOut;
+
+					jIn["Amount"] = _outputs[0].getAmount();
+					jIn["ToAddress"] = _outputs[0].getAddress();
+					summary["Incoming"] = jIn;
+				} else {
+					jOut["Amount"] = _outputs[0].getAmount();
+					jOut["ToAddress"] = _outputs[0].getAddress();
+					summary["Outcoming"] = jOut;
+
+					jIn["Amount"] = 0;
+					jIn["ToAddress"] = "";
+					summary["Incoming"] = jIn;
+				}
+			} else {
+				uint64_t inputAmount = 0;
+				std::string toAddress = "";
+
+				for (size_t i = 0; i < _outputs.size(); ++i) {
+					if (wallet->containsAddress(_outputs[i].getAddress())) {
+						inputAmount += _outputs[i].getAmount();
+						toAddress = _outputs[i].getAddress();
+					}
+				}
+
+				jOut["Amount"] = 0;
+				jOut["ToAddress"] = "";
+				summary["Outcoming"] = jOut;
+
+				jIn["Amount"] = inputAmount;
+				jIn["ToAddress"] = toAddress;
+				summary["Incoming"] = jIn;
+			}
 
 			rawTxJson["Summary"] = summary;
-			SPDLOG_DEBUG(Log::getLogger(), "tx = {}.", summary.dump());
 		}
 
 		std::string Transaction::getConfirmInfo(uint32_t _blockHeight) {

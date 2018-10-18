@@ -7,6 +7,7 @@
 #include <Core/BRKey.h>
 #include <Core/BRBIP32Sequence.h>
 #include <Core/BRChainParams.h>
+#include <SDK/Account/SubAccountGenerator.h>
 
 #include "BRBase58.h"
 #include "BRBIP39Mnemonic.h"
@@ -39,10 +40,10 @@ namespace Elastos {
 								   const std::string &rootPath,
 								   bool p2pEnable,
 								   MasterWalletInitFrom from) :
-			_rootPath(rootPath),
-			_p2pEnable(p2pEnable),
-			_initFrom(from),
-			_localStore(rootPath) {
+				_rootPath(rootPath),
+				_p2pEnable(p2pEnable),
+				_initFrom(from),
+				_localStore(rootPath) {
 
 			_localStore.Load(localStore);
 			_id = localStore.parent_path().filename().string();
@@ -55,48 +56,46 @@ namespace Elastos {
 								   const std::string &phrasePassword,
 								   const std::string &payPassword,
 								   const std::string &language,
+								   bool singleAddress,
 								   bool p2pEnable,
 								   const std::string &rootPath,
 								   MasterWalletInitFrom from) :
-			_id(id),
-			_rootPath(rootPath),
-			_p2pEnable(p2pEnable),
-			_initFrom(from),
-			_localStore(rootPath) {
+				_id(id),
+				_rootPath(rootPath),
+				_p2pEnable(p2pEnable),
+				_initFrom(from),
+				_localStore(rootPath) {
 
 			ParamChecker::checkArgumentNotEmpty(id, "Master wallet id");
 			ParamChecker::checkArgumentNotEmpty(language, "Language");
 			ParamChecker::checkPassword(payPassword, "Pay");
 			ParamChecker::checkPasswordWithNullLegal(phrasePassword, "Phrase");
 
+			_localStore.IsSingleAddress() = singleAddress;
 			_idAgentImpl = boost::shared_ptr<IdAgentImpl>(new IdAgentImpl(this, _localStore.GetIdAgentInfo()));
 			importFromMnemonic(mnemonic, language, phrasePassword, payPassword);
-			Save();
 		}
 
 		MasterWallet::MasterWallet(const std::string &id,
 								   const nlohmann::json &keystoreContent,
 								   const std::string &backupPassword,
 								   const std::string &payPassword,
-								   const std::string &phrasePassword,
 								   const std::string &rootPath,
 								   bool p2pEnable,
 								   MasterWalletInitFrom from) :
-			_id(id),
-			_rootPath(rootPath),
-			_p2pEnable(p2pEnable),
-			_initFrom(from),
-			_localStore(rootPath) {
+				_id(id),
+				_rootPath(rootPath),
+				_p2pEnable(p2pEnable),
+				_initFrom(from),
+				_localStore(rootPath) {
 
 			ParamChecker::checkArgumentNotEmpty(id, "Master wallet id");
 			ParamChecker::checkPassword(backupPassword, "Backup");
 			ParamChecker::checkPassword(payPassword, "Pay");
-			ParamChecker::checkPasswordWithNullLegal(phrasePassword, "Phrase");
 			ParamChecker::checkArgumentNotEmpty(rootPath, "Root path");
 
 			_idAgentImpl = boost::shared_ptr<IdAgentImpl>(new IdAgentImpl(this, _localStore.GetIdAgentInfo()));
-			importFromKeyStore(keystoreContent, backupPassword, payPassword, phrasePassword);
-			Save();
+			importFromKeyStore(keystoreContent, backupPassword, payPassword);
 		}
 
 		MasterWallet::MasterWallet(const std::string &id,
@@ -104,29 +103,28 @@ namespace Elastos {
 								   const std::string &rootPath,
 								   bool p2pEnable,
 								   MasterWalletInitFrom from) :
-			_id(id),
-			_rootPath(rootPath),
-			_p2pEnable(p2pEnable),
-			_initFrom(from),
-			_localStore(rootPath),
-			_idAgentImpl(nullptr) {
+				_id(id),
+				_rootPath(rootPath),
+				_p2pEnable(p2pEnable),
+				_initFrom(from),
+				_localStore(rootPath),
+				_idAgentImpl(nullptr) {
 			ParamChecker::checkArgumentNotEmpty(id, "Master wallet id");
 			ParamChecker::checkArgumentNotEmpty(rootPath, "Root path");
 			ParamChecker::checkPubKeyJsonArray(coSigners, requiredSignCount, "Signers");
 
 			initFromMultiSigners("", "", coSigners, requiredSignCount);
-			Save();
 		}
 
 		MasterWallet::MasterWallet(const std::string &id, const std::string &privKey, const std::string &payPassword,
 								   const nlohmann::json &coSigners, uint32_t requiredSignCount,
 								   const std::string &rootPath, bool p2pEnable, MasterWalletInitFrom from) :
-			_id(id),
-			_rootPath(rootPath),
-			_p2pEnable(p2pEnable),
-			_initFrom(from),
-			_localStore(rootPath),
-			_idAgentImpl(nullptr) {
+				_id(id),
+				_rootPath(rootPath),
+				_p2pEnable(p2pEnable),
+				_initFrom(from),
+				_localStore(rootPath),
+				_idAgentImpl(nullptr) {
 
 			ParamChecker::checkArgumentNotEmpty(id, "Master wallet id");
 			ParamChecker::checkPassword(payPassword, "Pay");
@@ -134,7 +132,6 @@ namespace Elastos {
 			ParamChecker::checkPubKeyJsonArray(coSigners, requiredSignCount - 1, "Signers");
 
 			initFromMultiSigners(privKey, payPassword, coSigners, requiredSignCount);
-			Save();
 		}
 
 		MasterWallet::MasterWallet(const std::string &id, const std::string &mnemonic,
@@ -142,11 +139,11 @@ namespace Elastos {
 								   const std::string &language, const nlohmann::json &coSigners,
 								   uint32_t requiredSignCount, bool p2pEnable, const std::string &rootPath,
 								   MasterWalletInitFrom from) :
-			_id(id),
-			_rootPath(rootPath),
-			_p2pEnable(p2pEnable),
-			_initFrom(from),
-			_localStore(rootPath) {
+				_id(id),
+				_rootPath(rootPath),
+				_p2pEnable(p2pEnable),
+				_initFrom(from),
+				_localStore(rootPath) {
 			ParamChecker::checkArgumentNotEmpty(id, "Master wallet id");
 			ParamChecker::checkPassword(payPassword, "Pay");
 			ParamChecker::checkPasswordWithNullLegal(phrasePassword, "Phrase");
@@ -155,7 +152,6 @@ namespace Elastos {
 			ParamChecker::checkPubKeyJsonArray(coSigners, requiredSignCount - 1, "Signers");
 
 			initFromMultiSigners(mnemonic, phrasePassword, language, payPassword, coSigners, requiredSignCount);
-			Save();
 		}
 
 		MasterWallet::~MasterWallet() {
@@ -203,14 +199,10 @@ namespace Elastos {
 		}
 
 		ISubWallet *
-		MasterWallet::CreateSubWallet(const std::string &chainID, const std::string &payPassword, bool singleAddress,
-									  uint64_t feePerKb) {
+		MasterWallet::CreateSubWallet(const std::string &chainID, uint64_t feePerKb) {
 
 			ParamChecker::checkArgumentNotEmpty(chainID, "Chain ID");
 			ParamChecker::checkCondition(chainID.size() > 128, Error::InvalidArgument, "Chain ID sould less than 128");
-
-			if (!_localStore.Account()->IsReadOnly())
-				ParamChecker::checkPassword(payPassword, "Pay");
 
 			//todo limit coinTypeIndex and feePerKb if needed in future
 
@@ -219,8 +211,6 @@ namespace Elastos {
 			}
 
 			CoinInfo info;
-
-
 			tryInitCoinConfig();
 			CoinConfig coinConfig = _coinConfigReader.FindConfig(chainID);
 			info.setWalletType(coinConfig.Type);
@@ -230,13 +220,12 @@ namespace Elastos {
 			info.setEnableP2P(coinConfig.EnableP2P);
 			info.setReconnectSeconds(coinConfig.ReconnectSeconds);
 
-			info.setSingleAddress(singleAddress);
+			info.setSingleAddress(_localStore.IsSingleAddress());
 			info.setUsedMaxAddressIndex(0);
 			info.setChainId(chainID);
 			info.setFeePerKb(feePerKb);
 
-			SubWallet *subWallet = SubWalletFactoryMethod(info, ChainParams(coinConfig), payPassword,
-														  PluginTypes(coinConfig), this);
+			SubWallet *subWallet = SubWalletFactoryMethod(info, ChainParams(coinConfig), PluginTypes(coinConfig), this);
 			_createdWallets[chainID] = subWallet;
 			startPeerManager(subWallet);
 			Save();
@@ -244,8 +233,7 @@ namespace Elastos {
 		}
 
 		ISubWallet *
-		MasterWallet::RecoverSubWallet(const std::string &chainID, const std::string &payPassword, bool singleAddress,
-									   uint32_t limitGap, uint64_t feePerKb) {
+		MasterWallet::RecoverSubWallet(const std::string &chainID, uint32_t limitGap, uint64_t feePerKb) {
 
 			if (_createdWallets.find(chainID) != _createdWallets.end())
 				return _createdWallets[chainID];
@@ -254,7 +242,7 @@ namespace Elastos {
 										 "Limit gap should less than or equal " +
 										 std::to_string(SEQUENCE_GAP_LIMIT_EXTERNAL));
 
-			ISubWallet *subWallet = CreateSubWallet(chainID, payPassword, singleAddress, feePerKb);
+			ISubWallet *subWallet = CreateSubWallet(chainID, feePerKb);
 			SubWallet *walletInner = dynamic_cast<SubWallet *>(subWallet);
 			assert(walletInner != nullptr);
 			walletInner->recover(limitGap);
@@ -270,8 +258,7 @@ namespace Elastos {
 
 				CoinConfig coinConfig = _coinConfigReader.FindConfig(coinInfoList[i].getChainId());
 				_createdWallets[coinInfoList[i].getChainId()] =
-					SubWalletFactoryMethod(coinInfoList[i], ChainParams(coinConfig), "", PluginTypes(coinConfig),
-										   this);
+						SubWalletFactoryMethod(coinInfoList[i], ChainParams(coinConfig), PluginTypes(coinConfig), this);
 			}
 		}
 
@@ -306,10 +293,9 @@ namespace Elastos {
 		}
 
 		void MasterWallet::importFromKeyStore(const nlohmann::json &keystoreContent, const std::string &backupPassword,
-											  const std::string &payPassword, const std::string &phrasePassword) {
+											  const std::string &payPassword) {
 			ParamChecker::checkPassword(backupPassword, "Backup");
 			ParamChecker::checkPassword(payPassword, "Pay");
-			ParamChecker::checkPasswordWithNullLegal(phrasePassword, "Phrase");
 
 			KeyStore keyStore(_rootPath);
 			ParamChecker::checkCondition(!keyStore.open(keystoreContent, backupPassword), Error::WrongPasswd,
@@ -320,9 +306,8 @@ namespace Elastos {
 				_initFrom = ImportFromOldKeyStore;
 			}
 
-			initFromKeyStore(keyStore, payPassword, phrasePassword);
-
-			Save();
+			initFromKeyStore(keyStore, payPassword);
+			initSubWalletsPubKeyMap(payPassword);
 		}
 
 		void MasterWallet::importFromMnemonic(const std::string &mnemonic,
@@ -334,8 +319,7 @@ namespace Elastos {
 			ParamChecker::checkPasswordWithNullLegal(phrasePassword, "Phrase");
 
 			_localStore.Reset(mnemonic, languange, phrasePassword, payPassword);
-
-			Save();
+			initSubWalletsPubKeyMap(payPassword);
 		}
 
 		nlohmann::json MasterWallet::exportKeyStore(const std::string &backupPassword, const std::string &payPassword) {
@@ -364,13 +348,13 @@ namespace Elastos {
 		void MasterWallet::initFromLocalStore(const MasterWalletStore &localStore) {
 			tryInitCoinConfig();
 			_idAgentImpl = boost::shared_ptr<IdAgentImpl>(new IdAgentImpl(this, localStore.GetIdAgentInfo()));
-			initSubWallets(localStore.GetSubWalletInfoList(), "");
+			initSubWallets(localStore.GetSubWalletInfoList());
 		}
 
-		void MasterWallet::initSubWallets(const std::vector<CoinInfo> &coinInfoList, const std::string &payPassword) {
+		void MasterWallet::initSubWallets(const std::vector<CoinInfo> &coinInfoList) {
 			for (int i = 0; i < coinInfoList.size(); ++i) {
 				CoinConfig coinConfig = _coinConfigReader.FindConfig(coinInfoList[i].getChainId());
-				ISubWallet *subWallet = SubWalletFactoryMethod(coinInfoList[i], ChainParams(coinConfig), payPassword,
+				ISubWallet *subWallet = SubWalletFactoryMethod(coinInfoList[i], ChainParams(coinConfig),
 															   PluginTypes(coinConfig), this);
 				SubWallet *subWalletImpl = dynamic_cast<SubWallet *>(subWallet);
 				ParamChecker::checkCondition(subWalletImpl == nullptr, Error::CreateSubWalletError,
@@ -406,8 +390,7 @@ namespace Elastos {
 		}
 
 		SubWallet *MasterWallet::SubWalletFactoryMethod(const CoinInfo &info, const ChainParams &chainParams,
-														const std::string &payPassword, const PluginTypes &pluginTypes,
-														MasterWallet *parent) {
+														const PluginTypes &pluginTypes, MasterWallet *parent) {
 
 			CoinInfo fixedInfo = info;
 
@@ -432,16 +415,19 @@ namespace Elastos {
 			Log::getLogger()->info("Master wallet init from {}, ealiest peer time = {}", _initFrom,
 								   fixedInfo.getEarliestPeerTime());
 
+			MasterPubKeyPtr masterPubKey =
+					_subWalletsPubKeyMap.find(fixedInfo.getChainId()) != _subWalletsPubKeyMap.end()
+					? _subWalletsPubKeyMap[fixedInfo.getChainId()] : nullptr;
 			switch (fixedInfo.getWalletType()) {
 				case Mainchain:
-					return new MainchainSubWallet(fixedInfo, chainParams, payPassword, pluginTypes, parent);
+					return new MainchainSubWallet(fixedInfo, masterPubKey, chainParams, pluginTypes, parent);
 				case Sidechain:
-					return new SidechainSubWallet(fixedInfo, chainParams, payPassword, pluginTypes, parent);
+					return new SidechainSubWallet(fixedInfo, masterPubKey, chainParams, pluginTypes, parent);
 				case Idchain:
-					return new IdChainSubWallet(fixedInfo, chainParams, payPassword, pluginTypes, parent);
+					return new IdChainSubWallet(fixedInfo, masterPubKey, chainParams, pluginTypes, parent);
 				case Normal:
 				default:
-					return new SubWallet(fixedInfo, chainParams, payPassword, pluginTypes, parent);
+					return new SubWallet(fixedInfo, masterPubKey, chainParams, pluginTypes, parent);
 			}
 		}
 
@@ -475,6 +461,9 @@ namespace Elastos {
 		}
 
 		std::vector<std::string> MasterWallet::GetAllIds() const {
+			if (_idAgentImpl == nullptr)
+				return std::vector<std::string>();
+
 			return _idAgentImpl->GetAllIds();
 		}
 
@@ -510,6 +499,20 @@ namespace Elastos {
 			}
 		}
 
+		void MasterWallet::initSubWalletsPubKeyMap(const std::string &payPassword) {
+			tryInitCoinConfig();
+
+			_subWalletsPubKeyMap.clear();
+			typedef std::map<std::string, uint32_t> IdIndexMap;
+			IdIndexMap idIndexMap = _coinConfigReader.GetChainIdsAndIndices();
+			std::for_each(idIndexMap.begin(), idIndexMap.end(),
+						  [this, &payPassword](const IdIndexMap::value_type &item) {
+							  _subWalletsPubKeyMap[item.first] = SubAccountGenerator::GenerateMasterPubKey(
+									  _localStore.Account(),
+									  item.second, payPassword);
+						  });
+		}
+
 		void MasterWallet::restoreLocalStore() {
 			if (_idAgentImpl != nullptr)
 				_localStore.SetIdAgentInfo(_idAgentImpl->GetIdAgentInfo());
@@ -524,13 +527,13 @@ namespace Elastos {
 			_localStore.SetSubWalletInfoList(coinInfos);
 		}
 
-		void MasterWallet::initFromKeyStore(const KeyStore &keyStore, const std::string &payPassword,
-											const std::string &phrasePassword) {
+		void MasterWallet::initFromKeyStore(const KeyStore &keyStore, const std::string &payPassword) {
 			tryInitCoinConfig();
 
-			IAccount *account = keyStore.createAccountFromJson(phrasePassword, payPassword);
+			IAccount *account = keyStore.createAccountFromJson(payPassword);
 			_localStore.Reset(account);
-			initSubWallets(keyStore.json().getCoinInfoList(), payPassword);
+			_localStore.IsSingleAddress() = keyStore.json().getIsSingleAddress();
+			initSubWallets(keyStore.json().getCoinInfoList());
 		}
 
 		void MasterWallet::restoreKeyStore(KeyStore &keyStore, const std::string &payPassword) {
@@ -542,10 +545,7 @@ namespace Elastos {
 							  SubWallet *subWallet = dynamic_cast<SubWallet *>(item.second);
 							  keyStore.json().addCoinInfo(subWallet->_info);
 						  });
-		}
-
-		void MasterWallet::initFrom(MasterWalletInitFrom from) {
-			_initFrom = from;
+			keyStore.json().setIsSingleAddress(_localStore.IsSingleAddress());
 		}
 
 		void MasterWallet::ChangePassword(const std::string &oldPassword, const std::string &newPassword) {
@@ -570,6 +570,10 @@ namespace Elastos {
 												const std::string &language, const std::string &payPassword,
 												const nlohmann::json &coSigners, uint32_t requiredSignCount) {
 			_localStore.Reset(mnemonic, language, phrasePassword, coSigners, payPassword, requiredSignCount);
+		}
+
+		bool MasterWallet::IsEqual(const MasterWallet &wallet) const {
+			return _localStore.Account()->IsEqual(*wallet._localStore.Account());
 		}
 
 	}

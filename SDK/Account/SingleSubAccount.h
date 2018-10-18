@@ -14,6 +14,8 @@ namespace Elastos {
 		public:
 			SingleSubAccount(IAccount *account);
 
+			virtual ~SingleSubAccount();
+
 			virtual nlohmann::json GetBasicInfo() const;
 
 			virtual Key DeriveMainAccountKey(const std::string &payPassword);
@@ -34,7 +36,7 @@ namespace Elastos {
 			virtual bool IsAddressUsed(const Address &address) const;
 
 		protected:
-			WrapperList<Key, BRKey>
+			virtual WrapperList<Key, BRKey>
 			DeriveAccountAvailableKeys(const std::string &payPassword,
 									   const TransactionPtr &transaction);
 		};

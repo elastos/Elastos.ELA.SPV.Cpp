@@ -23,7 +23,7 @@
 #include "Plugin/Block/MerkleBlock.h"
 #include "BloomFilter.h"
 
-#define PEER_MAX_CONNECTIONS 3
+#define PEER_MAX_CONNECTIONS 1
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -102,6 +102,8 @@ namespace Elastos {
 			uint32_t getLastBlockHeight() const;
 
 			uint32_t getLastBlockTimestamp() const;
+
+			time_t getKeepAliveTimestamp() const;
 
 			double getSyncProgress(uint32_t startHeight);
 
@@ -247,6 +249,7 @@ namespace Elastos {
 
 		private:
 			int _isConnected, _connectFailureCount, _misbehavinCount, _dnsThreadCount, _maxConnectCount, _reconnectTaskCount;
+			time_t _keepAliveTimestamp;
 
 			std::vector<PeerInfo> _peers;
 			std::vector<PeerInfo> _fiexedPeers;

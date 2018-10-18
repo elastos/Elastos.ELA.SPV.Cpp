@@ -344,6 +344,10 @@ namespace Elastos {
 			return timestamp;
 		}
 
+		time_t PeerManager::getKeepAliveTimestamp() const {
+			return _keepAliveTimestamp;
+		}
+
 		double PeerManager::getSyncProgress(uint32_t startHeight) {
 			double progress;
 
@@ -805,6 +809,7 @@ namespace Elastos {
 					_downloadPeer->Disconnect();
 				}
 
+				_keepAliveTimestamp = time(nullptr);
 				_downloadPeer = peer;
 				_isConnected = 1;
 				_estimatedHeight = peer->getLastBlock();

@@ -20,6 +20,7 @@ namespace Elastos {
 
 		}
 
+#define time_after(a,b)  ((long)(b) - (long)(a) < 0)
 		bool PingMessage::Accept(const CMBlock &msg) {
 			bool r = true;
 
@@ -29,9 +30,9 @@ namespace Elastos {
 			} else {
 				_peer->Pinfo("got ping");
 				_peer->SendMessage(msg, MSG_PONG);
+				PeerManager *manager = _peer->getPeerManager();
 
-				if (_peer->SentVerack() && _peer->GotVerack() && _peer->SentFilter() && _peer->SentMempool()) {
-					PeerManager *manager = _peer->getPeerManager();
+				if (time_after(time(nullptr), manager->getKeepAliveTimestamp() + 30)) {
 					int haveTxPending = 0;
 
 					manager->Lock();

@@ -50,6 +50,7 @@ namespace Elastos {
 			boost::shared_ptr<BRMasterPubKey> _masterPubKey;
 		};
 
+		typedef boost::shared_ptr<MasterPubKey> MasterPubKeyPtr;
 	}
 }
 

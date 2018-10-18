@@ -8,7 +8,6 @@
 #include <set>
 
 #include "SubAccountBase.h"
-#include "MasterPubKey.h"
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -49,8 +48,6 @@ namespace Elastos {
 															   const TransactionPtr &transaction);
 
 		private:
-			MasterPubKey _masterPubKey;
-			uint32_t _coinIndex;
 			std::vector<Address> internalChain, externalChain;
 			std::set<Address> usedAddrs, allAddrs;
 			Lockable *_lock;
