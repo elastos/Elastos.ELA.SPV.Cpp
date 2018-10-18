@@ -18,6 +18,24 @@ namespace Elastos {
 			virtual ~ISidechainSubWallet() noexcept {}
 
 			/**
+			 * Create a normal transaction and return the content of transaction in json format.
+			 * @param fromAddress specify which address we want to spend, or just input empty string to let wallet choose UTXOs automatically.
+			 * @param toAddress specify which address we want to send.
+			 * @param amount specify amount we want to send.
+			 * @param assetID specify asset ID
+			 * @param memo input memo attribute for describing.
+			 * @param remark is used to record message of local wallet.
+			 * @return If success return the content of transaction in json format.
+			 */
+			virtual nlohmann::json CreateTransaction(
+					const std::string &fromAddress,
+					const std::string &toAddress,
+					uint64_t amount,
+					const std::string &assetID,
+					const std::string &memo,
+					const std::string &remark) = 0;
+
+			/**
 			 * Create a withdraw transaction and return the content of transaction in json format. Note that \p amount should greater than sum of \p so that we will leave enough fee for mainchain.
 			 * @param fromAddress specify which address we want to spend, or just input empty string to let wallet choose UTXOs automatically.
 			 * @param toAddress specify which address we want to send, in this method to address shall be destroy address of the side chain. Note that destroy address is a special address generate by a program hash that all bytes set to zero.
@@ -33,8 +51,8 @@ namespace Elastos {
 					const std::string &fromAddress,
 					const std::string &toAddress,
 					const uint64_t amount,
-					const nlohmann::json& mainchainAccounts,
-					const nlohmann::json& mainchainAmounts,
+					const nlohmann::json &mainchainAccounts,
+					const nlohmann::json &mainchainAmounts,
 					const nlohmann::json &mainchainIndexs,
 					const std::string &memo,
 					const std::string &remark) = 0;

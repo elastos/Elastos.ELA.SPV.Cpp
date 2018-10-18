@@ -86,20 +86,10 @@ namespace Elastos {
 
 			void setLockTime(uint32_t lockTime);
 
-			/**
-			 * The transaction's blockHeight.
-			 *
-			 * @return the blockHeight as a long (from a uint32_t).
-			 */
 			uint32_t getBlockHeight();
 
 			void setBlockHeight(uint32_t height);
 
-			/**
-			 * The transacdtion's timestamp.
-			 *
-			 * @return the timestamp as a long (from a uint32_t).
-			 */
 			uint32_t getTimestamp();
 
 			void setTimestamp(uint32_t timestamp);
@@ -108,20 +98,8 @@ namespace Elastos {
 
 			void addInput(const TransactionInput &input);
 
-			/**
-			 * The the transactions' size in bytes if signed, or the estimated size assuming
-			 * compact pubkey sigs
-		
-			 * @return the size in bytes.
-			 */
 			size_t getSize();
 
-			/**
-			 * Returns true if all the transaction's signatures exists.  This method does not verify
-			 * the signatures.
-			 *
-			 * @return true if all exist.
-			 */
 			bool isSigned() const;
 
 			bool sign(const WrapperList<Key, BRKey> &keys, const boost::shared_ptr<Wallet> &wallet);
@@ -165,11 +143,17 @@ namespace Elastos {
 
 			void setFee(uint64_t fee);
 
+			uint32_t GetAssetTableID() const;
+
+			void SetAssetTableID(uint32_t assetTableID);
+
 			void removeDuplicatePrograms();
 
 			void serializeUnsigned(ByteStream &ostream) const;
 
 			CMBlock GetShaData() const;
+
+			UInt256 GetAssetID() const;
 
 			void Cleanup();
 
@@ -190,11 +174,12 @@ namespace Elastos {
 		private:
 			bool _isRegistered;
 			mutable UInt256 _txHash;
+			uint32_t _assetTableID;
+
 			uint32_t _version;
 			uint32_t _lockTime;
 			uint32_t _blockHeight;
 			uint32_t _timestamp; // time interval since unix epoch
-
 			Type _type;
 			uint8_t _payloadVersion;
 			uint64_t _fee;

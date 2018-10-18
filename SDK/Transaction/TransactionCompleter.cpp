@@ -31,7 +31,7 @@ namespace Elastos {
 				modifyTransactionChange(resultTx, inputAmount - outputAmount - actualFee);
 			} else {
 				resultTx = recreateTransaction(actualFee, outputAmount, outAddr, resultTx->getRemark(),
-											   getMemo());
+											   getMemo(), _transaction->GetAssetID());
 			}
 
 			completedTransactionAssetID(resultTx);
@@ -45,7 +45,7 @@ namespace Elastos {
 										 "Tx complete asset ID without output");
 
 			UInt256 zero = UINT256_ZERO;
-			UInt256 assetID = Asset::GetELAAsset();
+			UInt256 assetID = Asset::GetELAAssetID();
 
 			for (size_t i = 0; i < transaction->getSize(); ++i) {
 				if (UInt256Eq(&transaction->getOutputs()[0].getAssetId(), &zero) == 1) {
@@ -77,8 +77,9 @@ namespace Elastos {
 
 		TransactionPtr
 		TransactionCompleter::recreateTransaction(uint64_t fee, uint64_t amount, const std::string &toAddress,
-												  const std::string &remark, const std::string &memo) {
-			return _wallet->createTransaction("", fee, amount, toAddress, remark, memo);
+												  const std::string &remark, const std::string &memo,
+												  const UInt256 &assetID) {
+			return _wallet->createTransaction("", fee, amount, toAddress, assetID, remark, memo);
 		}
 
 		void TransactionCompleter::modifyTransactionChange(const TransactionPtr &transaction, uint64_t actualChange) {
@@ -90,7 +91,7 @@ namespace Elastos {
 				std::string changeAddress = _wallet->getAllAddresses()[0];
 				TransactionOutput output;
 				output.setAmount(actualChange);
-				output.setAssetId(Asset::GetELAAsset());
+				output.setAssetId(Asset::GetELAAssetID());
 				output.setOutputLock(0);
 				UInt168 u168Address = UINT168_ZERO;
 				Utils::UInt168FromAddress(u168Address, changeAddress);

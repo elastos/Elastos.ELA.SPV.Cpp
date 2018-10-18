@@ -218,6 +218,14 @@ namespace Elastos {
 					const std::string &signature) = 0;
 
 			/**
+			 * Get an asset details by specified asset ID
+			 * @param assetID asset hex code from asset hash.
+			 * @return details about asset in json format.
+			 */
+			virtual nlohmann::json GetAssetDetails(
+					const std::string &assetID) const = 0;
+
+			/**
 			 * Get root public key of current sub wallet.
 			 * @return root public key with hex string format.
 			 */

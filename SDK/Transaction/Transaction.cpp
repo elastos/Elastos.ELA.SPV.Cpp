@@ -38,6 +38,7 @@ namespace Elastos {
 				_blockHeight(TX_UNCONFIRMED),
 				_payloadVersion(0),
 				_fee(0),
+				_assetTableID(UINT32_MAX),
 				_payload(nullptr),
 				_type(DEFAULT_PAYLOAD_TYPE),
 				_isRegistered(false) {
@@ -49,6 +50,7 @@ namespace Elastos {
 
 		Transaction &Transaction::operator=(const Transaction &orig) {
 			_isRegistered = orig._isRegistered;
+			_assetTableID = orig._assetTableID;
 
 			_type = orig._type;
 			_payloadVersion = orig._payloadVersion;
@@ -101,8 +103,7 @@ namespace Elastos {
 		}
 
 		const UInt256 &Transaction::getHash() const {
-			UInt256 emptyHash = UINT256_ZERO;
-			if (UInt256Eq(&_txHash, &emptyHash)) {
+			if (UInt256IsZero(&_txHash)) {
 				ByteStream ostream;
 				serializeUnsigned(ostream);
 				CMBlock buff = ostream.getBuffer();
@@ -724,6 +725,21 @@ namespace Elastos {
 
 		bool Transaction::IsEqual(const Transaction *tx) const {
 			return (tx == this || UInt256Eq(&_txHash, &tx->getHash()));
+		}
+
+		UInt256 Transaction::GetAssetID() const {
+			UInt256 result = UINT256_ZERO;
+			if (!_outputs.empty())
+				result = _outputs.begin()->getAssetId();
+			return result;
+		}
+
+		uint32_t Transaction::GetAssetTableID() const {
+			return _assetTableID;
+		}
+
+		void Transaction::SetAssetTableID(uint32_t assetTableID) {
+			_assetTableID = assetTableID;
 		}
 
 	}

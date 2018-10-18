@@ -37,17 +37,15 @@ namespace Elastos {
 		public:
 			class Listener {
 			public:
-				// func balanceChanged(_ balance: UInt64)
 				virtual void balanceChanged(uint64_t balance) = 0;
 
-				// func txAdded(_ tx: BRTxRef)
 				virtual void onTxAdded(const TransactionPtr &transaction) = 0;
 
-				// func txUpdated(_ txHashes: [UInt256], blockHeight: UInt32, timestamp: UInt32)
 				virtual void onTxUpdated(const std::string &hash, uint32_t blockHeight, uint32_t timeStamp) = 0;
 
-				// func txDeleted(_ txHash: UInt256, notifyUser: Bool, recommendRescan: Bool)
-				virtual void onTxDeleted(const std::string &hash, bool notifyUser, bool recommendRescan) = 0;
+				virtual void
+				onTxDeleted(const std::string &hash, const std::string &assetID, bool notifyUser,
+							bool recommendRescan) = 0;
 			};
 
 		public:
@@ -101,12 +99,10 @@ namespace Elastos {
 
 			TransactionPtr
 			createTransaction(const std::string &fromAddress, uint64_t fee, uint64_t amount,
-							  const std::string &toAddress, const std::string &remark,
+							  const std::string &toAddress, const UInt256 &assetID, const std::string &remark,
 							  const std::string &memo);
 
 			bool containsTransaction(const TransactionPtr &transaction);
-
-			bool containsTransaction(const UInt256 &hash);
 
 			bool registerTransaction(const TransactionPtr &transaction);
 
@@ -176,7 +172,6 @@ namespace Elastos {
 			void SetTxUnconfirmedAfter(uint32_t blockHeight);
 
 
-
 			const std::vector<std::string> &getListeningAddrs() const;
 
 			std::vector<Address> UnusedAddresses(uint32_t gapLimit, bool internal);
@@ -184,12 +179,6 @@ namespace Elastos {
 		protected:
 
 			bool AddressFilter(const std::string &fromAddress, const std::string &filterAddress);
-
-			int UTXOCompareAscending(const void *o1, const void *o2);
-
-			int UTXOCompareDescending(const void *o1, const void *o2);
-
-			void SortUTXOForAmount(uint64_t amount);
 
 			TransactionPtr CreateTxForOutputs(const std::vector<TransactionOutput> &outputs,
 											  const std::string &fromAddress,
@@ -208,13 +197,15 @@ namespace Elastos {
 
 			void txUpdated(const std::vector<UInt256> &txHashes, uint32_t blockHeight, uint32_t timestamp);
 
-			void txDeleted(const UInt256 &txHash, int notifyUser, int recommendRescan);
+			void txDeleted(const UInt256 &txHash, const UInt256 &assetID, int notifyUser, int recommendRescan);
 
 			uint64_t BalanceAfterTx(const TransactionPtr &tx);
 
 			void sortTransations();
 
 			uint64_t AmountSentByTx(const TransactionPtr &tx);
+
+			UInt256 GetUniqueAssetID(const std::vector<TransactionOutput> &outputs) const;
 
 		protected:
 			uint64_t _balance, _totalSent, _totalReceived, _feePerKb;

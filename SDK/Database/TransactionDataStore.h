@@ -25,11 +25,12 @@ namespace Elastos {
 			{
 			}
 
-			TransactionEntity(CMBlock buff, uint32_t blockHeight, uint32_t timeStamp,
+			TransactionEntity(CMBlock buff, uint32_t blockHeight, uint32_t timeStamp, uint32_t assetTableID,
 							  const std::string &remark, const std::string &txHash) :
 				buff(buff),
 				blockHeight(blockHeight),
 				timeStamp(timeStamp),
+				assetTableID(assetTableID),
 				remark(remark),
 				txHash(txHash)
 			{
@@ -38,6 +39,7 @@ namespace Elastos {
 			CMBlock buff;
 			uint32_t blockHeight;
 			uint32_t timeStamp;
+			uint32_t assetTableID;
 			std::string remark;
 			std::string txHash;
 		};
@@ -69,6 +71,7 @@ namespace Elastos {
 			const std::string TX_TIME_STAMP = "transactionTimeStamp";
 			const std::string TX_ISO = "transactionISO";
 			const std::string TX_REMARK = "transactionRemark";
+			const std::string TX_ASSETID = "assetID";
 
 			const std::string TX_DATABASE_CREATE = "create table if not exists " + TX_TABLE_NAME + " (" +
 				TX_COLUMN_ID + " text not null, " +
@@ -76,6 +79,7 @@ namespace Elastos {
 				TX_BLOCK_HEIGHT + " integer, " +
 				TX_TIME_STAMP + " integer, " +
 				TX_REMARK + " text DEFAULT '', " +
+				TX_ASSETID + " integer, " +
 				TX_ISO + " text DEFAULT 'ELA' );";
 		};
 

@@ -11,6 +11,7 @@
 #include <Core/BRBIP32Sequence.h>
 #include <SDK/Common/ParamChecker.h>
 #include <SDK/ELACoreExt/Payload/Asset.h>
+#include <SDK/ELACoreExt/Payload/PayloadRegisterAsset.h>
 
 #include "BRAddress.h"
 #include "BRBIP39Mnemonic.h"
@@ -249,8 +250,9 @@ namespace Elastos {
 
 					// check for sufficient total funds before building a smaller transaction
 					if (balance < amount + _txFee(_feePerKb,
-								 10 + _utxos.size() * TX_INPUT_SIZE + (outputs.size() + 1) * TX_OUTPUT_SIZE +
-								 cpfpSize))
+												  10 + _utxos.size() * TX_INPUT_SIZE +
+												  (outputs.size() + 1) * TX_OUTPUT_SIZE +
+												  cpfpSize))
 						break;
 					lock.unlock();
 
@@ -265,6 +267,7 @@ namespace Elastos {
 													 "Tx size too large, amount should less than " +
 													 std::to_string(maxAmount),
 													 maxAmount);
+						//todo automatic create new transaction if needed
 //						std::vector<TransactionOutput> newOutputs = outputs;
 //						newOutputs[outputs.size() - 1].setAmount(newOutputs[outputs.size() - 1].getAmount() -
 //																 amount + feeAmount -
@@ -279,6 +282,7 @@ namespace Elastos {
 													 "Tx size too large, amount should less than " +
 													 std::to_string(maxAmount),
 													 maxAmount);
+						//todo automatic create new transaction if needed
 //						std::vector<TransactionOutput> newOutputs;
 //						newOutputs.insert(newOutputs.end(), outputs.begin(), outputs.begin() + outputs.size() - 1);
 //						transaction = CreateTxForOutputs(newOutputs, fromAddress, filter); // remove last output
@@ -329,7 +333,7 @@ namespace Elastos {
 
 		TransactionPtr
 		Wallet::createTransaction(const std::string &fromAddress, uint64_t fee, uint64_t amount,
-								  const std::string &toAddress, const std::string &remark,
+								  const std::string &toAddress, const UInt256 &assetID, const std::string &remark,
 								  const std::string &memo) {
 			UInt168 u168Address = UINT168_ZERO;
 			ParamChecker::checkCondition(!fromAddress.empty() && !Utils::UInt168FromAddress(u168Address, fromAddress),
@@ -341,7 +345,7 @@ namespace Elastos {
 			TransactionOutput output;
 			output.setProgramHash(u168Address);
 			output.setAmount(amount);
-			output.setAssetId(Asset::GetELAAsset());
+			output.setAssetId(assetID);
 			output.setOutputLock(0);
 
 			std::vector<TransactionOutput> outputs = {output};
@@ -367,13 +371,6 @@ namespace Elastos {
 			{
 				boost::mutex::scoped_lock scoped_lock(lock);
 				result = WalletContainsTx(transaction);
-			}
-			return result;
-		}
-
-		bool Wallet::containsTransaction(const UInt256 &hash) {
-			bool result = false;
-			{
 			}
 			return result;
 		}
@@ -473,8 +470,14 @@ namespace Elastos {
 						}
 					}
 
+					UInt256 assetID = UINT256_ZERO;
+					if (tx->getTransactionType() == Transaction::RegisterAsset) {
+						PayloadRegisterAsset *registerAsset = static_cast<PayloadRegisterAsset *>(tx->getPayload());
+						assetID = registerAsset->getAsset().GetHash();
+					}
+
 					balanceChanged(_balance);
-					txDeleted(transactionHash, notifyUser, recommendRescan);
+					txDeleted(transactionHash, assetID, notifyUser, recommendRescan);
 				}
 
 				array_free(hashes);
@@ -942,10 +945,11 @@ namespace Elastos {
 			}
 		}
 
-		void Wallet::txDeleted(const UInt256 &txHash, int notifyUser, int recommendRescan) {
+		void Wallet::txDeleted(const UInt256 &txHash, const UInt256 &assetID, int notifyUser, int recommendRescan) {
 			if (!_listener.expired()) {
-				_listener.lock()->onTxDeleted(Utils::UInt256ToString(txHash), static_cast<bool>(notifyUser),
-											  static_cast<bool>(recommendRescan));
+				_listener.lock()->onTxDeleted(Utils::UInt256ToString(txHash),
+											  UInt256IsZero(&assetID) ? "" : Utils::UInt256ToString(assetID),
+											  static_cast<bool>(notifyUser), static_cast<bool>(recommendRescan));
 			}
 		}
 
@@ -1063,6 +1067,16 @@ namespace Elastos {
 				txUpdated(hashes, TX_UNCONFIRMED, 0);
 				balanceChanged(_balance);
 			}
+		}
+
+		UInt256 Wallet::GetUniqueAssetID(const std::vector<TransactionOutput> &outputs) const {
+			ParamChecker::checkCondition(outputs.empty(), Error::Code::CreateTransaction, "Output list is empty");
+			UInt256 result = outputs.begin()->getAssetId();
+			for (std::vector<TransactionOutput>::const_iterator it = outputs.cbegin() + 1; it != outputs.cend(); ++it) {
+				ParamChecker::checkCondition(!UInt256Eq(&result, &it->getAssetId()), Error::Code::CreateTransaction,
+											 "Asset ID should be unique");
+			}
+			return result;
 		}
 
 	}
