@@ -65,7 +65,7 @@ namespace Elastos {
 			_walletManager->registerPeerManagerListener(this);
 
 			if (info.getFeePerKb() > 0) {
-				_walletManager->getWallet()->setFeePerKb(info.getFeePerKb());
+				_walletManager->getWallet()->setFeePerKb(Asset::GetELAAssetID(), info.getFeePerKb());
 			}
 		}
 
@@ -82,13 +82,13 @@ namespace Elastos {
 		}
 
 		nlohmann::json SubWallet::GetBalanceInfo() {
-			return _walletManager->getWallet()->GetBalanceInfo();
+			return _walletManager->getWallet()->GetBalanceInfo(Asset::GetELAAssetID());
 		}
 
 		uint64_t SubWallet::GetBalance() {
 			Log::getLogger()->info("chain = {}, balance = {}", _info.getChainId(),
-								   _walletManager->getWallet()->getBalance());
-			return _walletManager->getWallet()->getBalance();
+								   _walletManager->getWallet()->getBalance(Asset::GetELAAssetID()));
+			return _walletManager->getWallet()->getBalance(Asset::GetELAAssetID());
 		}
 
 		std::string SubWallet::CreateAddress() {
@@ -112,7 +112,7 @@ namespace Elastos {
 		}
 
 		uint64_t SubWallet::GetBalanceWithAddress(const std::string &address) {
-			return _walletManager->getWallet()->GetBalanceWithAddress(address);
+			return _walletManager->getWallet()->GetBalanceWithAddress(Asset::GetELAAssetID(), address);
 		}
 
 		void SubWallet::AddCallback(ISubWalletCallback *subCallback) {
@@ -128,8 +128,9 @@ namespace Elastos {
 		nlohmann::json SubWallet::CreateTransaction(const std::string &fromAddress, const std::string &toAddress,
 													uint64_t amount, const std::string &memo,
 													const std::string &remark) {
-			boost::scoped_ptr<TxParam> txParam(TxParamFactory::createTxParam(Normal, fromAddress, toAddress, amount,
-																			 _info.getMinFee(), memo, remark));
+			boost::scoped_ptr<TxParam> txParam(
+					TxParamFactory::createTxParam(Normal, fromAddress, toAddress, amount, _info.getMinFee(), memo,
+												  remark, Asset::GetELAAssetID()));
 			TransactionPtr transaction = createTransaction(txParam.get());
 			ParamChecker::checkCondition(!transaction, Error::CreateTransaction,
 										 "create transaction error.");
@@ -167,7 +168,7 @@ namespace Elastos {
 			for (size_t i = 0; i < realCount; ++i) {
 				nlohmann::json txJson;
 				transactions[i]->generateExtraTransactionInfo(txJson, _walletManager->getWallet(),
-															 _walletManager->getPeerManager()->getLastBlockHeight());
+															  _walletManager->getPeerManager()->getLastBlockHeight());
 				jsonList[i] = txJson;
 			}
 			j["Transactions"] = jsonList;
@@ -179,8 +180,8 @@ namespace Elastos {
 		SubWallet::createTransaction(TxParam *param) const {
 			TransactionPtr ptr = _walletManager->getWallet()->
 					createTransaction(param->getFromAddress(), std::max(param->getFee(), _info.getMinFee()),
-									  param->getAmount(), param->getToAddress(), param->getRemark(),
-									  param->getMemo());
+									  param->getAmount(), param->getToAddress(), param->getAssetId(),
+									  param->getRemark(), param->getMemo());
 			if (!ptr) return nullptr;
 
 			ptr->setTransactionType(Transaction::TransferAsset);
@@ -214,10 +215,10 @@ namespace Elastos {
 			return std::max(transaction->calculateFee(feePerKb), _info.getMinFee());
 		}
 
-		void SubWallet::balanceChanged(uint64_t balance) {
+		void SubWallet::balanceChanged() {
 			std::for_each(_callbacks.begin(), _callbacks.end(),
-						  [&balance](ISubWalletCallback *callback) {
-							  callback->OnBalanceChanged(balance);
+						  [](ISubWalletCallback *callback) {
+							  callback->OnBalanceChanged();
 						  });
 		}
 
@@ -254,7 +255,8 @@ namespace Elastos {
 			}
 		}
 
-		void SubWallet::onTxDeleted(const std::string &hash, const std::string &assetID, bool notifyUser, bool recommendRescan) {
+		void SubWallet::onTxDeleted(const std::string &hash, const std::string &assetID, bool notifyUser,
+									bool recommendRescan) {
 			Log::getLogger()->info("onTxDeleted: hash = {}", hash);
 			fireTransactionStatusChanged(hash, SubWalletCallback::convertToString(SubWalletCallback::Deleted),
 										 nlohmann::json(), 0);
@@ -271,7 +273,7 @@ namespace Elastos {
 		}
 
 		nlohmann::json SubWallet::SignTransaction(const nlohmann::json &rawTransaction,
-																   const std::string &payPassword) {
+												  const std::string &payPassword) {
 			TransactionPtr transaction(new Transaction());
 			transaction->fromJson(rawTransaction);
 			_walletManager->getWallet()->signTransaction(transaction, payPassword);
@@ -401,7 +403,9 @@ namespace Elastos {
 			std::for_each(_callbacks.begin(), _callbacks.end(),
 						  [blockHeight, this](ISubWalletCallback *callback) {
 							  callback->OnBlockHeightIncreased(
-									  blockHeight, (int)(_walletManager->getPeerManager()->getSyncProgress(_syncStartHeight) * 100));
+									  blockHeight,
+									  (int) (_walletManager->getPeerManager()->getSyncProgress(_syncStartHeight) *
+											 100));
 						  });
 		}
 
@@ -444,6 +448,21 @@ namespace Elastos {
 				result["Signers"] = subAccount->GetTransactionSignedSigners(transaction);
 			}
 			return result;
+		}
+
+		nlohmann::json SubWallet::GetAssetDetails(const std::string &assetID) const {
+			Asset asset = _walletManager->FindAsset(Utils::UInt256FromString(assetID));
+			return asset.toJson();
+		}
+
+		nlohmann::json SubWallet::GetAllAssets() const {
+			//todo complete me
+			return nlohmann::json();
+		}
+
+		nlohmann::json SubWallet::GetAllSupportedAssets() const {
+			//todo complete me
+			return nlohmann::json();
 		}
 
 	}

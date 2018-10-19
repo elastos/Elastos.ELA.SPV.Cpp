@@ -37,17 +37,18 @@ namespace Elastos {
 																	const nlohmann::json &sidechainIndices,
 																	const std::string &memo,
 																	const std::string &remark) {
-			boost::scoped_ptr<TxParam> txParam(TxParamFactory::createTxParam(Mainchain, fromAddress, toAddress, amount,
-																			 _info.getMinFee(), memo, remark));
+			boost::scoped_ptr<TxParam> txParam(
+					TxParamFactory::createTxParam(Mainchain, fromAddress, toAddress, amount, _info.getMinFee(), memo,
+												  remark, Asset::GetELAAssetID()));
 			txParam->setAssetId(Asset::GetELAAssetID());
 
 			ParamChecker::checkJsonArray(sidechainAccounts, 1, "Side chain accounts");
 			ParamChecker::checkJsonArray(sidechainAmounts, 1, "Side chain amounts");
 			ParamChecker::checkJsonArray(sidechainIndices, 1, "Side chain indices");
 
-			std::vector <std::string> accounts = sidechainAccounts.get < std::vector < std::string >> ();
-			std::vector <uint64_t> amounts = sidechainAmounts.get < std::vector < uint64_t >> ();
-			std::vector <uint64_t> indexs = sidechainIndices.get < std::vector < uint64_t >> ();
+			std::vector<std::string> accounts = sidechainAccounts.get<std::vector<std::string >>();
+			std::vector<uint64_t> amounts = sidechainAmounts.get<std::vector<uint64_t >>();
+			std::vector<uint64_t> indexs = sidechainIndices.get<std::vector<uint64_t >>();
 
 			ParamChecker::checkCondition(accounts.size() != amounts.size() || accounts.size() != indexs.size(),
 										 Error::DepositParam, "Invalid deposit parameters of side chain");
@@ -72,9 +73,10 @@ namespace Elastos {
 			if (depositTxParam == nullptr) {
 				ptr = SubWallet::createTransaction(param);
 			} else {
-				ptr = _walletManager->getWallet()->
-						createTransaction(param->getFromAddress(), param->getFee(), param->getAmount(),
-										  param->getToAddress(), param->getRemark(), param->getMemo());
+				ptr = _walletManager->getWallet()->createTransaction(param->getFromAddress(), param->getFee(),
+																	 param->getAmount(), param->getToAddress(),
+																	 param->getAssetId(), param->getRemark(),
+																	 param->getMemo());
 
 				if (!ptr) return nullptr;
 

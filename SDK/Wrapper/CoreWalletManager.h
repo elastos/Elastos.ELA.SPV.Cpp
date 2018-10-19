@@ -170,7 +170,7 @@ namespace Elastos {
 		public:
 			WrappedExceptionWalletListener(Wallet::Listener *listener);
 
-			virtual void balanceChanged(uint64_t balance);
+			virtual void balanceChanged();
 
 			virtual void onTxAdded(const TransactionPtr &transaction);
 
@@ -188,7 +188,7 @@ namespace Elastos {
 		public:
 			WrappedExecutorWalletListener(Wallet::Listener *listener, Executor *executor);
 
-			virtual void balanceChanged(uint64_t balance);
+			virtual void balanceChanged();
 
 			virtual void onTxAdded(const TransactionPtr &transaction);
 

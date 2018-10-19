@@ -5,7 +5,8 @@
 #include <boost/bind.hpp>
 
 #include "UTXOList.h"
-#include "TransactionInput.h"
+#include "SDK/Transaction/TransactionInput.h"
+#include "ParamChecker.h"
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -64,6 +65,10 @@ namespace Elastos {
 
 			if (ThresholdIndex > 0)
 				std::reverse(_utxos.begin(), _utxos.begin() + ThresholdIndex);
+		}
+
+		const std::vector<UTXO> &UTXOList::GetUTXOs() const {
+			return _utxos;
 		}
 
 	}

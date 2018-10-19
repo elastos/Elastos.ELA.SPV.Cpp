@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <boost/scoped_ptr.hpp>
+#include <SDK/Common/Utils.h>
 
 #include "SidechainSubWallet.h"
 #include "ELACoreExt/Payload/PayloadTransferCrossChainAsset.h"
@@ -18,7 +19,7 @@ namespace Elastos {
 		SidechainSubWallet::SidechainSubWallet(const CoinInfo &info, const MasterPubKeyPtr &masterPubKey,
 											   const ChainParams &chainParams, const PluginTypes &pluginTypes,
 											   MasterWallet *parent) :
-			SubWallet(info, masterPubKey, chainParams, pluginTypes, parent) {
+				SubWallet(info, masterPubKey, chainParams, pluginTypes, parent) {
 
 		}
 
@@ -34,8 +35,9 @@ namespace Elastos {
 																	 const nlohmann::json &mainchainIndexs,
 																	 const std::string &memo,
 																	 const std::string &remark) {
-			boost::scoped_ptr<TxParam> txParam(TxParamFactory::createTxParam(Sidechain, fromAddress, toAddress, amount,
-																			 _info.getMinFee(), memo, remark));
+			boost::scoped_ptr<TxParam> txParam(
+					TxParamFactory::createTxParam(Sidechain, fromAddress, toAddress, amount, _info.getMinFee(), memo,
+												  remark, Asset::GetELAAssetID()));
 
 			ParamChecker::checkJsonArray(mainchainAccounts, 1, "Main chain accounts");
 			ParamChecker::checkJsonArray(mainchainAmounts, 1, "Main chain amounts");
@@ -69,8 +71,9 @@ namespace Elastos {
 			WithdrawTxParam *withdrawTxParam = dynamic_cast<WithdrawTxParam *>(param);
 			if (withdrawTxParam != nullptr) {
 				TransactionPtr ptr = _walletManager->getWallet()->
-					createTransaction(param->getFromAddress(), param->getFee(), param->getAmount(),
-									  param->getToAddress(), param->getRemark(), param->getMemo());
+						createTransaction(param->getFromAddress(), param->getFee(), param->getAmount(),
+										  param->getToAddress(), param->getAssetId(), param->getRemark(),
+										  param->getMemo());
 				if (!ptr) return nullptr;
 
 				ptr->setTransactionType(Transaction::TransferCrossChainAsset);
@@ -82,7 +85,7 @@ namespace Elastos {
 							  });
 
 				PayloadTransferCrossChainAsset *payloadTransferCrossChainAsset =
-					static_cast<PayloadTransferCrossChainAsset *>(ptr->getPayload());
+						static_cast<PayloadTransferCrossChainAsset *>(ptr->getPayload());
 				payloadTransferCrossChainAsset->setCrossChainData(withdrawTxParam->getCrossChainAddress(),
 																  withdrawTxParam->getCrossChainOutputIndexs(),
 																  withdrawTxParam->getCrosschainAmouts());
@@ -112,6 +115,33 @@ namespace Elastos {
 			j["Type"] = "Sidechain";
 			j["Account"] = _subAccount->GetBasicInfo();
 			return j;
+		}
+
+		nlohmann::json
+		SidechainSubWallet::CreateTransaction(const std::string &fromAddress, const std::string &toAddress,
+											  uint64_t amount, const std::string &assetID, const std::string &memo,
+											  const std::string &remark) {
+			boost::scoped_ptr<TxParam> txParam(
+					TxParamFactory::createTxParam(Normal, fromAddress, toAddress, amount, _info.getMinFee(), memo,
+												  remark, Utils::UInt256FromString(assetID)));
+			TransactionPtr transaction = createTransaction(txParam.get());
+			ParamChecker::checkCondition(!transaction, Error::CreateTransaction,
+										 "create transaction error.");
+			return transaction->toJson();
+		}
+
+		nlohmann::json SidechainSubWallet::GetBalanceInfo(const std::string &assetID) {
+			return _walletManager->getWallet()->GetBalanceInfo(Utils::UInt256FromString(assetID));
+		}
+
+		uint64_t SidechainSubWallet::GetBalance(const std::string &assetID) {
+			Log::getLogger()->info("chain = {}, balance = {}", _info.getChainId(),
+								   _walletManager->getWallet()->getBalance(Utils::UInt256FromString(assetID)));
+			return _walletManager->getWallet()->getBalance(Utils::UInt256FromString(assetID));
+		}
+
+		uint64_t SidechainSubWallet::GetBalanceWithAddress(const std::string &assetID, const std::string &address) {
+			return _walletManager->getWallet()->GetBalanceWithAddress(Utils::UInt256FromString(assetID), address);
 		}
 	}
 }

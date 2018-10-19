@@ -43,6 +43,8 @@ namespace Elastos {
 
 			void Clear();
 
+			const std::vector<UTXO> &GetUTXOs() const;
+
 			void AddByTxInput(const TransactionInput &input);
 
 			void AddUTXO(const UInt256 &hash, uint32_t index);
