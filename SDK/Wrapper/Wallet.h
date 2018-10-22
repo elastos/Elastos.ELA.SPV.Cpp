@@ -151,6 +151,10 @@ namespace Elastos {
 
 			void UpdateAssets(const UInt256ValueMap<uint32_t> &assetIDMap);
 
+			nlohmann::json GetAllSupportedAssets() const;
+
+			bool ContainsAsset(const std::string &assetID);
+
 		protected:
 
 			bool AddressFilter(const std::string &fromAddress, const std::string &filterAddress);

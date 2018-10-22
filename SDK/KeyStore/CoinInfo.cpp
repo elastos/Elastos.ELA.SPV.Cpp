@@ -2,6 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <SDK/Common/Utils.h>
+#include <SDK/ELACoreExt/Payload/Asset.h>
 #include "CoinInfo.h"
 
 namespace Elastos {
@@ -93,6 +95,7 @@ namespace Elastos {
 			j["ReconnectSeconds"] = p._reconnectSeconds;
 			j["ChainCode"] = p._chainCode;
 			j["PublicKey"] = p._publicKey;
+			j["VisibleAssets"] = p.VisibleAssetsToJson();
 		}
 
 		void from_json(const nlohmann::json &j, CoinInfo &p) {
@@ -108,6 +111,10 @@ namespace Elastos {
 			p._publicKey = j["PublicKey"].get<std::string>();
 			if (j.find("EnableP2P") != j.end())
 				p._enableP2P = j["EnableP2P"].get<bool>();
+			if (j.find("VisibleAssets") != j.end()) {
+				p.VisibleAssetsFromJson(j["VisibleAssets"]);
+			} else
+				p._visibleAssets = {Asset::GetELAAssetID()};
 		}
 
 		int CoinInfo::getForkId() const {
@@ -156,7 +163,7 @@ namespace Elastos {
 
 		void CoinInfo::setReconnectSeconds(uint32_t reconnectSeconds) {
 			_reconnectSeconds = reconnectSeconds;
-			}
+		}
 
 		const std::string &CoinInfo::getChainCode() const {
 			return _chainCode;
@@ -173,5 +180,34 @@ namespace Elastos {
 		void CoinInfo::setPublicKey(const std::string &pubKey) {
 			_publicKey = pubKey;
 		}
+
+		const std::vector<UInt256> &CoinInfo::GetVisibleAssets() const {
+			return _visibleAssets;
+		}
+
+		void CoinInfo::SetVisibleAssets(const std::vector<UInt256> &assets) {
+			_visibleAssets = assets;
+		}
+
+		nlohmann::json CoinInfo::VisibleAssetsToJson() const {
+			std::vector<std::string> assets;
+			std::for_each(_visibleAssets.begin(), _visibleAssets.end(), [&assets](const UInt256 &asset) {
+				assets.push_back(Utils::UInt256ToString(asset));
+			});
+			nlohmann::json j;
+			std::for_each(assets.begin(), assets.end(), [&j](const std::string &asset) {
+				j.push_back(asset);
+			});
+			return j;
+		}
+
+		void CoinInfo::VisibleAssetsFromJson(const nlohmann::json &j) {
+			_visibleAssets.clear();
+			std::vector<std::string> assets = j.get<std::vector<std::string>>();
+			std::for_each(assets.begin(), assets.end(), [this](const std::string &assetStr) {
+				_visibleAssets.push_back(Utils::UInt256FromString(assetStr));
+			});
+		}
+
 	}
 }

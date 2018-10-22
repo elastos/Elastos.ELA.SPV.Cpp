@@ -455,15 +455,5 @@ namespace Elastos {
 			return asset.toJson();
 		}
 
-		nlohmann::json SubWallet::GetAllAssets() const {
-			//todo complete me
-			return nlohmann::json();
-		}
-
-		nlohmann::json SubWallet::GetAllSupportedAssets() const {
-			//todo complete me
-			return nlohmann::json();
-		}
-
 	}
 }
