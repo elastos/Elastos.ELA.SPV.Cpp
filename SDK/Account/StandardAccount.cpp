@@ -3,7 +3,6 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "SDK/Common/Utils.h"
-#include "SDK/Common/WalletTool.h"
 #include "Core/BRBIP39Mnemonic.h"
 #include "SDK/Common/ParamChecker.h"
 #include "StandardAccount.h"
@@ -23,9 +22,9 @@ namespace Elastos {
 			phraseData.SetMemFixed(phrase.c_str(), phrase.size() + 1);
 			resetMnemonic(_language);
 
-			if (!WalletTool::PhraseIsValid(phraseData, _mnemonic->words())) {
+			if (!Utils::PhraseIsValid(phraseData, _mnemonic->words())) {
 				resetMnemonic("chinese");
-				ParamChecker::checkCondition(!WalletTool::PhraseIsValid(phraseData, _mnemonic->words()),
+				ParamChecker::checkCondition(!Utils::PhraseIsValid(phraseData, _mnemonic->words()),
 											 Error::Mnemonic, "Invalid mnemonic words");
 			}
 
