@@ -16,8 +16,6 @@ namespace Elastos {
 		}
 
 		bool AddressMessage::Accept(const CMBlock &msg) {
-			_peer->Pdebug("Accept address message");
-
 			size_t off = 0;
 			size_t count = UInt64GetLE(&msg[off]);
 			off += sizeof(uint64_t);
