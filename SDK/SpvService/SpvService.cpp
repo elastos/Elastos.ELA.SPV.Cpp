@@ -56,7 +56,7 @@ namespace Elastos {
 		void SpvService::stop() {
 			if (_reconnectTimer != nullptr) {
 				_reconnectTimer->cancel();
-				Log::getLogger()->info("Cancel the timer");
+				Log::info("Cancel the timer");
 			}
 
 			getPeerManager()->disconnect();
@@ -68,7 +68,7 @@ namespace Elastos {
 			nlohmann::json sendingTx = transaction->toJson();
 			ByteStream byteStream;
 			transaction->Serialize(byteStream);
-			Log::getLogger()->info("Sending transaction, json info: {}, hex String: {}",
+			Log::info("Sending transaction, json info: {}, hex String: {}",
 								   sendingTx.dump(), Utils::encodeHex(byteStream.getBuffer()));
 
 			if (_peerManager->getConnectStatus() != Peer::Connected) {
@@ -315,7 +315,7 @@ namespace Elastos {
 				ByteStream stream(blocksEntity[i].blockBytes, blocksEntity[i].blockBytes.GetSize(), false);
 				stream.setPosition(0);
 				if (!block->Deserialize(stream)) {
-					Log::getLogger()->error("block deserialize fail");
+					Log::error("block deserialize fail");
 				}
 				blocks.push_back(block);
 			}
@@ -363,7 +363,7 @@ namespace Elastos {
 		}
 
 		void SpvService::startReconnect() {
-			Log::getLogger()->info("reconnect {}s later...", _reconnectSeconds);
+			Log::info("reconnect {}s later...", _reconnectSeconds);
 			_reconnectTimer = boost::shared_ptr<boost::asio::deadline_timer>(new boost::asio::deadline_timer(
 					_reconnectService, boost::posix_time::seconds(_reconnectSeconds)));
 			_reconnectTimer->async_wait(

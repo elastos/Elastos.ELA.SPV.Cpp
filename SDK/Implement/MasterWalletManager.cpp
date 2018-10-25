@@ -151,7 +151,7 @@ namespace Elastos {
 			if (_masterWalletMap.find(masterWalletId) == _masterWalletMap.end())
 				return;
 
-			Log::getLogger()->info("Master wallet manager remove master wallet ({})", masterWalletId);
+			Log::info("Master wallet manager remove master wallet ({})", masterWalletId);
 
 			IMasterWallet *masterWallet = _masterWalletMap[masterWalletId];
 
@@ -159,27 +159,27 @@ namespace Elastos {
 			if (saveMaster) {
 				masterWalletInner->Save();
 
-				Log::getLogger()->info("Destroying sub wallets.");
+				Log::info("Destroying sub wallets.");
 				std::vector<ISubWallet *> subWallets = masterWallet->GetAllSubWallets();
 				for (int i = 0; i < subWallets.size(); ++i) {
 					masterWallet->DestroyWallet(subWallets[i]);
 				}
 			} else {
-				Log::getLogger()->info("Destroying sub wallets.");
+				Log::info("Destroying sub wallets.");
 				std::vector<ISubWallet *> subWallets = masterWallet->GetAllSubWallets();
 				for (int i = 0; i < subWallets.size(); ++i) {
 					masterWallet->DestroyWallet(subWallets[i]);
 				}
 
-				Log::getLogger()->info("Clearing local.", masterWalletId);
+				Log::info("Clearing local.", masterWalletId);
 				masterWalletInner->ClearLocal();
 			}
 
 
-			Log::getLogger()->info("Removing master wallet from map.");
+			Log::info("Removing master wallet from map.");
 			_masterWalletMap.erase(masterWalletId);
 
-			Log::getLogger()->info("Deleting master wallet.");
+			Log::info("Deleting master wallet.");
 			delete masterWallet;
 		}
 
@@ -304,7 +304,16 @@ namespace Elastos {
 		void MasterWalletManager::initMasterWallets() {
 			path rootPath = _rootPath;
 
-			Log::getLogger()->critical("spvsdk version {}", SPVSDK_VERSION_MESSAGE);
+			Log::setLevel(spdlog::level::from_str(SPVSDK_SPDLOG_LEVEL));
+			Log::critical("spvsdk version {}", SPVSDK_VERSION_MESSAGE);
+			Log::trace(1);
+			Log::trace("test trace... {}", 1);
+			Log::debug(1);
+			Log::debug("test debug...{}", 2);
+			Log::info(1);
+			Log::info("test info... {}", 3);
+			Log::warn(1);
+			Log::warn("test warning...{}", 4);
 
 			ParamChecker::checkPathExists(rootPath);
 
@@ -326,7 +335,7 @@ namespace Elastos {
 			}
 
 			if (_masterWalletMap.size() > 0)
-				Log::getLogger()->info("{} master wallets were loaded from local store", _masterWalletMap.size());
+				Log::info("{} master wallets were loaded from local store", _masterWalletMap.size());
 		}
 
 		std::vector<std::string> MasterWalletManager::GetAllMasterWalletIds() const {
@@ -368,13 +377,13 @@ namespace Elastos {
 						  });
 
 			if (hasRedundant) {
-				Log::getLogger()->info("Destroying sub wallets.");
+				Log::info("Destroying sub wallets.");
 				std::vector<ISubWallet *> subWallets = masterWallet->GetAllSubWallets();
 				for (int i = 0; i < subWallets.size(); ++i) {
 					masterWallet->DestroyWallet(subWallets[i]);
 				}
 
-				Log::getLogger()->info("({}) Clearing local.", masterWallet->GetId());
+				Log::info("({}) Clearing local.", masterWallet->GetId());
 				masterWallet->ClearLocal();
 				delete masterWallet;
 			} else {
