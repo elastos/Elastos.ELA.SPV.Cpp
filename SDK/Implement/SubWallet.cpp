@@ -418,6 +418,11 @@ namespace Elastos {
 						  });
 		}
 
+		const CoinInfo &SubWallet::getCoinInfo() {
+			_info.setFeePerKb(_walletManager->getWallet()->getFeePerKb(Asset::GetELAAssetID()));
+			return _info;
+		}
+
 		void SubWallet::StartP2P() {
 			if (_info.getEnableP2P())
 				_walletManager->start();

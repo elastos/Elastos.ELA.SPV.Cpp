@@ -105,6 +105,8 @@ namespace Elastos {
 
 			time_t getKeepAliveTimestamp() const;
 
+			void SetKeepAliveTimestamp(time_t t);
+
 			double getSyncProgress(uint32_t startHeight);
 
 			Peer::ConnectStatus getConnectStatus() const;
@@ -135,11 +137,15 @@ namespace Elastos {
 
 			const std::vector<UInt256> getPublishedTransactionHashes() const;
 
-			int reconnectTaskCount() const;
+			int ReconnectTaskCount() const;
 
-			int &reconnectTaskCount();
+			void SetReconnectTaskCount(int count);
 
 			const PluginType &GetPluginType() const;
+
+			const std::vector<PeerInfo> &GetPeers() const;
+
+			void SetPeers(const std::vector<PeerInfo> &peers);
 
 		public:
 			virtual void OnConnected(const PeerPtr &peer);

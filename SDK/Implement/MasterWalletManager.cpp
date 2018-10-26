@@ -306,14 +306,6 @@ namespace Elastos {
 
 			Log::setLevel(spdlog::level::from_str(SPVSDK_SPDLOG_LEVEL));
 			Log::critical("spvsdk version {}", SPVSDK_VERSION_MESSAGE);
-			Log::trace(1);
-			Log::trace("test trace... {}", 1);
-			Log::debug(1);
-			Log::debug("test debug...{}", 2);
-			Log::info(1);
-			Log::info("test info... {}", 3);
-			Log::warn(1);
-			Log::warn("test warning...{}", 4);
 
 			ParamChecker::checkPathExists(rootPath);
 

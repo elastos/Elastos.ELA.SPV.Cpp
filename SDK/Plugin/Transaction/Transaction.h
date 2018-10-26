@@ -96,6 +96,8 @@ namespace Elastos {
 
 			void addOutput(const TransactionOutput &output);
 
+			void removeChangeOutput();
+
 			void addInput(const TransactionInput &input);
 
 			size_t getSize();

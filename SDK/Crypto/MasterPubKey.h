@@ -14,6 +14,7 @@
 #include "Wrapper.h"
 #include "Key.h"
 #include "CMemBlock.h"
+#include "ByteStream.h"
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -36,9 +37,9 @@ namespace Elastos {
 
 			virtual BRMasterPubKey *getRaw() const;
 
-			CMBlock serialize() const;
+			void Serialize(ByteStream &stream) const;
 
-			void deserialize(const CMBlock &data);
+			bool Deserialize(ByteStream &stream);
 
 			CMBlock getPubKey() const;
 

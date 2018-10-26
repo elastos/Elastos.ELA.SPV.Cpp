@@ -32,29 +32,23 @@ namespace Elastos {
 				_peer->SendMessage(msg, MSG_PONG);
 				PeerManager *manager = _peer->getPeerManager();
 
-				if (time_after(time(nullptr), manager->getKeepAliveTimestamp() + 30)) {
+				if (_peer->SentGetaddr() && time_after(time(nullptr), manager->getKeepAliveTimestamp() + 30)) {
 					int haveTxPending = 0;
 
 					manager->Lock();
 					for (size_t i = manager->getPublishedTransaction().size(); i > 0; i--) {
 						if (manager->getPublishedTransaction()[i - 1].HasCallback()) {
-							_peer->Pinfo("publish pending tx hash = {}",
+							_peer->Pinfo("publish pending tx hash = {}, do not disconnect",
 										 Utils::UInt256ToString(manager->getPublishedTransactionHashes()[i - 1]));
 							haveTxPending++;
 						}
 					}
-					manager->Unlock();
 
 					if (manager->GetLastBlockHeight() >= *(uint64_t *)(uint8_t *)msg && !haveTxPending) {
-						manager->Lock();
-						if (manager->reconnectTaskCount() == 0) {
-							manager->reconnectTaskCount()++;
-							manager->Unlock();
-
-							FireRelayedPingMsg();
-						} else {
-							manager->Unlock();
-						}
+						manager->Unlock();
+						FireRelayedPingMsg();
+					} else {
+						manager->Unlock();
 					}
 				}
 			}

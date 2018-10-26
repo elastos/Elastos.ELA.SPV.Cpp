@@ -37,7 +37,8 @@ namespace Elastos {
 			Key key;
 			UInt256 chainCode;
 			BRBIP32PrivKeyPath(key.getRaw(), &chainCode, &seed, sizeof(seed), 5, 44 | BIP32_HARD,
-							   _coinIndex | BIP32_HARD, 0 | BIP32_HARD, 1, 0);
+							   _coinIndex | BIP32_HARD, 0 | BIP32_HARD, SEQUENCE_EXTERNAL_CHAIN, 0);
+			key.setPublicKey();
 			var_clean(&seed);
 			result.push_back(key);
 			return result;
