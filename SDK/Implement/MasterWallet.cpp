@@ -413,9 +413,10 @@ namespace Elastos {
 			Log::info("Master wallet init from {}, ealiest peer time = {}", _initFrom,
 								   fixedInfo.getEarliestPeerTime());
 
-			MasterPubKeyPtr masterPubKey =
-					_subWalletsPubKeyMap.find(fixedInfo.getChainId()) != _subWalletsPubKeyMap.end()
-					? _subWalletsPubKeyMap[fixedInfo.getChainId()] : nullptr;
+			MasterPubKeyMap subWalletsMasterPubKeyMap = _localStore.GetMasterPubKeyMap();
+			const MasterPubKeyPtr masterPubKey =
+				subWalletsMasterPubKeyMap.find(fixedInfo.getChainId()) != subWalletsMasterPubKeyMap.end()
+				? subWalletsMasterPubKeyMap[fixedInfo.getChainId()] : nullptr;
 			switch (fixedInfo.getWalletType()) {
 				case Mainchain:
 					return new MainchainSubWallet(fixedInfo, masterPubKey, chainParams, pluginTypes, parent);
@@ -500,15 +501,16 @@ namespace Elastos {
 		void MasterWallet::initSubWalletsPubKeyMap(const std::string &payPassword) {
 			tryInitCoinConfig();
 
-			_subWalletsPubKeyMap.clear();
+			MasterPubKeyMap subWalletsPubKeyMap;
 			typedef std::map<std::string, uint32_t> IdIndexMap;
 			IdIndexMap idIndexMap = _coinConfigReader.GetChainIdsAndIndices();
 			std::for_each(idIndexMap.begin(), idIndexMap.end(),
-						  [this, &payPassword](const IdIndexMap::value_type &item) {
-							  _subWalletsPubKeyMap[item.first] = SubAccountGenerator::GenerateMasterPubKey(
+						  [this, &subWalletsPubKeyMap, &payPassword](const IdIndexMap::value_type &item) {
+							  subWalletsPubKeyMap[item.first] = SubAccountGenerator::GenerateMasterPubKey(
 									  _localStore.Account(),
 									  item.second, payPassword);
 						  });
+			_localStore.SetMasterPubKeyMap(subWalletsPubKeyMap);
 		}
 
 		void MasterWallet::restoreLocalStore() {
@@ -520,7 +522,7 @@ namespace Elastos {
 				SubWallet *subWallet = dynamic_cast<SubWallet *>(it->second);
 				if (subWallet == nullptr) continue;
 				Log::info("Going to save configuration of subwallet '{}'", subWallet->GetChainId());
-				coinInfos.push_back(subWallet->_info);
+				coinInfos.push_back(subWallet->getCoinInfo());
 			}
 			_localStore.SetSubWalletInfoList(coinInfos);
 		}
@@ -556,11 +558,13 @@ namespace Elastos {
 				_localStore.Reset(coSigners, requiredSignCount);
 			else
 				_localStore.Reset(privKey, coSigners, payPassword, requiredSignCount);
+			_localStore.IsSingleAddress() = true;
 		}
 
 		nlohmann::json MasterWallet::GetBasicInfo() const {
 			nlohmann::json j;
 			j["Account"] = _localStore.Account()->GetBasicInfo();
+			j["Account"]["SingleAddress"] = _localStore.IsSingleAddress();
 			return j;
 		}
 

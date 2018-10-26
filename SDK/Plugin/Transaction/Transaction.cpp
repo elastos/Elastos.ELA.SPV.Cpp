@@ -200,6 +200,12 @@ namespace Elastos {
 			_outputs.push_back(o);
 		}
 
+		void Transaction::removeChangeOutput() {
+			if (_outputs.size() > 1) {
+				_outputs.erase(_outputs.begin() + 1);
+			}
+		}
+
 		void Transaction::addInput(const Elastos::ElaWallet::TransactionInput &input) {
 			_inputs.push_back(input);
 		}
