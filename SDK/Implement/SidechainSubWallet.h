@@ -53,7 +53,7 @@ namespace Elastos {
 			SidechainSubWallet(const CoinInfo &info,
 							   const MasterPubKeyPtr &masterPubKey,
 							   const ChainParams &chainParams,
-							   const PluginTypes &pluginTypes,
+							   const PluginType &pluginTypes,
 							   MasterWallet *parent);
 
 			virtual nlohmann::json GetBasicInfo() const;

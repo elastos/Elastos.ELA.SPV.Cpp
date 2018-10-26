@@ -99,7 +99,7 @@ namespace Elastos {
 			}
 		}
 
-		PeerManager::Listener::Listener(const PluginTypes &pluginTypes) :
+		PeerManager::Listener::Listener(const PluginType &pluginTypes) :
 				_pluginTypes(pluginTypes) {
 		}
 
@@ -109,11 +109,11 @@ namespace Elastos {
 								 const std::vector<MerkleBlockPtr> &blocks,
 								 const std::vector<PeerInfo> &peers,
 								 const boost::shared_ptr<PeerManager::Listener> &listener,
-								 const PluginTypes &plugins) :
+								 const PluginType &plugins) :
 				_wallet(wallet),
 				_lastBlock(nullptr),
 				_lastOrphan(nullptr),
-				_pluginTypes(plugins),
+				_pluginType(plugins),
 				_earliestKeyTime(earliestKeyTime),
 				_averageTxPerBlock(1400),
 				_maxConnectCount(PEER_MAX_CONNECTIONS),
@@ -128,7 +128,7 @@ namespace Elastos {
 
 			time_t now = time(nullptr);
 			for (size_t i = 0; i < params.getRaw()->checkpointsCount; i++) {
-				MerkleBlockPtr checkBlock = Registry::Instance()->CreateMerkleBlock(_pluginTypes.BlockType);
+				MerkleBlockPtr checkBlock = Registry::Instance()->CreateMerkleBlock(_pluginType);
 				checkBlock->setHeight(params.getRaw()->checkpoints[i].height);
 				checkBlock->setHash(UInt256Reverse(&params.getRaw()->checkpoints[i].hash));
 				checkBlock->setTimestamp(params.getRaw()->checkpoints[i].timestamp);
@@ -151,7 +151,7 @@ namespace Elastos {
 					block = blocks[i]; // find last transition block
 			}
 
-			MerkleBlockPtr orphan = Registry::Instance()->CreateMerkleBlock(_pluginTypes.BlockType);
+			MerkleBlockPtr orphan = Registry::Instance()->CreateMerkleBlock(_pluginType);
 			while (block != nullptr) {
 				_blocks.Insert(block);
 				_lastBlock = block;
@@ -1492,8 +1492,8 @@ namespace Elastos {
 			peer->Disconnect();
 		}
 
-		const PluginTypes &PeerManager::GetPluginTypes() const {
-			return _pluginTypes;
+		const PluginType &PeerManager::GetPluginType() const {
+			return _pluginType;
 		}
 
 		void PeerManager::updateBloomFilter() {
