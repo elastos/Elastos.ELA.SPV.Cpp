@@ -35,7 +35,7 @@ namespace Elastos {
 
 		SpvService::SpvService(const SubAccountPtr &subAccount, const boost::filesystem::path &dbPath,
 									 uint32_t earliestPeerTime, uint32_t reconnectSeconds, int forkId,
-									 const PluginTypes &pluginTypes, const ChainParams &chainParams) :
+									 const PluginType &pluginTypes, const ChainParams &chainParams) :
 				CoreSpvService(pluginTypes, chainParams),
 				_executor(BACKGROUND_THREAD_COUNT),
 				_databaseManager(dbPath),
@@ -310,7 +310,7 @@ namespace Elastos {
 			std::vector<MerkleBlockEntity> blocksEntity = _databaseManager.getAllMerkleBlocks(ISO);
 
 			for (size_t i = 0; i < blocksEntity.size(); ++i) {
-				MerkleBlockPtr block(Registry::Instance()->CreateMerkleBlock(_pluginTypes.BlockType));
+				MerkleBlockPtr block(Registry::Instance()->CreateMerkleBlock(_pluginTypes));
 				block->setHeight(blocksEntity[i].blockHeight);
 				ByteStream stream(blocksEntity[i].blockBytes, blocksEntity[i].blockBytes.GetSize(), false);
 				stream.setPosition(0);

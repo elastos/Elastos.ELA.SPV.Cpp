@@ -11,7 +11,7 @@
 namespace Elastos {
 	namespace ElaWallet {
 
-		CoreSpvService::CoreSpvService(const PluginTypes &pluginTypes, const ChainParams &chainParams) :
+		CoreSpvService::CoreSpvService(const PluginType &pluginTypes, const ChainParams &chainParams) :
 				PeerManager::Listener(pluginTypes),
 				_wallet(nullptr),
 				_walletListener(nullptr),
@@ -138,7 +138,7 @@ namespace Elastos {
 		}
 
 		WrappedExceptionPeerManagerListener::WrappedExceptionPeerManagerListener(PeerManager::Listener *listener,
-																				 const PluginTypes &pluginTypes) :
+																				 const PluginType &pluginTypes) :
 				PeerManager::Listener(pluginTypes),
 				_listener(listener) {
 		}
@@ -259,7 +259,7 @@ namespace Elastos {
 		WrappedExecutorPeerManagerListener::WrappedExecutorPeerManagerListener(
 				PeerManager::Listener *listener,
 				Executor *executor,
-				const PluginTypes &pluginTypes) :
+				const PluginType &pluginTypes) :
 				PeerManager::Listener(pluginTypes),
 				_listener(listener),
 				_executor(executor) {

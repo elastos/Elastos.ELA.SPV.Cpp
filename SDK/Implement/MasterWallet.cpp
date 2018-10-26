@@ -223,7 +223,7 @@ namespace Elastos {
 			info.setChainId(chainID);
 			info.setFeePerKb(feePerKb);
 
-			SubWallet *subWallet = SubWalletFactoryMethod(info, ChainParams(coinConfig), PluginTypes(coinConfig), this);
+			SubWallet *subWallet = SubWalletFactoryMethod(info, ChainParams(coinConfig), coinConfig.PluginType, this);
 			_createdWallets[chainID] = subWallet;
 			startPeerManager(subWallet);
 			Save();
@@ -256,7 +256,7 @@ namespace Elastos {
 
 				CoinConfig coinConfig = _coinConfigReader.FindConfig(coinInfoList[i].getChainId());
 				_createdWallets[coinInfoList[i].getChainId()] =
-						SubWalletFactoryMethod(coinInfoList[i], ChainParams(coinConfig), PluginTypes(coinConfig), this);
+						SubWalletFactoryMethod(coinInfoList[i], ChainParams(coinConfig), coinConfig.PluginType, this);
 			}
 		}
 
@@ -353,7 +353,7 @@ namespace Elastos {
 			for (int i = 0; i < coinInfoList.size(); ++i) {
 				CoinConfig coinConfig = _coinConfigReader.FindConfig(coinInfoList[i].getChainId());
 				ISubWallet *subWallet = SubWalletFactoryMethod(coinInfoList[i], ChainParams(coinConfig),
-															   PluginTypes(coinConfig), this);
+															   coinConfig.PluginType, this);
 				SubWallet *subWalletImpl = dynamic_cast<SubWallet *>(subWallet);
 				ParamChecker::checkCondition(subWalletImpl == nullptr, Error::CreateSubWalletError,
 											 "Recover sub wallet error");
@@ -388,7 +388,7 @@ namespace Elastos {
 		}
 
 		SubWallet *MasterWallet::SubWalletFactoryMethod(const CoinInfo &info, const ChainParams &chainParams,
-														const PluginTypes &pluginTypes, MasterWallet *parent) {
+														const PluginType &pluginTypes, MasterWallet *parent) {
 
 			CoinInfo fixedInfo = info;
 
