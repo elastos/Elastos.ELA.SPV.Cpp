@@ -30,6 +30,9 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 */
+
+#include <spawn.h>
+
 #if (defined(_WIN32) || defined(WIN32)) && !defined(_CRT_SECURE_NO_WARNINGS)
 /* This needs to come before any includes for MSVC compiler */
 #define _CRT_SECURE_NO_WARNINGS
@@ -8768,7 +8771,9 @@ static void editFunc(
     sqlite3_result_error_nomem(context);
     goto edit_func_end;
   }
-  rc = system(zCmd);
+    pid_t pid;
+    rc = posix_spawn(&pid, "", NULL, NULL, (char *const *) zCmd, NULL);
+//  rc = system(zCmd);
   sqlite3_free(zCmd);
   if( rc ){
     sqlite3_result_error(context, "EDITOR returned non-zero", -1);
@@ -11685,7 +11690,9 @@ static void output_reset(ShellState *p){
 #endif
       char *zCmd;
       zCmd = sqlite3_mprintf("%s %s", zXdgOpenCmd, p->zTempFile);
-      if( system(zCmd) ){
+        pid_t pid;
+        if( posix_spawn(&pid, "", NULL, NULL, (char *const *) zCmd, NULL) ){
+//      if( system(zCmd) ){
         utf8_printf(stderr, "Failed: [%s]\n", zCmd);
       }
       sqlite3_free(zCmd);
@@ -14718,7 +14725,9 @@ static int do_meta_command(char *zLine, ShellState *p){
       zCmd = sqlite3_mprintf(strchr(azArg[i],' ')==0?"%z %s":"%z \"%s\"",
                              zCmd, azArg[i]);
     }
-    x = system(zCmd);
+      pid_t pid;
+      x = posix_spawn(&pid, "", NULL, NULL, (char *const *) zCmd, NULL);
+//    x = system(zCmd);
     sqlite3_free(zCmd);
     if( x ) raw_printf(stderr, "System command returns %d\n", x);
   }else

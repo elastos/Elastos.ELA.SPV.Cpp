@@ -78,6 +78,35 @@ $ make
 ```
 
 
+## Build for iOS
+### Install twilio-boost-build
+Go to https://github.com/twilio/twilio-boost-build and build the library
+
+### Clone source code
+This explanation is specific to branch release_v0.3.0
+$ git clone https://github.com/ademcan/Elastos.ELA.SPV.Cpp
+$ cd Elastos.ELA.SPV.Cpp
+$ git remote add upstream git@github.com:elastos/Elastos.ELA.SPV.Cpp
+$ git checkout release_v0.3.0
+$ git pull upstream release_v0.3.0
+$ git submodule init
+$ git submodule update
+
+Edit the ThirdParty/boost.cmake on lines 7, 49 and 73 by providing the correct paths (will not be required on the long run as building twilio-boost-build can be included on the cmake file)
+$ mkdir cmake-build-ios-release
+$ cd cmake-build-ios-release
+$ cmake -DSPV_FOR_IOS=ON -G Xcode ..
+
+### Build SPVSDK on Xcode
+Open SPVSDK.xcodeproj
+Click the name of the project and select PROJECT/SPVSDK -> Build Settings
+Change Base SDK to iOS
+Wait for "Indexing | Processing files" to finish
+Select TARGE/ALL_BUILD and build for any simulator
+This will generate the final library under: Elastos.ELA.SPV.Cpp/cmake-build-ios-release/SPVSDK.build/Debug/spvsdk_object.build/Objects-normal/libspvsdk_object.a
+
+
+
 ## Development
 Patches are welcome. Please submit pull requests against the `dev` branch.
 
@@ -87,4 +116,3 @@ Patches are welcome. Please submit pull requests against the `dev` branch.
 Learn more about this repository please refer to the following links:
 - [interfaces document](https://raindust.github.io/Elastos.ELA.SPV.Cpp.Document/)
 - [wiki](https://github.com/elastos/Elastos.ELA.SPV.Cpp/wiki)
-
