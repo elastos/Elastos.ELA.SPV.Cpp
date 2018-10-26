@@ -100,12 +100,12 @@ $ cmake -DSPV_FOR_IOS=ON -G Xcode ..
 ```
 
 ### Build SPVSDK on Xcode
-Open SPVSDK.xcodeproj
-Click the name of the project and select PROJECT/SPVSDK -> Build Settings
-Change Base SDK to iOS
-Wait for "Indexing | Processing files" to finish
-Select TARGE/ALL_BUILD and build for any simulator
-This will generate the final library under: Elastos.ELA.SPV.Cpp/cmake-build-ios-release/SPVSDK.build/Debug/spvsdk_object.build/Objects-normal/libspvsdk_object.a
+* Open SPVSDK.xcodeproj
+* Click the name of the project and select PROJECT/SPVSDK -> Build Settings
+* Change Base SDK to iOS
+* Wait for "Indexing | Processing files" to finish
+* Select TARGE/ALL_BUILD and build for any simulator
+* This will generate the final library under: Elastos.ELA.SPV.Cpp/cmake-build-ios-release/SPVSDK.build/Debug/spvsdk_object.build/Objects-normal/libspvsdk_object.a
 
 
 
