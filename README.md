@@ -93,10 +93,9 @@ $ git submodule init
 $ git submodule update
 ```
 
-Edit the ThirdParty/boost.cmake on lines 7, 49 and 73 by providing the correct paths (will not be required on the long run as building twilio-boost-build can be included on the cmake file)
-```$ mkdir cmake-build-ios-release
-$ cd cmake-build-ios-release
-$ cmake -DSPV_FOR_IOS=ON -G Xcode ..
+### Build boost for iOS
+```$ cd ThirdParty/twilio-boost-build
+$ ./boost.sh -ios
 ```
 
 ### Build SPVSDK on Xcode

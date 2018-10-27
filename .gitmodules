@@ -19,3 +19,6 @@
 [submodule "ThirdParty/fruit"]
 	path = ThirdParty/fruit
 	url = git@github.com:google/fruit.git
+[submodule "ThirdParty/twilio-boost-build"]
+	path = ThirdParty/twilio-boost-build
+	url = https://github.com/twilio/twilio-boost-build
