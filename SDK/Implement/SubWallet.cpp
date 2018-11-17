@@ -86,8 +86,6 @@ namespace Elastos {
 		}
 
 		uint64_t SubWallet::GetBalance() {
-			Log::info("chain = {}, balance = {}", _info.getChainId(),
-								   _walletManager->getWallet()->getBalance(Asset::GetELAAssetID()));
 			return _walletManager->getWallet()->getBalance(Asset::GetELAAssetID());
 		}
 

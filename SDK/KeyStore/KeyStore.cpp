@@ -81,7 +81,7 @@ namespace Elastos {
 			save(json, password);
 
 			std::ofstream outfile(path.string());
-			json >> outfile;
+			outfile << json;
 
 			return true;
 		}
