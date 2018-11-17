@@ -340,6 +340,45 @@ namespace Elastos {
 			return peers;
 		}
 
+		std::vector<Asset> SpvService::loadAssets() {
+			std::vector<Asset> assets;
+
+			AssetEntity defaultAssetEntity;
+			UInt256 defaultAssetID = Asset::GetELAAssetID();
+			std::string assetStringID = Utils::UInt256ToString(defaultAssetID);
+			if (!_databaseManager.GetAssetDetails(ISO, assetStringID, defaultAssetEntity)) {
+				Asset defaultAsset;
+				defaultAsset.setName("ELA");
+				defaultAsset.setPrecision(0x08);
+				defaultAsset.setAssetType(Asset::AssetType::Token);
+				defaultAsset.SetHash(defaultAssetID);
+
+				ByteStream stream;
+				defaultAsset.Serialize(stream);
+
+				defaultAssetEntity.AssetID = assetStringID;
+				defaultAssetEntity.Asset = stream.getBuffer();
+
+				// TODO how to set these two value?
+				defaultAssetEntity.Amount = 0;
+				defaultAssetEntity.TxHash = assetStringID;
+
+				_databaseManager.PutAsset(ISO, defaultAssetEntity);
+			}
+
+			std::vector<AssetEntity> assetsEntity = _databaseManager.GetAllAssets(ISO);
+
+			for (size_t i = 0; i < assetsEntity.size(); ++i) {
+				Asset asset;
+				ByteStream stream(assetsEntity[i].Asset);
+				if (asset.Deserialize(stream)) {
+					assets.push_back(asset);
+				}
+			}
+
+			return assets;
+		}
+
 		int SpvService::getForkId() const {
 			return _forkId;
 		}
@@ -388,15 +427,19 @@ namespace Elastos {
 
 		void SpvService::UpdateAssets() {
 			std::vector<AssetEntity> assets = _databaseManager.GetAllAssets(ISO);
-			UInt256ValueMap<std::string> assetIDMap;
-			std::for_each(assets.begin(), assets.end(), [&assetIDMap](const AssetEntity &entity) {
+			std::vector<Asset> assetArray;
+			std::for_each(assets.begin(), assets.end(), [&assetArray](const AssetEntity &entity) {
 				Asset asset;
 				ByteStream stream(entity.Asset);
-				asset.Deserialize(stream);
-				assetIDMap.Insert(asset.GetHash(), entity.AssetID);
+				if (!asset.Deserialize(stream)) {
+					Log::error("Update assets deserialize fail");
+				} else {
+					asset.SetHash(Utils::UInt256FromString(entity.AssetID));
+					assetArray.push_back(asset);
+				}
 			});
 
-			_wallet->UpdateAssets(assetIDMap);
+			_wallet->UpdateAssets(assetArray);
 		}
 
 		Asset SpvService::FindAsset(const std::string &assetID) const {
@@ -412,6 +455,8 @@ namespace Elastos {
 				Log::error("Asset {} deserialize fail", assetID);
 				return Asset();
 			}
+			asset.SetHash(Utils::UInt256FromString(assetEntity.AssetID));
+
 			return asset;
 		}
 
