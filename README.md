@@ -76,7 +76,7 @@ $ cmake -DSPV_PLATFORM=IOS ..
 $ make
 ```
 
-Note: If built successfully, you will see output static library in directory cmake-build-ios/Output/. Only support architecture armv7 & arm64 for iPhone now, and minimum IOS target version is 10.0
+Note: If built successfully, you will see output static library in directory cmake-build-ios/lib/, which combined with all dependent static libraries(libsqlite.a libboost_*.a libcrypto.a libssl.a libbigint.a). Only support architecture armv7 & arm64 for iPhone now, and minimum IOS target version is 10.0
 
 ## Build for Android
 
