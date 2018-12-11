@@ -27,9 +27,13 @@ namespace Elastos {
 
 			void setEaliestPeerTime(uint32_t time);
 
-			int getIndex() const;
+			uint32_t getReconnectSeconds() const;
 
-			void setIndex(int index);
+			void setReconnectSeconds(uint32_t reconnectSeconds);
+
+			uint32_t getIndex() const;
+
+			void setIndex(uint32_t index);
 
 			int getUsedMaxAddressIndex() const;
 
@@ -51,18 +55,6 @@ namespace Elastos {
 
 			void setWalletType(SubWalletType type);
 
-			const std::string &getEncryptedKey() const;
-
-			void setEncryptedKey(const std::string &key);
-
-			const std::string &getChainCode() const;
-
-			void setChainCode(const std::string &code);
-
-			const std::string &getPublicKey() const;
-
-			void setPublicKey(const std::string &pubKey);
-
 			uint64_t getMinFee() const;
 
 			void setMinFee(uint64_t fee);
@@ -75,6 +67,14 @@ namespace Elastos {
 
 			void setEnableP2P(bool enable);
 
+			const std::string &getChainCode() const;
+
+			void setChainCode(const std::string &code);
+
+			const std::string &getPublicKey() const;
+
+			void setPublicKey(const std::string &pubKey);
+
 		private:
 			JSON_SM_LS(CoinInfo);
 			JSON_SM_RS(CoinInfo);
@@ -84,8 +84,9 @@ namespace Elastos {
 		private:
 			std::string _chainId;
 			uint32_t _earliestPeerTime;
+			uint32_t _reconnectSeconds;
 			int _forkId;
-			int _index;
+			uint32_t _index;
 			int _usedMaxAddressIndex;
 			bool _singleAddress;
 			bool _enableP2P;
@@ -93,7 +94,6 @@ namespace Elastos {
 			uint64_t _feePerKb;
 			SubWalletType _walletType;
 			std::string _publicKey;
-			std::string _encryptedKey;
 			std::string _chainCode;
 			std::string _genesisAddress;
 		};

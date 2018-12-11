@@ -16,10 +16,10 @@
 namespace Elastos {
 	namespace ElaWallet {
 
-		SidechainSubWallet::SidechainSubWallet(const CoinInfo &info, const ChainParams &chainParams,
-											   const std::string &payPassword, const PluginTypes &pluginTypes,
+		SidechainSubWallet::SidechainSubWallet(const CoinInfo &info, const MasterPubKeyPtr &masterPubKey,
+											   const ChainParams &chainParams, const PluginTypes &pluginTypes,
 											   MasterWallet *parent) :
-				SubWallet(info, chainParams, payPassword, pluginTypes, parent) {
+			SubWallet(info, masterPubKey, chainParams, pluginTypes, parent) {
 
 		}
 
@@ -28,28 +28,27 @@ namespace Elastos {
 		}
 
 		nlohmann::json SidechainSubWallet::CreateWithdrawTransaction(const std::string &fromAddress,
-																	 const std::string &toAddress,
 																	 const uint64_t amount,
 																	 const nlohmann::json &mainchainAccounts,
 																	 const nlohmann::json &mainchainAmounts,
 																	 const nlohmann::json &mainchainIndexs,
 																	 const std::string &memo,
 																	 const std::string &remark) {
-			boost::scoped_ptr<TxParam> txParam(TxParamFactory::createTxParam(Sidechain, fromAddress, toAddress, amount,
+			boost::scoped_ptr<TxParam> txParam(TxParamFactory::createTxParam(Sidechain, fromAddress, ELA_SIDECHAIN_DESTROY_ADDR, amount,
 																			 _info.getMinFee(), memo, remark));
 
-			ParamChecker::checkJsonArrayNotEmpty(mainchainAccounts);
-			ParamChecker::checkJsonArrayNotEmpty(mainchainAmounts);
-			ParamChecker::checkJsonArrayNotEmpty(mainchainIndexs);
+			ParamChecker::checkJsonArray(mainchainAccounts, 1, "Main chain accounts");
+			ParamChecker::checkJsonArray(mainchainAmounts, 1, "Main chain amounts");
+			ParamChecker::checkJsonArray(mainchainIndexs, 1, "Main chain indexs");
 
 			std::vector<std::string> accounts = mainchainAccounts.get<std::vector<std::string>>();
 			std::vector<uint64_t> amounts = mainchainAmounts.get<std::vector<uint64_t>>();
 			std::vector<uint64_t> indexs = mainchainIndexs.get<std::vector<uint64_t>>();
-			assert(accounts.size() == amounts.size());
-			assert(accounts.size() == indexs.size());
+
+			ParamChecker::checkCondition(accounts.size() != amounts.size() || accounts.size() != indexs.size(),
+										 Error::WithdrawParam, "Invalid withdraw parameters of main chain");
 
 			WithdrawTxParam *withdrawTxParam = dynamic_cast<WithdrawTxParam *>(txParam.get());
-			assert(withdrawTxParam != nullptr);
 			withdrawTxParam->setMainchainDatas(accounts, indexs, amounts);
 
 			//todo read main chain address from config
@@ -57,9 +56,7 @@ namespace Elastos {
 			withdrawTxParam->setMainchainAddress(mainchainAddress);
 
 			TransactionPtr transaction = createTransaction(txParam.get());
-			if (transaction == nullptr) {
-				throw std::logic_error("Create transaction error.");
-			}
+			ParamChecker::checkCondition(transaction == nullptr, Error::CreateTransaction, "Create withdraw tx");
 			return transaction->toJson();
 		}
 
@@ -72,8 +69,8 @@ namespace Elastos {
 			WithdrawTxParam *withdrawTxParam = dynamic_cast<WithdrawTxParam *>(param);
 			if (withdrawTxParam != nullptr) {
 				TransactionPtr ptr = _walletManager->getWallet()->
-						createTransaction(param->getFromAddress(), param->getFee(), param->getAmount(),
-										  param->getToAddress(), param->getRemark(), param->getMemo());
+					createTransaction(param->getFromAddress(), param->getFee(), param->getAmount(),
+									  param->getToAddress(), param->getRemark(), param->getMemo());
 				if (!ptr) return nullptr;
 
 				ptr->setTransactionType(ELATransaction::TransferCrossChainAsset);
@@ -85,7 +82,7 @@ namespace Elastos {
 							  });
 
 				PayloadTransferCrossChainAsset *payloadTransferCrossChainAsset =
-						static_cast<PayloadTransferCrossChainAsset *>(ptr->getPayload());
+					static_cast<PayloadTransferCrossChainAsset *>(ptr->getPayload());
 				payloadTransferCrossChainAsset->setCrossChainData(withdrawTxParam->getCrossChainAddress(),
 																  withdrawTxParam->getCrossChainOutputIndexs(),
 																  withdrawTxParam->getCrosschainAmouts());
@@ -108,6 +105,13 @@ namespace Elastos {
 				return completer.Complete(actualFee);
 			} else
 				return SubWallet::completeTransaction(transaction, actualFee);
+		}
+
+		nlohmann::json SidechainSubWallet::GetBasicInfo() const {
+			nlohmann::json j;
+			j["Type"] = "Sidechain";
+			j["Account"] = _subAccount->GetBasicInfo();
+			return j;
 		}
 	}
 }

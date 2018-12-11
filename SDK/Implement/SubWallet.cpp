@@ -17,12 +17,12 @@
 #include "SubWalletCallback.h"
 #include "Utils.h"
 #include "Log.h"
-#include "ErrorCode.h"
 #include "ParamChecker.h"
 #include "Transaction/TransactionOutput.h"
 #include "Transaction/TransactionChecker.h"
 #include "Transaction/TransactionCompleter.h"
-#include "TimeUtils.h"
+#include "Account/MultiSignSubAccount.h"
+#include "Account/SubAccountGenerator.h"
 
 namespace fs = boost::filesystem;
 
@@ -32,8 +32,8 @@ namespace Elastos {
 	namespace ElaWallet {
 
 		SubWallet::SubWallet(const CoinInfo &info,
+							 const MasterPubKeyPtr &masterPubKey,
 							 const ChainParams &chainParams,
-							 const std::string &payPassword,
 							 const PluginTypes &pluginTypes,
 							 MasterWallet *parent) :
 				PeerManager::Listener(pluginTypes),
@@ -45,43 +45,23 @@ namespace Elastos {
 			subWalletDbPath /= parent->GetId();
 			subWalletDbPath /= info.getChainId() + DB_FILE_EXTENSION;
 
-			CMBlock encryptedKey;
-			UInt256 chainCode = UINT256_ZERO;
-			MasterPubKeyPtr masterPubKey = nullptr;
-			if (!payPassword.empty()) {
-				BRKey key;
-				deriveKeyAndChain(&key, chainCode, payPassword);
+			{
+				SubAccountGenerator generator;
+				generator.SetCoinInfo(_info);
+				generator.SetParentAccount(_parent->_localStore.Account());
+				generator.SetMasterPubKey(masterPubKey);
+				_subAccount = SubAccountPtr(generator.Generate());
 
-				char rawKey[BRKeyPrivKey(&key, nullptr, 0)];
-				BRKeyPrivKey(&key, rawKey, sizeof(rawKey));
-
-				CMBlock ret(sizeof(rawKey));
-				memcpy(ret, &rawKey, sizeof(rawKey));
-				encryptedKey = Utils::encrypt(ret, payPassword);
-
-				Key wrapperKey(key.secret, key.compressed);
-				CMBlock pubKey = wrapperKey.getPubkey();
-
-				_info.setEncryptedKey(Utils::encodeHex(encryptedKey));
-				_info.setChainCode(Utils::UInt256ToString(chainCode));
-				_info.setPublicKey(Utils::encodeHex(pubKey));
-
-				masterPubKey.reset(new MasterPubKey(key, chainCode));
-
-			} else {
-				ParamChecker::checkNotEmpty(_info.getEncryptedKey(), false);
-				ParamChecker::checkNotEmpty(_info.getPublicKey(), false);
-				ParamChecker::checkNotEmpty(_info.getChainCode(), false);
-
-				chainCode = Utils::UInt256FromString(_info.getChainCode());
-				CMBlock pubKey = Utils::decodeHex(_info.getPublicKey());
-
-				masterPubKey.reset(new MasterPubKey(pubKey, Utils::UInt256FromString(_info.getChainCode())));
+				_info.setChainCode(Utils::UInt256ToString(generator.GetResultChainCode()));
+				if (generator.GetResultPublicKey().GetSize() > 0)
+					_info.setPublicKey(Utils::encodeHex(generator.GetResultPublicKey()));
 			}
 
 			_walletManager = WalletManagerPtr(
-					new WalletManager(masterPubKey, subWalletDbPath, _info.getEarliestPeerTime(),
-									  _info.getSingleAddress(), _info.getForkId(), pluginTypes, chainParams));
+					new WalletManager(_subAccount, subWalletDbPath,
+									  _info.getEarliestPeerTime(), _info.getReconnectSeconds(),
+									  _info.getForkId(), pluginTypes,
+									  chainParams));
 
 			_walletManager->registerWalletListener(this);
 			_walletManager->registerPeerManagerListener(this);
@@ -108,8 +88,6 @@ namespace Elastos {
 		}
 
 		uint64_t SubWallet::GetBalance() {
-			Log::getLogger()->info("chain = {}, balance = {}", _info.getChainId(),
-								   _walletManager->getWallet()->getBalance());
 			return _walletManager->getWallet()->getBalance();
 		}
 
@@ -119,11 +97,17 @@ namespace Elastos {
 
 		nlohmann::json SubWallet::GetAllAddress(uint32_t start,
 												uint32_t count) {
-			std::vector<std::string> addresses = _walletManager->getWallet()->getAllAddresses();
-			uint32_t end = std::min(start + count, (uint32_t) addresses.size());
-			std::vector<std::string> results(addresses.begin() + start, addresses.begin() + end);
 			nlohmann::json j;
-			j["Addresses"] = addresses;
+			std::vector<std::string> addresses = _walletManager->getWallet()->getAllAddresses();
+			if (start >= addresses.size()) {
+				j["Addresses"] = {};
+				j["MaxCount"] = addresses.size();
+			} else {
+				uint32_t end = std::min(start + count, (uint32_t) addresses.size());
+				std::vector<std::string> results(addresses.begin() + start, addresses.begin() + end);
+				j["Addresses"] = results;
+				j["MaxCount"] = addresses.size();
+			}
 			return j;
 		}
 
@@ -147,19 +131,25 @@ namespace Elastos {
 			boost::scoped_ptr<TxParam> txParam(TxParamFactory::createTxParam(Normal, fromAddress, toAddress, amount,
 																			 _info.getMinFee(), memo, remark));
 			TransactionPtr transaction = createTransaction(txParam.get());
-			if (!transaction)
-				throw std::logic_error("create transaction error.");
+			ParamChecker::checkCondition(!transaction, Error::CreateTransaction,
+										 "create transaction error.");
 			return transaction->toJson();
 		}
 
 		nlohmann::json SubWallet::GetAllTransaction(uint32_t start, uint32_t count, const std::string &addressOrTxid) {
 			BRWallet *wallet = _walletManager->getWallet()->getRaw();
 			assert(wallet != nullptr);
-
-			Log::getLogger()->info("GetAllTransaction: start = {}, count = {}, addressOrTxid = {}", start, count,
-								   addressOrTxid);
+			nlohmann::json j;
 
 			size_t fullTxCount = array_count(wallet->transactions);
+
+			if (start >= fullTxCount) {
+				j["Transactions"] = {};
+				j["MaxCount"] = fullTxCount;
+				SPDLOG_DEBUG(Log::getLogger(), "{}", j.dump());
+				return j;
+			}
+
 			size_t pageCount = count;
 			pthread_mutex_lock(&wallet->lock);
 			if (fullTxCount < start + count)
@@ -177,20 +167,19 @@ namespace Elastos {
 			std::vector<nlohmann::json> jsonList(realCount);
 			for (size_t i = 0; i < realCount; ++i) {
 				TransactionPtr transactionPtr(new Transaction((ELATransaction *) transactions[i], false));
-				nlohmann::json txJson = transactionPtr->toJson();
+				nlohmann::json txJson;
 				transactionPtr->generateExtraTransactionInfo(txJson, _walletManager->getWallet(),
 															 _walletManager->getPeerManager()->getLastBlockHeight());
 				jsonList[i] = txJson;
 			}
-			nlohmann::json j;
 			j["Transactions"] = jsonList;
+			j["MaxCount"] = fullTxCount;
+			SPDLOG_DEBUG(Log::getLogger(), "{}", j.dump());
 			return j;
 		}
 
 		boost::shared_ptr<Transaction>
 		SubWallet::createTransaction(TxParam *param) const {
-			//todo consider the situation of from address and fee not null
-			//todo initialize asset id if null
 			TransactionPtr ptr = _walletManager->getWallet()->
 					createTransaction(param->getFromAddress(), std::max(param->getFee(), _info.getMinFee()),
 									  param->getAmount(), param->getToAddress(), param->getRemark(),
@@ -207,25 +196,13 @@ namespace Elastos {
 			return ptr;
 		}
 
-		nlohmann::json SubWallet::sendTransactionInternal(const boost::shared_ptr<Transaction> &transaction,
-														  const std::string &payPassword) {
-			signTransaction(transaction, _info.getForkId(), payPassword);
-			transaction->removeDuplicatePrograms();
-			publishTransaction(transaction);
-
-			nlohmann::json j;
-			j["TxHash"] = Utils::UInt256ToString(transaction->getHash(), true);
-			j["Fee"] = transaction->getStandardFee();
-			return j;
-		}
-
 		void SubWallet::publishTransaction(const TransactionPtr &transaction) {
 			_walletManager->publishTransaction(transaction);
 		}
 
 		std::string SubWallet::Sign(const std::string &message, const std::string &payPassword) {
 
-			Key key = deriveKey(payPassword);
+			Key key = _subAccount->DeriveMainAccountKey(payPassword);
 			return key.compactSign(message);
 		}
 
@@ -237,11 +214,15 @@ namespace Elastos {
 		uint64_t SubWallet::CalculateTransactionFee(const nlohmann::json &rawTransaction, uint64_t feePerKb) {
 			TransactionPtr transaction(new Transaction());
 			transaction->fromJson(rawTransaction);
+			_walletManager->getWallet()->setFeePerKb(feePerKb);
 			return std::max(transaction->calculateFee(feePerKb), _info.getMinFee());
 		}
 
 		void SubWallet::balanceChanged(uint64_t balance) {
-			Log::getLogger()->info("Tx callback (balanceChanged): balance={}", balance);
+			std::for_each(_callbacks.begin(), _callbacks.end(),
+						  [&balance](ISubWalletCallback *callback) {
+							  callback->OnBalanceChanged(balance);
+						  });
 		}
 
 		void SubWallet::onTxAdded(const TransactionPtr &transaction) {
@@ -250,152 +231,77 @@ namespace Elastos {
 
 
 			std::string txHash = Utils::UInt256ToString(transaction->getHash());
-			Log::getLogger()->info("Tx callback (onTxAdded): Tx hash={}", txHash);
+			Log::getLogger()->debug("onTxAdded: Tx hash={}", txHash);
 			_confirmingTxs[txHash] = transaction;
 
 			fireTransactionStatusChanged(txHash, SubWalletCallback::convertToString(SubWalletCallback::Added),
 										 transaction->toJson(), 0);
-			Log::getLogger()->info(
-					"Tx callback (onTxAdded) finished. Details: txHash={}, tx height = {}, confirm count={}.",
-					txHash, transaction->getBlockHeight(), 0);
 		}
 
 		void SubWallet::onTxUpdated(const std::string &hash, uint32_t blockHeight, uint32_t timeStamp) {
-			Log::getLogger()->info("Tx callback (onTxUpdated)");
+			if (_walletManager->getAllTransactionsCount() == 1) {
+				_info.setEaliestPeerTime(timeStamp);
+				_parent->Save();
+			}
+
 			if (_confirmingTxs.find(hash) == _confirmingTxs.end()) {
 				_confirmingTxs[hash] = _walletManager->getWallet()->transactionForHash(Utils::UInt256FromString(hash));
 			}
 
-			Log::getLogger()->info("Tx callback (onTxUpdated): Tx hash={}", hash);
-			uint32_t confirm = blockHeight - _confirmingTxs[hash]->getBlockHeight() + 1;
-			fireTransactionStatusChanged(hash, SubWalletCallback::convertToString(SubWalletCallback::Updated),
-										 _confirmingTxs[hash]->toJson(), confirm);
-			Log::getLogger()->info("Tx callback (onTxUpdated) finished. Details: txHash={}, confirm count={}.",
-								   hash, confirm);
+			uint32_t confirm = blockHeight != TX_UNCONFIRMED && blockHeight >= _confirmingTxs[hash]->getBlockHeight() ?
+							   blockHeight - _confirmingTxs[hash]->getBlockHeight() + 1 : 0;
+			if (_walletManager->getPeerManager()->getRaw()->syncSucceeded) {
+				Log::getLogger()->debug("onTxUpdated: hash = {}, confirm = {}", hash, confirm);
+				fireTransactionStatusChanged(hash, SubWalletCallback::convertToString(SubWalletCallback::Updated),
+											 _confirmingTxs[hash]->toJson(), confirm);
+			}
 		}
 
 		void SubWallet::onTxDeleted(const std::string &hash, bool notifyUser, bool recommendRescan) {
-			Log::getLogger()->info("Tx callback (onTxDeleted) begin");
+			Log::getLogger()->debug("onTxDeleted: hash = {}", hash);
 			fireTransactionStatusChanged(hash, SubWalletCallback::convertToString(SubWalletCallback::Deleted),
 										 nlohmann::json(), 0);
-			Log::getLogger()->info("Tx callback (onTxDeleted hash={}) finished.", hash);
 		}
 
 		void SubWallet::recover(int limitGap) {
 			_walletManager->recover(limitGap);
 		}
 
-		Key SubWallet::deriveKey(const std::string &payPassword) {
-			CMBlock raw = Utils::decodeHex(_info.getEncryptedKey());
-			CMBlock keyData = Utils::decrypt(raw, payPassword);
-			if (keyData.GetSize() == 0)
-				ErrorCode::StandardLogicError(ErrorCode::PasswordError, "Invalid password.");
-
-			Key key;
-			char stmp[keyData.GetSize()];
-			memcpy(stmp, keyData, keyData.GetSize());
-			std::string secret(stmp, keyData.GetSize());
-			key.setPrivKey(secret);
-			return key;
-		}
-
-		void SubWallet::deriveKeyAndChain(BRKey *key, UInt256 &chainCode, const std::string &payPassword) {
-			ParamChecker::checkNullPointer(key);
-
-			UInt512 seed = _parent->deriveSeed(payPassword);
-			Key wrapperKey;
-			wrapperKey.deriveKeyAndChain(chainCode, &seed, sizeof(seed), 5, 1 | BIP32_HARD, 0,
-										 44, _info.getIndex(), 0);
-			UInt256Set(&key->secret, wrapperKey.getSecret());
-			key->compressed = wrapperKey.getCompressed();
-			CMBlock pubKey = wrapperKey.getPubkey();
-			memcpy(key->pubKey, pubKey, pubKey.GetSize());
-		}
-
-		void SubWallet::signTransaction(const boost::shared_ptr<Transaction> &transaction, int forkId,
-										const std::string &payPassword) {
-			Log::getLogger()->info("SubWallet signTransaction method begin.");
-
-			ParamChecker::checkNullPointer(transaction.get());
-			BRKey masterKey;
-			UInt256 chainCode = UINT256_ZERO;
-			deriveKeyAndChain(&masterKey, chainCode, payPassword);
-			BRWallet *wallet = _walletManager->getWallet()->getRaw();
-			ParamChecker::checkNullPointer(wallet);
-			Log::getLogger()->info("SubWallet signTransaction derive key down.");
-
-			BRTransaction *tx = transaction->getRaw();
-			uint32_t j, internalIdx[tx->inCount], externalIdx[tx->inCount];
-			size_t i, internalCount = 0, externalCount = 0;
-
-
-			Log::getLogger()->info("SubWallet signTransaction begin get indices.");
-			pthread_mutex_lock(&wallet->lock);
-			for (i = 0; i < tx->inCount; i++) {
-				if (wallet->internalChain) {
-					for (j = (uint32_t) array_count(wallet->internalChain); j > 0; j--) {
-						if (BRAddressEq(tx->inputs[i].address, &wallet->internalChain[j - 1])) {
-							internalIdx[internalCount++] = j - 1;
-						}
-					}
-				}
-
-				for (j = (uint32_t) array_count(wallet->externalChain); j > 0; j--) {
-					if (BRAddressEq(tx->inputs[i].address, &wallet->externalChain[j - 1])) {
-						externalIdx[externalCount++] = j - 1;
-					}
-
-				}
-			}
-			pthread_mutex_unlock(&wallet->lock);
-			Log::getLogger()->info("SubWallet signTransaction end get indices.");
-
-			BRKey keys[internalCount + externalCount];
-			Key::calculatePrivateKeyList(keys, internalCount, &masterKey.secret, &chainCode,
-										 SEQUENCE_INTERNAL_CHAIN, internalIdx);
-			Key::calculatePrivateKeyList(&keys[internalCount], externalCount, &masterKey.secret, &chainCode,
-										 SEQUENCE_EXTERNAL_CHAIN, externalIdx);
-			Log::getLogger()->info("SubWallet signTransaction calculate private key list done.");
-
-			if (tx) {
-				Log::getLogger()->info("SubWallet signTransaction begin sign method.");
-				WrapperList<Key, BRKey> keyList;
-				for (i = 0; i < internalCount + externalCount; ++i) {
-					Key key(keys[i].secret, keys[i].compressed);
-					keyList.push_back(key);
-				}
-				if (!transaction->sign(keyList, forkId)) {
-					throw std::logic_error("Transaction Sign error!");
-				}
-				Log::getLogger()->info("SubWallet signTransaction end sign method.");
-			}
-
-			for (i = 0; i < internalCount + externalCount; i++) BRKeyClean(&keys[i]);
-		}
-
-		std::string SubWallet::CreateMultiSignAddress(const nlohmann::json &multiPublicKeyJson, uint32_t totalSignNum,
-													  uint32_t requiredSignNum) {
-			//todo complete me
-			return "";
-		}
-
 		nlohmann::json SubWallet::CreateMultiSignTransaction(const std::string &fromAddress,
 															 const std::string &toAddress, uint64_t amount,
 															 const std::string &memo) {
-			//todo complete me
-			return nlohmann::json();
+			return CreateTransaction(fromAddress, toAddress, amount, memo, "");
+		}
+
+		nlohmann::json SubWallet::SignTransaction(const nlohmann::json &rawTransaction,
+																   const std::string &payPassword) {
+			TransactionPtr transaction(new Transaction());
+			transaction->fromJson(rawTransaction);
+			_walletManager->getWallet()->signTransaction(transaction, _info.getForkId(), payPassword);
+			transaction->removeDuplicatePrograms();
+			return transaction->toJson();
+		}
+
+		nlohmann::json SubWallet::PublishTransaction(const nlohmann::json &rawTransaction) {
+			TransactionPtr transaction(new Transaction());
+			transaction->fromJson(rawTransaction);
+
+			verifyRawTransaction(transaction);
+			publishTransaction(transaction);
+
+			nlohmann::json j;
+			j["TxHash"] = Utils::UInt256ToString(transaction->getHash(), true);
+			j["Fee"] = transaction->getStandardFee();
+			return j;
 		}
 
 		nlohmann::json
-		SubWallet::SendRawTransaction(const nlohmann::json &transactionJson, uint64_t fee,
-									  const std::string &payPassword) {
+		SubWallet::UpdateTransactionFee(const nlohmann::json &transactionJson, uint64_t fee) {
 			TransactionPtr transaction(new Transaction());
 			transaction->fromJson(transactionJson);
 
-			verifyRawTransaction(transaction);
 			completeTransaction(transaction, fee);
-
-			return sendTransactionInternal(transaction, payPassword);
+			return transaction->toJson();
 		}
 
 		void SubWallet::verifyRawTransaction(const TransactionPtr &transaction) {
@@ -443,7 +349,7 @@ namespace Elastos {
 		void SubWallet::syncStarted() {
 			_syncStartHeight = _walletManager->getPeerManager()->getSyncStartHeight();
 			if (_info.getEarliestPeerTime() == 0) {
-				_info.setEaliestPeerTime(TimeUtils::getCurrentTime());
+				_info.setEaliestPeerTime(time(nullptr));
 			}
 
 			std::for_each(_callbacks.begin(), _callbacks.end(),
@@ -456,7 +362,7 @@ namespace Elastos {
 			_syncStartHeight = 0;
 
 			if (!error.empty()) {
-				Log::error(error);
+				Log::getLogger()->error("syncStopped with error: {}", error);
 			}
 
 			std::for_each(_callbacks.begin(), _callbacks.end(),
@@ -466,29 +372,30 @@ namespace Elastos {
 		}
 
 		void SubWallet::saveBlocks(bool replace, const SharedWrapperList<IMerkleBlock, BRMerkleBlock *> &blocks) {
-			Log::getLogger()->info("Saving blocks: block count = {}, chain id = {}", blocks.size(),
+			Log::getLogger()->debug("Saving blocks: block count = {}, chain id = {}", blocks.size(),
 								   _info.getChainId());
 		}
 
 		void SubWallet::blockHeightIncreased(uint32_t blockHeight) {
-			for (TransactionMap::iterator it = _confirmingTxs.begin(); it != _confirmingTxs.end(); ++it) {
-				Log::getLogger()->info(
-						"Transaction height increased: txHash = {}, confirms = {}, tx height = {}, last block height = {}",
-						it->first, blockHeight - it->second->getBlockHeight() + 1, it->second->getBlockHeight(),
-						blockHeight);
+			if (_walletManager->getPeerManager()->getRaw()->syncSucceeded) {
+				for (TransactionMap::iterator it = _confirmingTxs.begin(); it != _confirmingTxs.end(); ++it) {
 
-				if (it->second->getBlockHeight() == TX_UNCONFIRMED)
-					continue;
+					uint32_t confirms = blockHeight != TX_UNCONFIRMED && blockHeight >= it->second->getBlockHeight() ?
+										blockHeight - it->second->getBlockHeight() + 1 : 0;
 
-				fireTransactionStatusChanged(it->first, SubWalletCallback::convertToString(SubWalletCallback::Updated),
-											 it->second->toJson(), blockHeight - it->second->getBlockHeight() + 1);
+					if (confirms > 1) {
+						Log::getLogger()->debug("Tx height increased: hash = {}, confirms = {}", it->first, confirms);
+						fireTransactionStatusChanged(it->first, SubWalletCallback::convertToString(SubWalletCallback::Updated),
+													 it->second->toJson(), confirms);
+					}
+				}
 			}
 
 			for (TransactionMap::iterator it = _confirmingTxs.begin(); it != _confirmingTxs.end();) {
-				if (it->second->getBlockHeight() == TX_UNCONFIRMED)
-					continue;
+				uint32_t confirms =
+					blockHeight >= it->second->getBlockHeight() ? blockHeight - it->second->getBlockHeight() + 1 : 0;
 
-				if (blockHeight - it->second->getBlockHeight() + 1 >= 6)
+				if (confirms >= 6)
 					_confirmingTxs.erase(it++);
 				else
 					++it;
@@ -497,7 +404,7 @@ namespace Elastos {
 			std::for_each(_callbacks.begin(), _callbacks.end(),
 						  [blockHeight, this](ISubWalletCallback *callback) {
 							  callback->OnBlockHeightIncreased(
-									  blockHeight, _walletManager->getPeerManager()->getSyncProgress(_syncStartHeight));
+									  blockHeight, (int)(_walletManager->getPeerManager()->getSyncProgress(_syncStartHeight) * 100));
 						  });
 		}
 
@@ -510,9 +417,9 @@ namespace Elastos {
 						  });
 		}
 
-		void SubWallet::ChangePassword(const std::string &oldPassword, const std::string &newPassword) {
-			CMBlock key = Utils::decrypt(Utils::decodeHex(_info.getEncryptedKey()), oldPassword);
-			_info.setEncryptedKey(Utils::encodeHex(Utils::encrypt(key, newPassword)));
+		const CoinInfo &SubWallet::getCoinInfo() {
+			_info.setFeePerKb(_walletManager->getWallet()->getFeePerKb());
+			return _info;
 		}
 
 		void SubWallet::StartP2P() {
@@ -525,11 +432,26 @@ namespace Elastos {
 				_walletManager->stop();
 		}
 
-		void SubWallet::fireDestroyWallet() {
-			std::for_each(_callbacks.begin(), _callbacks.end(),
-						  [](ISubWalletCallback *callback) {
-							  callback->OnDestroyWallet();
-						  });
+		std::string SubWallet::GetPublicKey() const {
+			return _subAccount->GetMainAccountPublicKey();
+		}
+
+		nlohmann::json SubWallet::GetBasicInfo() const {
+			nlohmann::json j;
+			j["Type"] = "Normal";
+			j["Account"] = _subAccount->GetBasicInfo();
+			return j;
+		}
+
+		nlohmann::json SubWallet::GetTransactionSignedSigners(const nlohmann::json &rawTransaction) {
+			nlohmann::json result;
+			MultiSignSubAccount *subAccount = dynamic_cast<MultiSignSubAccount *>(_subAccount.get());
+			if (subAccount != nullptr) {
+				TransactionPtr transaction(new Transaction);
+				transaction->fromJson(rawTransaction);
+				result["Signers"] = subAccount->GetTransactionSignedSigners(transaction);
+			}
+			return result;
 		}
 
 	}

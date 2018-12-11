@@ -4,12 +4,13 @@
 
 #include <cstring>
 #include <Core/BRBIP32Sequence.h>
+#include <SDK/Common/Log.h>
 
 #include "BRBIP39Mnemonic.h"
 #include "BRBIP32Sequence.h"
 #include "MasterPubKey.h"
-#include "BTCKey.h"
 #include "Utils.h"
+#include "ByteStream.h"
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -23,6 +24,7 @@ namespace Elastos {
 			const char *phrasePass = phrasePassword.empty() ? nullptr : phrasePassword.c_str();
 			BRBIP39DeriveKey(seed.u8, phrase.c_str(), phrasePass);
 			_masterPubKey = boost::shared_ptr<BRMasterPubKey>(new BRMasterPubKey(BRBIP32MasterPubKey(&seed, sizeof(seed))));
+			var_clean(&seed);
 		}
 
 		std::string MasterPubKey::toString() const {
@@ -34,18 +36,29 @@ namespace Elastos {
 			return _masterPubKey.get();
 		}
 
-		CMBlock MasterPubKey::serialize() const {
-			CMBlock ret(sizeof(BRMasterPubKey));
-			uint8_t *tmp = (uint8_t*)_masterPubKey.get();
-			memcpy(ret, tmp, ret.GetSize());
-
-			return ret;
+		void MasterPubKey::Serialize(ByteStream &stream) const {
+			stream.writeUint32(_masterPubKey->fingerPrint);
+			stream.writeBytes(&_masterPubKey->chainCode, sizeof(_masterPubKey->chainCode));
+			stream.writeBytes(_masterPubKey->pubKey, sizeof(_masterPubKey->pubKey));
 		}
 
-		void MasterPubKey::deserialize(const CMBlock &data) {
-			assert (data.GetSize() == sizeof(BRMasterPubKey));
-			_masterPubKey = boost::shared_ptr<BRMasterPubKey>(new BRMasterPubKey);
-			memcpy(_masterPubKey.get(), data, data.GetSize());
+		bool MasterPubKey::Deserialize(ByteStream &stream) {
+			if (!stream.readUint32(_masterPubKey->fingerPrint)) {
+				Log::getLogger()->error("Master public key deserialize finger print fail");
+				return false;
+			}
+
+			if (!stream.readBytes(&_masterPubKey->chainCode, sizeof(_masterPubKey->chainCode))) {
+				Log::getLogger()->error("Master public key deserialize chain code fail");
+				return false;
+			}
+
+			if (!stream.readBytes(_masterPubKey->pubKey, sizeof(_masterPubKey->pubKey))) {
+				Log::getLogger()->error("Master public key deserialize pubkey fail");
+				return false;
+			}
+
+			return true;
 		}
 
 		CMBlock MasterPubKey::getPubKey() const {
@@ -123,25 +136,9 @@ namespace Elastos {
 			_masterPubKey->fingerPrint = wrapperKey.hashTo160().u32[0];
 		}
 
-		size_t MasterPubKey::BIP32PubKey(uint8_t *pubKey, size_t pubKeyLen, BRMasterPubKey mpk, uint32_t chain,
-		                                 uint32_t index) {
-			UInt256 chainCode = mpk.chainCode;
-			BRMasterPubKey zeroPubKey = BR_MASTER_PUBKEY_NONE;
-			assert(memcmp(&mpk, &zeroPubKey, sizeof(mpk)) != 0);
-
-			if (pubKey && sizeof(BRECPoint) <= pubKeyLen) {
-
-				CMBlock publicKey;
-				publicKey.SetMemFixed(mpk.pubKey, sizeof(mpk.pubKey));
-
-				CMBlock mbChildPubKey = BTCKey::getDerivePubKey(publicKey, chain, index, chainCode, NID_X9_62_prime256v1);
-
-				memcpy(pubKey, mbChildPubKey, mbChildPubKey.GetSize());
-
-				var_clean(&chainCode);
-			}
-
-			return (! pubKey || sizeof(BRECPoint) <= pubKeyLen) ? sizeof(BRECPoint) : 0;
+		MasterPubKey::MasterPubKey(const BRMasterPubKey &pubKey) {
+			_masterPubKey = boost::shared_ptr<BRMasterPubKey>(new BRMasterPubKey);
+			*_masterPubKey = pubKey;
 		}
 
 	}

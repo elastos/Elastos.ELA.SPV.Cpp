@@ -26,10 +26,12 @@ namespace Elastos {
 			friend class MasterWallet;
 
 			IdChainSubWallet(const CoinInfo &info,
+							 const MasterPubKeyPtr &masterPubKey,
 							 const ChainParams &chainParams,
-							 const std::string &payPassword,
 							 const PluginTypes &pluginTypes,
 							 MasterWallet *parent);
+
+			virtual nlohmann::json GetBasicInfo() const;
 
 			virtual boost::shared_ptr<Transaction> createTransaction(TxParam *param) const;
 

@@ -24,6 +24,34 @@ namespace Elastos {
 			virtual std::string GetId() const = 0;
 
 			/**
+			 * Here is a example of standard wallet basic info:
+			 * {
+			 * 	"Account":
+			 * 		{
+			 * 			"Type": "Standard"
+			 * 		}
+			 * }
+			 *
+			 * and an example of multi-sign(m = 2, n = 3) wallet basic info:
+			 * {
+			 * 	"Account":
+			 * 		{
+			 * 			"Type": "Multi-Sign"
+			 * 			"Details":
+			 * 				{
+			 * 					"Signers": [
+			 * 						"028763e9d2530d26708891037a183362ade43be4499a70d0dd22bc646236cc815f",
+			 * 						"0333f5633c66e7ef648e44ed622b7be788f834f11760689a9c56c96e20e3c3300d",
+			 * 						"022f2ac3763b5844cf0067c63e9806f2482496bb03119742543e719a71800bd929"],
+			 * 					"RequiredSignCount": 2
+			 * 				}
+			 * 		}
+			 * }
+			 * @return basic information of current master wallet.
+			 */
+			virtual nlohmann::json GetBasicInfo() const = 0;
+
+			/**
 			 * Get wallet existing sub wallets.
 			 * @return existing sub wallets by array.
 			 */
@@ -32,30 +60,22 @@ namespace Elastos {
 			/**
 			 * Create a sub wallet by specifying wallet type.
 			 * @param chainID unique identity of a sub wallet. Chain id should not be empty.
-			 * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
-			 * @param singleAddress if true created wallet will have only one address inside, otherwise sub wallet will manager a chain of addresses for security.
 			 * @param feePerKb specify fee per kb to calculate fee by size of transaction. Fee per key default set to zero so that sub wallet will calculate by default "fee rate".
 			 * @return If success will return a pointer of sub wallet interface.
 			 */
 			virtual ISubWallet *CreateSubWallet(
 					const std::string &chainID,
-					const std::string &payPassword,
-					bool singleAddress,
 					uint64_t feePerKb = 0) = 0;
 
 			/**
 			 * Recover a sub wallet from scratch.
 			 * @param chainID unique identity of a sub wallet. Chain id should not be empty.
-			 * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
-			 * @param singleAddress singleAddress if true created wallet will have only one address inside, otherwise sub wallet will manager a chain of addresses for security.
 			 * @param limitGap specify the max gap length for recover addresses and transactions.
 			 * @param feePerKb specify fee per kb to calculate fee by size of transaction. Fee per key default set to zero so that sub wallet will calculate by default "fee rate".
 			 * @return If success will return a pointer of sub wallet interface.
 			 */
 			virtual ISubWallet *RecoverSubWallet(
 					const std::string &chainID,
-					const std::string &payPassword,
-					bool singleAddress,
 					uint32_t limitGap,
 					uint64_t feePerKb = 0) = 0;
 

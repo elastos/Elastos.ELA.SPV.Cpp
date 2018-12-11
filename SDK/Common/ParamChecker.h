@@ -14,26 +14,83 @@
 namespace Elastos {
 	namespace ElaWallet {
 
+		namespace Error {
+			typedef enum {
+				InvalidArgument = 20001,
+				InvalidPasswd,
+				WrongPasswd,
+				IDNotFound,
+				CreateMasterWalletError,
+				CreateSubWalletError,
+				JsonArrayError,
+				Mnemonic,
+				PubKeyFormat,
+				PubKeyLength,
+				DepositParam,
+				WithdrawParam,
+				CreateTransactionExceedSize,
+				CreateTransaction,
+				Transaction,
+				PathNotExist,
+				PayloadRegisterID,
+				SqliteError,
+				DerivePurpose,
+				WrongAccountType,
+				WrongNetType,
+				InvalidCoinType,
+				NoCurrentMultiSinAccount,
+				MultiSignersCount,
+				MultiSign,
+				KeyStore,
+				LimitGap,
+				Wallet,
+				Key,
+				HexString,
+				SignType,
+				Address,
+				Sign,
+				KeyStoreNeedPhrasePassword,
+				BalanceNotEnough,
+				Other,
+			} Code;
+		}
+
+		namespace Exception {
+			typedef enum {
+				LogicError,
+				InvalidArgument,
+			} Type;
+		}
+
 		class ParamChecker {
 		public:
-			static void checkNullPointer(void *pointer, bool isParam = true);
 
-			static void
-			checkPassword(const std::string &password, const std::string &passName = "", bool isParam = true);
+			static nlohmann::json mkErrorJson(Error::Code err, const std::string &msg);
 
-			static void checkPasswordWithNullLegal(const std::string &password, const std::string &passName = "",
-												   bool isParam = true);
+			static nlohmann::json mkErrorJson(Error::Code err, const std::string &msg, uint64_t data);
 
-			static void checkNotEmpty(const std::string &message, bool isParam = true);
+			static void checkCondition(bool condition, Error::Code err, const std::string &msg,
+									   Exception::Type type = Exception::LogicError);
 
-			static void checkDataNotEmpty(const CMBlock &mem, bool isParam = true);
+			static void checkCondition(bool condition, Error::Code err, const std::string &msg, uint64_t data,
+									   Exception::Type type = Exception::LogicError);
 
-			static void checkJsonArrayNotEmpty(nlohmann::json jsonData, bool isParam = true);
+			static void checkPassword(const std::string &password, const std::string &msg);
 
-			static void checkPathExists(const boost::filesystem::path &path, bool isParam = true);
+			static void checkPasswordWithNullLegal(const std::string &password, const std::string &msg);
 
-			//check language words count is BIP39_WORDLIST_COUNT
-			static void checkLangWordsCnt(const uint32_t cnt);
+			static void checkArgumentNotEmpty(const std::string &argument, const std::string &msg);
+
+			static void CheckDecrypt(bool condition);
+
+			static void checkJsonArray(const nlohmann::json &jsonData, size_t count, const std::string &msg);
+
+			static void checkPathExists(const boost::filesystem::path &path);
+
+			static void checkPubKeyJsonArray(const nlohmann::json &jsonArray, size_t checkCount,
+												const std::string &msg);
+
+			static void checkPrivateKey(const std::string &key);
 		};
 
 	}

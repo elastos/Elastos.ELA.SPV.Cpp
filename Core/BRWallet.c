@@ -515,18 +515,19 @@ size_t BRWalletAllAddrs(BRWallet *wallet, BRAddress addrs[], size_t addrsCount)
 
     assert(wallet != NULL);
     pthread_mutex_lock(&wallet->lock);
-    internalCount = (! addrs || array_count(wallet->internalChain) < addrsCount) ?
-                    array_count(wallet->internalChain) : addrsCount;
 
-    for (i = 0; addrs && i < internalCount; i++) {
-        addrs[i] = wallet->internalChain[i];
-    }
-
-    externalCount = (! addrs || array_count(wallet->externalChain) < addrsCount - internalCount) ?
-                    array_count(wallet->externalChain) : addrsCount - internalCount;
+    externalCount = (! addrs || array_count(wallet->externalChain) < addrsCount) ?
+                    array_count(wallet->externalChain) : addrsCount;
 
     for (i = 0; addrs && i < externalCount; i++) {
-        addrs[internalCount + i] = wallet->externalChain[i];
+        addrs[i] = wallet->externalChain[i];
+    }
+
+    internalCount = (! addrs || array_count(wallet->internalChain) < addrsCount - externalCount) ?
+                    array_count(wallet->internalChain) : addrsCount - externalCount;
+
+    for (i = 0; addrs && i < internalCount; i++) {
+        addrs[externalCount + i] = wallet->internalChain[i];
     }
 
     pthread_mutex_unlock(&wallet->lock);
@@ -758,8 +759,8 @@ int BRWalletRegisterTransaction(BRWallet *wallet, BRTransaction *tx)
         // when a wallet address is used in a transaction, generate a new address to replace it
         wallet->WalletUnusedAddrs(wallet, NULL, SEQUENCE_GAP_LIMIT_EXTERNAL, 0);
         wallet->WalletUnusedAddrs(wallet, NULL, SEQUENCE_GAP_LIMIT_INTERNAL, 1);
-        if (wallet->balanceChanged) wallet->balanceChanged(wallet->callbackInfo, wallet->balance);
         if (wallet->txAdded) wallet->txAdded(wallet->callbackInfo, tx);
+        if (wallet->balanceChanged) wallet->balanceChanged(wallet->callbackInfo, wallet->balance);
     }
 
     return r;
@@ -981,6 +982,7 @@ void BRWalletUpdateTransactions(BRWallet *wallet, const UInt256 txHashes[], size
     if (needsUpdate) wallet->WalletUpdateBalance(wallet);
     pthread_mutex_unlock(&wallet->lock);
     if (j > 0 && wallet->txUpdated) wallet->txUpdated(wallet->callbackInfo, hashes, j, blockHeight, timestamp);
+    if (needsUpdate && wallet->balanceChanged) wallet->balanceChanged(wallet->callbackInfo, wallet->balance);
 }
 
 // marks all transactions confirmed after blockHeight as unconfirmed (useful for chain re-orgs)
@@ -1005,6 +1007,7 @@ void BRWalletSetTxUnconfirmedAfter(BRWallet *wallet, uint32_t blockHeight)
     if (count > 0) wallet->WalletUpdateBalance(wallet);
     pthread_mutex_unlock(&wallet->lock);
     if (count > 0 && wallet->txUpdated) wallet->txUpdated(wallet->callbackInfo, hashes, count, TX_UNCONFIRMED, 0);
+    if (count > 0 && wallet->balanceChanged) wallet->balanceChanged(wallet->callbackInfo, wallet->balance);
 }
 
 // returns the amount received by the wallet from the transaction (total outputs to change and/or receive addresses)

@@ -21,20 +21,28 @@
 #include "MasterPubKey.h"
 #include "SDK/Transaction/TransactionOutput.h"
 #include "WrapperList.h"
-#include "MasterPrivKey.h"
-#include "AddressCache.h"
+#include "Account/ISubAccount.h"
 
 namespace Elastos {
 	namespace ElaWallet {
 
 		struct ELAWallet {
+
+			ELAWallet() {
+				memset(&Raw, 0, sizeof(Raw));
+				IsSingleAddress = false;
+			}
+
 			BRWallet Raw;
 			typedef std::map<std::string, std::string> TransactionRemarkMap;
 			TransactionRemarkMap TxRemarkMap;
 			std::vector<std::string> ListeningAddrs;
+
+			bool IsSingleAddress;
+			std::string SingleAddress;
 		};
 
-		ELAWallet *ELAWalletNew(BRTransaction *transactions[], size_t txCount, BRMasterPubKey mpk,
+		ELAWallet *ELAWalletNew(BRTransaction *transactions[], size_t txCount,
 								size_t (*WalletUnusedAddrs)(BRWallet *wallet, BRAddress addrs[], uint32_t gapLimit,
 															int internal),
 								size_t (*WalletAllAddrs)(BRWallet *wallet, BRAddress addrs[], size_t addrsCount),
@@ -55,11 +63,9 @@ namespace Elastos {
 
 		std::string ELAWalletGetRemark(ELAWallet *wallet, const std::string &txHash);
 
-		void ELAWalletRegisterRemark(ELAWallet *wallet, const std::string &txHash,
-												   const std::string &remark);
+		void ELAWalletRegisterRemark(ELAWallet *wallet, const std::string &txHash, const std::string &remark);
 
-		void ELAWalletLoadRemarks(ELAWallet *wallet,
-												const SharedWrapperList<Transaction, BRTransaction *> &transaction);
+		void ELAWalletLoadRemarks(ELAWallet *wallet, const SharedWrapperList<Transaction, BRTransaction *> &transaction);
 
 		class Wallet :
 				public Wrapper<BRWallet> {
@@ -83,7 +89,7 @@ namespace Elastos {
 		public:
 
 			Wallet(const SharedWrapperList<Transaction, BRTransaction *> &transactions,
-				   const MasterPubKeyPtr &masterPubKey,
+				   const SubAccountPtr &subAccount,
 				   const boost::shared_ptr<Listener> &listener);
 
 			virtual ~Wallet();
@@ -229,10 +235,16 @@ namespace Elastos {
 
 			uint64_t getMaxOutputAmount();
 
+			void signTransaction(const boost::shared_ptr<Transaction> &transaction, int forkId,
+								 const std::string &payPassword);
+
+
 		protected:
 			Wallet();
 
 			static bool AddressFilter(const std::string &fromAddress, const std::string &filterAddress);
+
+			static void SortUTXOForAmount(BRWallet *wallet, uint64_t amount);
 
 			static BRTransaction *CreateTxForOutputs(BRWallet *wallet, const BRTxOutput outputs[], size_t outCount,
 													 uint64_t fee, const std::string &fromAddress,
@@ -241,8 +253,6 @@ namespace Elastos {
 
 			static BRTransaction *
 			WalletCreateTxForOutputs(BRWallet *wallet, const BRTxOutput outputs[], size_t outCount);
-
-			bool WalletSignTransaction(const TransactionPtr &transaction, int forkId, const void *seed, size_t seedLen);
 
 			static uint64_t WalletMaxOutputAmount(BRWallet *wallet);
 
@@ -273,9 +283,12 @@ namespace Elastos {
 
 			static uint64_t BalanceAfterTx(BRWallet *wallet, const BRTransaction *tx);
 
+			static size_t WalletAllAddrs(BRWallet *wallet, BRAddress addrs[], size_t addrsCount);
+
 		protected:
 			ELAWallet *_wallet;
 
+			SubAccountPtr _subAccount;
 			boost::weak_ptr<Listener> _listener;
 		};
 

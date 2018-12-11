@@ -4,6 +4,7 @@
 
 #include <set>
 #include <boost/scoped_ptr.hpp>
+#include <SDK/Common/ParamChecker.h>
 
 #include "ELACoreExt/ELATxOutput.h"
 #include "ELACoreExt/Payload/PayloadRegisterIdentification.h"
@@ -23,17 +24,20 @@
 namespace Elastos {
 	namespace ElaWallet {
 
-		IdChainSubWallet::IdChainSubWallet(const CoinInfo &info, const ChainParams &chainParams,
-										   const std::string &payPassword, const PluginTypes &pluginTypes,
+		IdChainSubWallet::IdChainSubWallet(const CoinInfo &info, const MasterPubKeyPtr &masterPubKey,
+										   const ChainParams &chainParams, const PluginTypes &pluginTypes,
 										   MasterWallet *parent) :
-				SidechainSubWallet(info, chainParams, payPassword, pluginTypes, parent) {
+				SidechainSubWallet(info, masterPubKey, chainParams, pluginTypes, parent) {
 
 			std::vector<std::string> registeredIds = _parent->GetAllIds();
 
 			uint32_t purpose = (uint32_t) info.getIndex();
 			std::set<std::string> bufferIds(registeredIds.begin(), registeredIds.end());
-			for (int i = 0; i < registeredIds.size() + ID_REGISTER_BUFFER_COUNT; ++i) {
-				bufferIds.insert(_parent->DeriveIdAndKeyForPurpose(purpose, i));
+
+			if (_subAccount->GetParent()->GetType() == "Standard") { //We only derive ids when accout type is "Standard"
+				for (int i = 0; i < registeredIds.size() + ID_REGISTER_BUFFER_COUNT; ++i) {
+					bufferIds.insert(_parent->DeriveIdAndKeyForPurpose(purpose, i));
+				}
 			}
 
 			std::vector<std::string> addrs(bufferIds.begin(), bufferIds.end());
@@ -53,9 +57,8 @@ namespace Elastos {
 																			 _info.getMinFee(), memo, remark));
 
 			TransactionPtr transaction = createTransaction(txParam.get());
-			if (transaction == nullptr) {
-				throw std::logic_error("Create transaction error.");
-			}
+			ParamChecker::checkCondition(transaction == nullptr, Error::CreateTransaction, "Create ID tx");
+
 			PayloadRegisterIdentification *payloadIdChain = static_cast<PayloadRegisterIdentification *>(transaction->getPayload());
 			payloadIdChain->fromJson(payloadJson);
 
@@ -109,7 +112,7 @@ namespace Elastos {
 		void IdChainSubWallet::onTxAdded(const TransactionPtr &transaction) {
 			if (transaction != nullptr && transaction->getTransactionType() == ELATransaction::RegisterIdentification) {
 				std::string txHash = Utils::UInt256ToString(transaction->getHash());
-				Log::getLogger()->info("Tx callback (onTxAdded): Tx hash={}", txHash);
+				Log::getLogger()->debug("ID onTxAdded: hash={}", txHash);
 
 				std::for_each(_callbacks.begin(), _callbacks.end(),
 							  [transaction](ISubWalletCallback *callback) {
@@ -119,10 +122,8 @@ namespace Elastos {
 										  Utils::UInt256ToString(transaction->getHash(), true),
 										  SubWalletCallback::convertToString(
 												  SubWalletCallback::Added),
-										  payload->toJson(), transaction->getBlockHeight());
+										  payload->toJson(), 0);
 							  });
-				Log::getLogger()->info("Tx callback (onTxAdded) finished. Details: txHash={}, confirm count={}.",
-									   txHash, 0);
 			} else {
 				SubWallet::onTxAdded(transaction);
 			}
@@ -131,19 +132,22 @@ namespace Elastos {
 		void IdChainSubWallet::onTxUpdated(const std::string &hash, uint32_t blockHeight, uint32_t timeStamp) {
 			TransactionPtr transaction = _walletManager->getWallet()->transactionForHash(
 					Utils::UInt256FromString(hash));
-			if (transaction != nullptr && transaction->getTransactionType() == ELATransaction::RegisterIdentification) {
-				Log::getLogger()->info("Tx callback (onTxUpdated): Tx hash={}", hash);
+			if (transaction != nullptr &&
+				transaction->getTransactionType() == ELATransaction::RegisterIdentification) {
 
+				uint32_t confirm = blockHeight >= transaction->getBlockHeight() ? blockHeight -
+					transaction->getBlockHeight() + 1 : 0;
+
+				Log::getLogger()->debug("ID onTxUpdated: hash = {}, confirm = {}", hash, confirm);
 				std::string reversedId(hash.rbegin(), hash.rend());
 				std::for_each(_callbacks.begin(), _callbacks.end(),
-							  [&reversedId, blockHeight, timeStamp, &transaction, this](ISubWalletCallback *callback) {
+							  [&reversedId, confirm, timeStamp, &transaction, this](ISubWalletCallback *callback) {
 
 								  const PayloadRegisterIdentification *payload = static_cast<const PayloadRegisterIdentification *>(
 										  transaction->getPayload());
 								  callback->OnTransactionStatusChanged(reversedId, SubWalletCallback::convertToString(
-										  SubWalletCallback::Updated), payload->toJson(), blockHeight);
+										  SubWalletCallback::Updated), payload->toJson(), confirm);
 							  });
-				Log::getLogger()->info("Tx callback (onTxUpdated) finished. Details: txHash={}.", hash);
 			} else {
 				SubWallet::onTxUpdated(hash, blockHeight, timeStamp);
 			}
@@ -153,7 +157,7 @@ namespace Elastos {
 			TransactionPtr transaction = _walletManager->getWallet()->transactionForHash(
 					Utils::UInt256FromString(hash));
 			if (transaction != nullptr && transaction->getTransactionType() == ELATransaction::RegisterIdentification) {
-				Log::getLogger()->info("Tx callback (onTxDeleted) begin");
+				Log::getLogger()->debug("ID onTxDeleted");
 				std::string reversedId(hash.rbegin(), hash.rend());
 				std::for_each(_callbacks.begin(), _callbacks.end(),
 							  [&reversedId, notifyUser, recommendRescan, &transaction, this](
@@ -164,10 +168,16 @@ namespace Elastos {
 								  callback->OnTransactionStatusChanged(reversedId, SubWalletCallback::convertToString(
 										  SubWalletCallback::Deleted), payload->toJson(), 0);
 							  });
-				Log::getLogger()->info("Tx callback (onTxDeleted) finished.");
 			} else {
 				SubWallet::onTxDeleted(hash, notifyUser, recommendRescan);
 			}
+		}
+
+		nlohmann::json IdChainSubWallet::GetBasicInfo() const {
+			nlohmann::json j;
+			j["Type"] = "Idchain";
+			j["Account"] = _subAccount->GetBasicInfo();
+			return j;
 		}
 
 	}

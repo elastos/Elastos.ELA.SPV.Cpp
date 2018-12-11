@@ -6,6 +6,12 @@
 
 #include <BRTransaction.h>
 #include <BRKey.h>
+#include <SDK/KeyStore/ElaNewWalletJson.h>
+#include <SDK/KeyStore/KeyStore.h>
+#include <SDK/Common/Log.h>
+#include <Core/BRBIP39Mnemonic.h>
+#include <Core/BRBIP32Sequence.h>
+#include <Core/BRKey.h>
 
 #include "catch.hpp"
 #include "Address.h"
@@ -15,7 +21,6 @@ using namespace Elastos::ElaWallet;
 
 TEST_CASE( "Address test", "[Address]" )
 {
-
 	SECTION("Default constructor") {
 		Address address;
 		REQUIRE(address.getRaw() != nullptr);

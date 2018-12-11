@@ -80,7 +80,7 @@ namespace Elastos {
 			static int networkIsReachable(void *info) {
 
 				WeakListener *listener = (WeakListener *) info;
-				int result = 0;
+				int result = 1;
 				if (!listener->expired()) {
 
 					result = listener->lock()->networkIsReachable();
@@ -113,6 +113,13 @@ namespace Elastos {
 					listener->lock()->blockHeightIncreased(height);
 				}
 			}
+
+			static void syncIsInactive(void *info, uint32_t time) {
+				WeakListener *listener = (WeakListener *) info;
+				if (!listener->expired()) {
+					listener->lock()->syncIsInactive(time);
+				}
+			}
 		}
 
 		PeerManager::Listener::Listener(const Elastos::ElaWallet::PluginTypes &pluginTypes) :
@@ -122,6 +129,7 @@ namespace Elastos {
 		PeerManager::PeerManager(const ChainParams &params,
 								 const WalletPtr &wallet,
 								 uint32_t earliestKeyTime,
+								 uint32_t reconnectSeconds,
 								 const SharedWrapperList<IMerkleBlock, BRMerkleBlock *> &blocks,
 								 const SharedWrapperList<Peer, BRPeer *> &peers,
 								 const boost::shared_ptr<PeerManager::Listener> &listener,
@@ -148,6 +156,7 @@ namespace Elastos {
 					_chainParams.getRaw(),
 					wallet->getRaw(),
 					earliestKeyTime,
+					reconnectSeconds,
 					blockArray.data(),
 					blocks.size(),
 					peerArray,
@@ -165,6 +174,7 @@ namespace Elastos {
 									  networkIsReachable,
 									  threadCleanup,
 									  blockHeightIncreased,
+									  syncIsInactive,
 									  verifyDifficultyWrapper,
 									  loadBloomFilter);
 		}
@@ -183,8 +193,7 @@ namespace Elastos {
 		}
 
 		Peer::ConnectStatus PeerManager::getConnectStatus() const {
-			//todo complete me
-			return Peer::Unknown;
+			return Peer::ConnectStatus(BRPeerManagerConnectStatus((BRPeerManager *) _manager));
 		}
 
 		void PeerManager::connect() {
@@ -192,8 +201,13 @@ namespace Elastos {
 		}
 
 		void PeerManager::disconnect() {
-			_manager->Raw.isShutDown = 1;
 			BRPeerManagerDisconnect((BRPeerManager *) _manager);
+		}
+
+		void PeerManager::DisableReconnectCallback() {
+			pthread_mutex_lock(&_manager->Raw.lock);
+			_manager->Raw.syncIsInactivate = NULL;
+			pthread_mutex_unlock(&_manager->Raw.lock);
 		}
 
 		void PeerManager::rescan() {

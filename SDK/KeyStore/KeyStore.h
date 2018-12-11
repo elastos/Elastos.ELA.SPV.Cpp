@@ -8,30 +8,52 @@
 #include <boost/filesystem.hpp>
 
 #include "ElaNewWalletJson.h"
+#include "IAccount.h"
 
 namespace Elastos {
 	namespace ElaWallet {
 
 		class KeyStore {
 		public:
-			KeyStore();
+			KeyStore(const std::string &rootPath);
 
 			~KeyStore();
 
 			bool open(const boost::filesystem::path &path, const std::string &password);
 
-			bool open(const nlohmann::json &json, const std::string &password);
+			// to support old web keystore temporary
+			bool Import(const nlohmann::json &json, const std::string &passwd, const std::string &phrasePasswd);
+
+			bool Import(const nlohmann::json &json, const std::string &password);
 
 			bool save(const boost::filesystem::path &path, const std::string &password);
 
-			bool save(nlohmann::json &json, const std::string &password);
+			bool Export(nlohmann::json &json, const std::string &password);
+
+			bool isOld();
+
+			bool HasPhrasePassword() const;
 
 			const ElaNewWalletJson &json() const;
 
 			ElaNewWalletJson &json();
 
+			IAccount *createAccountFromJson(const std::string &payPassword) const;
+
+			void initJsonFromAccount(IAccount *account, const std::string &payPassword);
+
+		private:
+			void initAccountByType(IAccount *account, const std::string &payPassword);
+
+			void initStandardAccount(IAccount *account, const std::string &payPassword);
+
+			void initSimpleAccount(IAccount *account, const std::string &payPassword);
+
+			void initMultiSignAccount(IAccount *account, const std::string &payPassword);
+
 		private:
 
+			std::string _rootPath;
 			ElaNewWalletJson _walletJson;
 		};
 	}

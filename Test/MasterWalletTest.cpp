@@ -82,6 +82,8 @@ public:
 			SubWalletType subWalletType,
 			int coinTypeIndex,
 			uint64_t feePerKb = 0) {
+
+		tryInitCoinConfig();
 		CoinInfo info;
 		info.setEaliestPeerTime(0);
 		info.setWalletType(subWalletType);
@@ -90,8 +92,6 @@ public:
 		info.setUsedMaxAddressIndex(0);
 		info.setChainId(chainID);
 		info.setFeePerKb(feePerKb);
-		info.setEncryptedKey(
-				"4142434b78676563675253724d494d3035523030467831564b3459672f6967737743566347563443474c6171594e4573744e6d312b4e46497a34496846394949327a505565714c564e387a510d0a3949645835413d3d00");
 		info.setChainCode("0000000000000000000000000000000000000000000000000000000000000000");
 		info.setPublicKey("038bc7fbfa77b10b85cdf9ef75c0d994924adab73a7a7486e9c392398899faac33");
 		std::vector<CoinInfo> coinInfoList = {info};
@@ -369,8 +369,7 @@ TEST_CASE("Master wallet DestroyWallet method test", "[DestroyWallet]") {
 
 		masterWallet->DestroyWallet(subWallet);
 		std::vector<ISubWallet *> subWallets = masterWallet->GetAllSubWallets();
-		REQUIRE(subWallets.size() == 1);
-		masterWallet->DestroyWallet(subWallets[0]);
+		REQUIRE(subWallets.size() == 0);
 		try {
 			masterWallet->DestroyWallet(subWallet);
 		}
@@ -466,6 +465,7 @@ TEST_CASE("Master wallet ChangePassword method test", "[ChangePassword]") {
         REQUIRE_NOTHROW(masterWallet->ChangePassword(payPassword, newPayPassword));
 	}
 	SECTION("Change password should be effective for sub wallets") {
+		masterWallet->CreateSubWallet("ELA", payPassword, false);
 		std::string newPayPassword = "newPayPassword";
 
 		REQUIRE_NOTHROW(masterWallet->GetAllSubWallets()[0]->Sign("MyMessage", payPassword));
@@ -656,7 +656,7 @@ TEST_CASE("Master wallet GetAllSubWallets method test", "[GetAllSubWallets]") {
 		std::string mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
 		boost::scoped_ptr<TestMasterWallet> masterWallet(new TestMasterWallet(mnemonic, phrasePassword, payPassword));
 
-		REQUIRE(masterWallet->GetAllSubWallets().size() == 1);
+		REQUIRE(masterWallet->GetAllSubWallets().size() == 0);
 
 		std::string masterWalletId = masterWallet->GetId();
 

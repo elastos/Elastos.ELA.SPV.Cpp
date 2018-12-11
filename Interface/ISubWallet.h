@@ -28,6 +28,32 @@ namespace Elastos {
 			virtual std::string GetChainId() const = 0;
 
 			/**
+			 * Here is a example of hd account wallet basic info:
+			 * {
+			 * 	"Type": "Normal" //Type can be Normal, Mainchain, Sidechain and Idchain
+			 * 	"Account":
+			 * 		{
+			 * 			"Type": "HD Account"
+			 * 			"Details":
+			 * 				{
+			 * 					"CoinIndex": 1
+			 * 				}
+			 * 		}
+			 * }
+			 *
+			 * and an example of multi-sign account wallet basic info:
+			 * {
+			 * 	"Type": "Mainchain" //Type can be Normal, Mainchain, Sidechain and Idchain
+			 * 	"Account":
+			 * 		{
+			 * 			"Type": "Multi-Sign Account"
+			 * 		}
+			 * }
+			 * @return basic information of current master wallet.
+			 */
+			virtual nlohmann::json GetBasicInfo() const = 0;
+
+			/**
 			 * Get balances of all addresses in json format.
 			 * @return balances of all addresses in json format.
 			 */
@@ -91,18 +117,6 @@ namespace Elastos {
 					const std::string &remark) = 0;
 
 			/**
-			 * Create a multi-sign address used to create multi-sign transaction.
-			 * @param multiPublicKeyJson is a list of public keys in json format.
-			 * @param totalSignNum specify total sign number (n).
-			 * @param requiredSignNum specify required sign number (m).
-			 * @return multi-sign address.
-			 */
-			virtual std::string CreateMultiSignAddress(
-					const nlohmann::json &multiPublicKeyJson,
-					uint32_t totalSignNum,
-					uint32_t requiredSignNum) = 0;
-
-			/**
 			 * Create a multi-sign transaction and return the content of transaction in json format.
 			 * @param fromAddress specify which address we want to spend, or just input empty string to let wallet choose UTXOs automatically.
 			 * @param toAddress specify which address we want to send.
@@ -127,16 +141,47 @@ namespace Elastos {
 					uint64_t feePerKb) = 0;
 
 			/**
-			 * Send raw transaction by p2p network.
+			 * Update a transaction by change fee
 			 * @param transactionJson content of transaction in json format.
 			 * @param fee specify fee for miners, fee must greater or equal than 1000 (sela).
-			 * @param payPassword use to decrypt the root private key temporarily. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
 			 * @return Sent result in json format.
 			 */
-			virtual nlohmann::json SendRawTransaction(
+			virtual nlohmann::json UpdateTransactionFee(
 					const nlohmann::json &transactionJson,
-					uint64_t fee,
+					uint64_t fee) = 0;
+
+			/**
+			 * Sign a transaction or append sign to a multi-sign transaction and return the content of transaction in json format.
+			 * @param rawTransaction content of transaction in json format.
+			 * @param payPassword use to decrypt the root private key temporarily. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+			 * @return If success return the content of transaction in json format.
+			 */
+			virtual nlohmann::json SignTransaction(
+					const nlohmann::json &rawTransaction,
 					const std::string &payPassword) = 0;
+
+			/**
+			 * Get signers already signed specified transaction.
+			 * @param rawTransaction a multi-sign transaction to find signed signers.
+			 * @return Signed signers in json format. An example of result will be displayed as follows:
+			 * {
+			 * 	[
+			 * 		"03b73a64f50c142c1f08710e04b928553508c3028e045dfdfdc5489434df13275e",
+			 * 		"02f925e82f4482a9aa853a35203ab8965439c9db6aee8ef1783d2e1a491c28a482"
+			 * 	]
+			 * }
+			 */
+			virtual nlohmann::json GetTransactionSignedSigners(
+					const nlohmann::json &rawTransaction) = 0;
+
+			/**
+			 * Send a transaction by p2p network.
+			 * @param rawTransaction content of transaction in json format.
+			 * @param fee specify fee for miners, fee must greater or equal than 1000 (sela).
+			 * @return Sent result in json format.
+			 */
+			virtual nlohmann::json PublishTransaction(
+					const nlohmann::json &rawTransaction) = 0;
 
 			/**
 			 * Get all qualified transactions sorted by descent (newest first).
@@ -168,9 +213,15 @@ namespace Elastos {
 			 * @return the result wrapper by a json.
 			 */
 			virtual nlohmann::json CheckSign(
-					const std::string &address,
+					const std::string &publicKey,
 					const std::string &message,
 					const std::string &signature) = 0;
+
+			/**
+			 * Get root public key of current sub wallet.
+			 * @return root public key with hex string format.
+			 */
+			virtual std::string GetPublicKey() const = 0;
 		};
 
 	}

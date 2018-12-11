@@ -2,6 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <arpa/inet.h>
+#include <Core/BRPeer.h>
 #include "BRPeer.h"
 #include "BRPeerMessages.h"
 #include "BRPeerManager.h"
@@ -16,8 +18,6 @@ namespace Elastos {
 		}
 
 		int AddressMessage::Accept(BRPeer *peer, const uint8_t *msg, size_t msgLen) {
-			peer_log(peer, "AddressMessage.Accept");
-
 			BRPeerContext *ctx = (BRPeerContext *)peer;
 
 			size_t off = 0;
@@ -49,12 +49,25 @@ namespace Elastos {
 					off += sizeof(UInt128);
 					p.port = UInt16GetLE(&msg[off]);
 					off += sizeof(uint16_t);
-					uint64_t id = UInt64GetLE(&msg[off]);
-					off += sizeof(uint64_t);
+
+					char host[INET6_ADDRSTRLEN] = {0};
+					if ((p.address.u64[0] == 0 && p.address.u16[4] == 0 && p.address.u16[5] == 0xffff))
+						inet_ntop(AF_INET, &p.address.u32[3], host, sizeof(host));
+					else
+						inet_ntop(AF_INET6, &p.address, host, sizeof(host));
+
+					peer_dbg(peer, "peers[%zu] = %s, timestamp = %llu, port = %d, services = %llu",
+							 i, host, p.timestamp, p.port, p.services);
 
 					if (! (p.services & SERVICES_NODE_NETWORK)) continue; // skip peers that don't carry full blocks
-					if (! (peer->address.u64[0] == 0 && peer->address.u16[4] == 0 && peer->address.u16[5] == 0xffff))
+					if (! (p.address.u64[0] == 0 && p.address.u16[4] == 0 && p.address.u16[5] == 0xffff))
 						continue; // ignore IPv6 for now
+					if (p.address.u64[0] == 0 && p.address.u16[4] == 0 && p.address.u16[5] == 0xffff &&
+						p.address.u8[12] == 127 && p.address.u8[13] == 0 &&
+						p.address.u8[14] == 0 && p.address.u8[15] == 1) {
+						peer_log(peer, "drop peers[%zu]", i);
+						continue;
+					}
 
 					// if address time is more than 10 min in the future or unknown, set to 5 days old
 					if (p.timestamp > now + 10*60 || p.timestamp == 0) p.timestamp = now - 5*24*60*60;
@@ -69,8 +82,6 @@ namespace Elastos {
 		}
 
 		void AddressMessage::Send(BRPeer *peer) {
-			peer_log(peer, "AddressMessage.Send");
-
 			uint8_t msg[BRVarIntSize(0)];
 			size_t msgLen = BRVarIntSet(msg, sizeof(msg), 0);
 

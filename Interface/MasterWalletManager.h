@@ -38,21 +38,85 @@ namespace Elastos {
 			 */
 			virtual std::string GenerateMnemonic(const std::string &language);
 
-			 /**
-			  * Create a new master wallet by mnemonic and phrase password, or return existing master wallet if current master wallet manager has the master wallet id.
-			  * @param masterWalletId is the unique identification of a master wallet object.
-			  * @param mnemonic use to generate seed which deriving the master private key and chain code.
-			  * @param phrasePassword combine with random seed to generate root key and chain code. Phrase password can be empty or between 8 and 128, otherwise will throw invalid argument exception.
-			  * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
-			  * @param language specify language of mnemonic, value of language should correspond to the language of \p mnemonic.
-			  * @return If success will return a pointer of master wallet interface.
-			  */
+			/**
+			 * Get public key for creating multi sign wallet with phrase.
+			 * @param phrase is something like mnemonic generated from GenerateMnemonic().
+			 * @param phrasePassword combine with random seed to generate root key and chain code. Phrase password can be empty or between 8 and 128, otherwise will throw invalid argument exception.
+			 * @return public key as expected.
+			 */
+			virtual std::string GetMultiSignPubKey(const std::string &phrase, const std::string &phrasePassword);
+
+			/**
+			 * Get public key for creating multi sign wallet with private key.
+			 * @param privKey private key to do the sign job of related multi-sign accounts.
+			 * @return public key as expected.
+			 */
+			virtual std::string GetMultiSignPubKey(const std::string &privKey);
+
+			/**
+			 * Create a new master wallet by mnemonic and phrase password, or return existing master wallet if current master wallet manager has the master wallet id.
+			 * @param masterWalletId is the unique identification of a master wallet object.
+			 * @param mnemonic use to generate seed which deriving the master private key and chain code.
+			 * @param phrasePassword combine with random seed to generate root key and chain code. Phrase password can be empty or between 8 and 128, otherwise will throw invalid argument exception.
+			 * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+			 * @param singleAddress singleAddress if true created wallet will have only one address inside, otherwise sub wallet will manager a chain of addresses for security.
+			 * @param language specify language of mnemonic, value of language should correspond to the language of \p mnemonic.
+			 * @return If success will return a pointer of master wallet interface.
+			 */
 			virtual IMasterWallet *CreateMasterWallet(
 					const std::string &masterWalletId,
 					const std::string &mnemonic,
 					const std::string &phrasePassword,
 					const std::string &payPassword,
-					const std::string &language = "english");
+					bool singleAddress);
+
+			/**
+			  * Create a multi-sign master wallet by mnemonic phrase password and related co-signers, or return existing master wallet if current master wallet manager has the master wallet id.
+			  * @param masterWalletId is the unique identification of a master wallet object.
+			  * @param coSigners is an array of signers' public key
+			  * @param requiredSignCount specify minimum count to accomplish related transactions.
+			  * @return If success will return a pointer of master wallet interface.
+			  */
+			virtual IMasterWallet *CreateMultiSignMasterWallet(
+					const std::string &masterWalletId,
+					const nlohmann::json &coSigners,
+					uint32_t requiredSignCount);
+
+			/**
+			  * Create a multi-sign master wallet by mnemonic phrase password and related co-signers, or return existing master wallet if current master wallet manager has the master wallet id.
+			  * @param masterWalletId is the unique identification of a master wallet object.
+			  * @param privKey private key to do the sign job of related multi-sign accounts.
+			  * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+			  * @param coSigners is an array of signers' public key
+			  * @param requiredSignCount specify minimum count to accomplish related transactions.
+			  * @return If success will return a pointer of master wallet interface.
+			  */
+			virtual IMasterWallet *CreateMultiSignMasterWallet(
+					const std::string &masterWalletId,
+					const std::string &privKey,
+					const std::string &payPassword,
+					const nlohmann::json &coSigners,
+					uint32_t requiredSignCount);
+
+			/**
+			 * Create a multi-sign master wallet by private key and related co-signers, or return existing master wallet if current master wallet manager has the master wallet id.
+			 * @param masterWalletId is the unique identification of a master wallet object.
+			 * @param mnemonic use to generate seed which deriving the master private key and chain code.
+			 * @param phrasePassword combine with random seed to generate root key and chain code. Phrase password can be empty or between 8 and 128, otherwise will throw invalid argument exception.
+			 * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+			 * @param coSigners is an array of signers' public key.
+			 * @param requiredSignCount specify minimum count to accomplish related transactions.
+			 * @param language specify language of mnemonic, value of language should correspond to the language of \p mnemonic.
+			 * @return If success will return a pointer of master wallet interface.
+			 */
+			virtual IMasterWallet *CreateMultiSignMasterWallet(
+					const std::string &masterWalletId,
+					const std::string &mnemonic,
+					const std::string &phrasePassword,
+					const std::string &payPassword,
+					const nlohmann::json &coSigners,
+					uint32_t requiredSignCount);
+
 
 			/**
 			 * Get manager existing master wallets.
@@ -61,11 +125,35 @@ namespace Elastos {
 			virtual std::vector<IMasterWallet *> GetAllMasterWallets() const;
 
 			/**
+			 * Get manager available master wallet ids.
+			 * @return available ids array.
+			 */
+			virtual std::vector<std::string> GetAllMasterWalletIds() const;
+
+			/**
+			 * Get a master wallet object by id.
+			 * @param masterWalletId master wallet id.
+			 * @return master wallet object.
+			 */
+			virtual IMasterWallet *GetWallet(
+					const std::string &masterWalletId) const;
+
+			/**
 			 * Destroy a master wallet.
 			 * @param masterWallet A pointer of master wallet interface create or imported by wallet factory object.
 			 */
 			virtual void DestroyWallet(
 					const std::string &masterWalletId);
+
+			/*
+			 * To support old web keystore
+			 */
+			virtual IMasterWallet *ImportWalletWithKeystore(
+				const std::string &masterWalletId,
+				const nlohmann::json &keystoreContent,
+				const std::string &backupPassword,
+				const std::string &payPassword,
+				const std::string &phrasePassword);
 
 			/**
 			 * Import master wallet by key store file.
@@ -80,8 +168,7 @@ namespace Elastos {
 					const std::string &masterWalletId,
 					const nlohmann::json &keystoreContent,
 					const std::string &backupPassword,
-					const std::string &payPassword,
-					const std::string &phrasePassword = "");
+					const std::string &payPassword);
 
 			/**
 			 * Import master wallet by mnemonic.
@@ -89,6 +176,7 @@ namespace Elastos {
 			 * @param mnemonic for importing the master wallet.
 			 * @param phrasePassword combine with mnemonic to generate root key and chain code. Phrase password can be empty or between 8 and 128, otherwise will throw invalid argument exception.
 			 * @param payPassword use to encrypt important things(such as private key) in memory. Pay password should between 8 and 128, otherwise will throw invalid argument exception.
+			 * @param singleAddress singleAddress if true created wallet will have only one address inside, otherwise sub wallet will manager a chain of addresses for security.
 			 * @param language specify language of mnemonic. Language should not be empty, and exit corresponding language config file under the root path. The config begin with fixed prefix "mnemonic_" and end with ".txt" extension, for example mnemonic of Chinese config will be "mnemonic_chinese.txt".
 			 * @return If success will return a pointer of master wallet interface.
 			 */
@@ -97,7 +185,7 @@ namespace Elastos {
 					const std::string &mnemonic,
 					const std::string &phrasePassword,
 					const std::string &payPassword,
-					const std::string &language = "english");
+					bool singleAddress);
 
 			/**
 			 * Export key store content of the master wallet in json format.
@@ -121,6 +209,10 @@ namespace Elastos {
 					IMasterWallet *masterWallet,
 					const std::string &payPassword);
 
+			nlohmann::json EncodeTransactionToString(const nlohmann::json &tx);
+
+			nlohmann::json DecodeTransactionFromString(const nlohmann::json &cipher);
+
 		protected:
 			typedef std::map<std::string, IMasterWallet *> MasterWalletMap;
 
@@ -130,10 +222,12 @@ namespace Elastos {
 
 			void removeWallet(const std::string &masterWalletId, bool saveMaster = true);
 
+			void checkRedundant(IMasterWallet *wallet) const;
+
 		protected:
 			std::string _rootPath;
 			bool _p2pEnable;
-			MasterWalletMap _masterWalletMap;
+			mutable MasterWalletMap _masterWalletMap;
 		};
 	}
 }

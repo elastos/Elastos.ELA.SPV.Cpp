@@ -35,6 +35,10 @@ namespace Elastos {
 			return _transactionDataStore.deleteAllTransactions(iso);
 		}
 
+		size_t DatabaseManager::getAllTransactionsCount(const std::string &iso) const {
+			return _transactionDataStore.getAllTransactionsCount(iso);
+		}
+
 		std::vector<TransactionEntity> DatabaseManager::getAllTransactions(const std::string &iso) const {
 			return _transactionDataStore.getAllTransactions(iso);
 		}
@@ -66,6 +70,10 @@ namespace Elastos {
 
 		std::vector<PeerEntity> DatabaseManager::getAllPeers(const std::string &iso) const {
 			return _peerDataSource.getAllPeers(iso);
+		}
+
+		size_t DatabaseManager::getAllPeersCount(const std::string &iso) const {
+			return _peerDataSource.getAllPeersCount(iso);
 		}
 
 		bool DatabaseManager::putMerkleBlock(const std::string &iso, const MerkleBlockEntity &blockEntity) {

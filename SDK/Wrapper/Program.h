@@ -13,8 +13,10 @@
 namespace Elastos {
 	namespace ElaWallet {
 
+		class Transaction;
+
 		class Program :
-			public ELAMessageSerializable {
+				public ELAMessageSerializable {
 		public:
 			Program();
 
@@ -24,7 +26,7 @@ namespace Elastos {
 
 			~Program();
 
-			bool isValid();
+			bool isValid(const boost::shared_ptr<Transaction> &transaction);
 
 			const CMBlock &getCode();
 
@@ -41,6 +43,9 @@ namespace Elastos {
 			virtual nlohmann::json toJson() const;
 
 			virtual void fromJson(const nlohmann::json &jsonData);
+
+			static bool ParseMultiSignRedeemScript(const CMBlock &code, uint8_t &m, uint8_t &n,
+												   std::vector<std::string> &signers);
 
 		private:
 			CMBlock _code;

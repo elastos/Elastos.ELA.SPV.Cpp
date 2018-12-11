@@ -25,14 +25,30 @@ namespace Elastos {
 					const std::string &memo,
 					const std::string &remark);
 
+			virtual nlohmann::json CreateRegisterProducerTransaction(
+					const std::string &fromAddress,
+					const std::string &toAddress,
+					const std::string &publicKey,
+					const std::string &nickName,
+					const std::string &url,
+					uint64_t location);
+
+			virtual nlohmann::json CreateCancelProducerTransaction(const std::string &publicKey);
+
+			virtual nlohmann::json CreateVoteProducerTransaction(
+					uint64_t stake,
+					const nlohmann::json &pubicKeys);
+
 		protected:
 			friend class MasterWallet;
 
 			MainchainSubWallet(const CoinInfo &info,
+							   const MasterPubKeyPtr &masterPubKey,
 							   const ChainParams &chainParams,
-							   const std::string &payPassword,
 							   const PluginTypes &pluginTypes,
 							   MasterWallet *parent);
+
+			virtual nlohmann::json GetBasicInfo() const;
 
 			virtual boost::shared_ptr<Transaction> createTransaction(TxParam *param) const;
 

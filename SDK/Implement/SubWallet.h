@@ -14,11 +14,13 @@
 #include "KeyStore/CoinInfo.h"
 #include "ChainParams.h"
 #include "WalletManager.h"
+#include "Account/ISubAccount.h"
 
 namespace Elastos {
 	namespace ElaWallet {
 
 		class MasterWallet;
+
 		class Transaction;
 
 		class SubWallet : public virtual ISubWallet, public Wallet::Listener, public PeerManager::Listener {
@@ -29,14 +31,14 @@ namespace Elastos {
 
 			const WalletManagerPtr &GetWalletManager() const;
 
-			void ChangePassword(const std::string &oldPassword, const std::string &newPassword);
-
 			void StartP2P();
 
 			void StopP2P();
 
 		public: //implement ISubWallet
 			virtual std::string GetChainId() const;
+
+			virtual nlohmann::json GetBasicInfo() const;
 
 			virtual nlohmann::json GetBalanceInfo();
 
@@ -60,21 +62,29 @@ namespace Elastos {
 					const std::string &memo,
 					const std::string &remark);
 
-			virtual std::string CreateMultiSignAddress(
-					const nlohmann::json &multiPublicKeyJson,
-					uint32_t totalSignNum,
-					uint32_t requiredSignNum);
-
 			virtual nlohmann::json CreateMultiSignTransaction(
 					const std::string &fromAddress,
 					const std::string &toAddress,
 					uint64_t amount,
 					const std::string &memo);
 
-			virtual nlohmann::json SendRawTransaction(
+			virtual uint64_t CalculateTransactionFee(
+					const nlohmann::json &rawTransaction,
+					uint64_t feePerKb);
+
+			virtual nlohmann::json UpdateTransactionFee(
 					const nlohmann::json &transactionJson,
-					uint64_t fee,
+					uint64_t fee);
+
+			virtual nlohmann::json SignTransaction(
+					const nlohmann::json &rawTransaction,
 					const std::string &payPassword);
+
+			virtual nlohmann::json GetTransactionSignedSigners(
+					const nlohmann::json &rawTransaction);
+
+			virtual nlohmann::json PublishTransaction(
+					const nlohmann::json &rawTransaction);
 
 			virtual nlohmann::json GetAllTransaction(
 					uint32_t start,
@@ -86,13 +96,11 @@ namespace Elastos {
 					const std::string &payPassword);
 
 			virtual nlohmann::json CheckSign(
-					const std::string &address,
+					const std::string &publicKey,
 					const std::string &message,
 					const std::string &signature);
 
-			virtual uint64_t CalculateTransactionFee(
-					const nlohmann::json &rawTransaction,
-					uint64_t feePerKb);
+			virtual std::string GetPublicKey() const;
 
 		protected: //implement Wallet::Listener
 			virtual void balanceChanged(uint64_t balance);
@@ -113,41 +121,33 @@ namespace Elastos {
 			virtual void txStatusUpdate() {}
 
 			// func saveBlocks(_ replace: Bool, _ blocks: [BRBlockRef?])
-			virtual void saveBlocks(bool replace, const SharedWrapperList<IMerkleBlock, BRMerkleBlock *>& blocks);
+			virtual void saveBlocks(bool replace, const SharedWrapperList<IMerkleBlock, BRMerkleBlock *> &blocks);
 
 			// func savePeers(_ replace: Bool, _ peers: [BRPeer])
-			virtual void savePeers(bool replace, const SharedWrapperList<Peer, BRPeer*>& peers) {}
+			virtual void savePeers(bool replace, const SharedWrapperList<Peer, BRPeer *> &peers) {}
 
 			// func networkIsReachable() -> Bool}
-			virtual bool networkIsReachable() {return false;}
+			virtual bool networkIsReachable() { return true; }
 
 			// Called on publishTransaction
 			virtual void txPublished(const std::string &error) {}
 
 			virtual void blockHeightIncreased(uint32_t blockHeight);
 
+			virtual void syncIsInactive(uint32_t time) {}
+
 		protected:
 			friend class MasterWallet;
 
 			SubWallet(const CoinInfo &info,
+					  const MasterPubKeyPtr &masterPubKey,
 					  const ChainParams &chainParams,
-					  const std::string &payPassword,
 					  const PluginTypes &pluginTypes,
 					  MasterWallet *parent);
 
-			Key deriveKey(const std::string &payPassword);
-
-			void deriveKeyAndChain(BRKey *key, UInt256 &chainCode, const std::string &payPassword);
-
 			virtual boost::shared_ptr<Transaction> createTransaction(TxParam *param) const;
 
-			virtual nlohmann::json sendTransactionInternal(const boost::shared_ptr<Transaction> &transaction,
-														const std::string &payPassword);
-
 			virtual void publishTransaction(const TransactionPtr &transaction);
-
-			void signTransaction(const boost::shared_ptr<Transaction> &transaction, int forkId,
-			                     const std::string &payPassword);
 
 			void recover(int limitGap);
 
@@ -162,12 +162,14 @@ namespace Elastos {
 													  const nlohmann::json &desc,
 													  uint32_t confirms);
 
-			virtual void fireDestroyWallet();
+			const CoinInfo &getCoinInfo();
+
 		protected:
 			WalletManagerPtr _walletManager;
 			std::vector<ISubWalletCallback *> _callbacks;
 			MasterWallet *_parent;
 			CoinInfo _info;
+			SubAccountPtr _subAccount;
 
 			typedef std::map<std::string, TransactionPtr> TransactionMap;
 			TransactionMap _confirmingTxs;

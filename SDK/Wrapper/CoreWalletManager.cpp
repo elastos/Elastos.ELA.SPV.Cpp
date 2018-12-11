@@ -5,18 +5,11 @@
 #include <sstream>
 
 #include "Common/Log.h"
-#include "SingleAddressWallet.h"
 #include "CoreWalletManager.h"
-#include "AddressRegisteringWallet.h"
+#include "Account/SingleSubAccount.h"
 
 namespace Elastos {
 	namespace ElaWallet {
-
-		bool CoreWalletManager::SHOW_CALLBACK = true;
-		bool CoreWalletManager::SHOW_CALLBACK_DETAIL = false;
-
-		bool CoreWalletManager::SHOW_CALLBACK_DETAIL_TX_STATUS = false;
-		bool CoreWalletManager::SHOW_CALLBACK_DETAIL_TX_IO = false;
 
 		CoreWalletManager::CoreWalletManager(const PluginTypes &pluginTypes, const ChainParams &chainParams) :
 				PeerManager::Listener(pluginTypes),
@@ -24,8 +17,7 @@ namespace Elastos {
 				_walletListener(nullptr),
 				_peerManager(nullptr),
 				_peerManagerListener(nullptr),
-				_masterPubKey(nullptr),
-				_singleAddress(false),
+				_subAccount(nullptr),
 				_pluginTypes(pluginTypes),
 				_chainParams(chainParams) {
 		}
@@ -34,27 +26,17 @@ namespace Elastos {
 
 		}
 
-		void CoreWalletManager::init(const MasterPubKeyPtr &masterPubKey,
-									 uint32_t earliestPeerTime,
-									 bool singleAddress) {
-			_masterPubKey = masterPubKey;
+		void CoreWalletManager::init(const SubAccountPtr &subAccount, uint32_t earliestPeerTime, uint32_t reconnectSeconds) {
+			_subAccount = subAccount;
 			_earliestPeerTime = earliestPeerTime;
-			_singleAddress = singleAddress;
-		}
+			_reconnectSeconds = reconnectSeconds;
 
-		void CoreWalletManager::init(uint32_t earliestPeerTime,
-									 const std::vector<std::string> &initialAddresses) {
-			_earliestPeerTime = earliestPeerTime;
-			_wallet = WalletPtr(new AddressRegisteringWallet(createWalletListener(), initialAddresses));
+			if (_wallet == nullptr) {
+				_wallet = WalletPtr(new Wallet(loadTransactions(), _subAccount, createWalletListener()));
+			}
 		}
 
 		const WalletPtr &CoreWalletManager::getWallet() {
-			if (_wallet == nullptr) {
-				_wallet = WalletPtr(!_singleAddress
-									? new Wallet(loadTransactions(), _masterPubKey, createWalletListener())
-									: new SingleAddressWallet(loadTransactions(), _masterPubKey,
-															  createWalletListener()));
-			}
 			return _wallet;
 		}
 
@@ -64,6 +46,7 @@ namespace Elastos {
 						_chainParams,
 						getWallet(),
 						_earliestPeerTime,
+						_reconnectSeconds,
 						loadBlocks(),
 						loadPeers(),
 						createPeerManagerListener(),
@@ -76,7 +59,6 @@ namespace Elastos {
 		std::string CoreWalletManager::toString() const {
 			std::stringstream ss;
 			ss << "BRCoreWalletManager {" <<
-			   "\n  masterPubKey      : " << _masterPubKey->toString() <<
 			   "\n  chainParams       : " << _chainParams.toString() <<
 			   "\n  earliest peer time: " << _earliestPeerTime <<
 			   "\n  wallet rcv addr   : " << (_wallet != nullptr ? _wallet->getReceiveAddress() : "") <<
@@ -124,7 +106,7 @@ namespace Elastos {
 		}
 
 		bool CoreWalletManager::networkIsReachable() {
-			return false;
+			return true;
 		}
 
 		void CoreWalletManager::txPublished(const std::string &error) {
@@ -252,7 +234,7 @@ namespace Elastos {
 				Log::getLogger()->error("Peer manager callback (networkIsReachable) error.");
 			}
 
-			return false;
+			return true;
 		}
 
 		void WrappedExceptionPeerManagerListener::txPublished(const std::string &error) {
@@ -279,13 +261,27 @@ namespace Elastos {
 			}
 		}
 
+		void WrappedExceptionPeerManagerListener::syncIsInactive(uint32_t time) {
+			try {
+				_listener->syncIsInactive(time);
+			}
+			catch (std::exception ex) {
+				Log::getLogger()->error("Peer manager callback (blockHeightIncreased) error: {}", ex.what());
+			}
+			catch (...) {
+				Log::getLogger()->error("Peer manager callback (blockHeightIncreased) error.");
+			}
+		}
+
 		WrappedExecutorPeerManagerListener::WrappedExecutorPeerManagerListener(
 				PeerManager::Listener *listener,
 				Executor *executor,
+				Executor *reconnectExecutor,
 				const PluginTypes &pluginTypes) :
 				PeerManager::Listener(pluginTypes),
 				_listener(listener),
-				_executor(executor) {
+				_executor(executor),
+				_reconnectExecutor(reconnectExecutor) {
 		}
 
 		void WrappedExecutorPeerManagerListener::syncStarted() {
@@ -363,7 +359,7 @@ namespace Elastos {
 
 		bool WrappedExecutorPeerManagerListener::networkIsReachable() {
 
-			bool result;
+			bool result = true;
 			_executor->execute(Runnable([this, result]() -> void {
 				try {
 					_listener->networkIsReachable();
@@ -396,7 +392,22 @@ namespace Elastos {
 		void WrappedExecutorPeerManagerListener::blockHeightIncreased(uint32_t blockHeight) {
 			_executor->execute(Runnable([this, blockHeight]() -> void {
 				try {
-					_listener->blockHeightIncreased(blockHeight);
+					if (_listener)
+						_listener->blockHeightIncreased(blockHeight);
+				}
+				catch (std::exception ex) {
+					Log::getLogger()->error("Peer manager callback (blockHeightIncreased) error: {}", ex.what());
+				}
+				catch (...) {
+					Log::error("Peer manager callback (blockHeightIncreased) error.");
+				}
+			}));
+		}
+
+		void WrappedExecutorPeerManagerListener::syncIsInactive(uint32_t time) {
+			_reconnectExecutor->execute(Runnable([this, time]() -> void {
+				try {
+					_listener->syncIsInactive(time);
 				}
 				catch (std::exception ex) {
 					Log::getLogger()->error("Peer manager callback (blockHeightIncreased) error: {}", ex.what());

@@ -39,17 +39,15 @@ namespace Elastos {
 			 * @param currentBlockHeight is the of current block when callback fired.
 			 * @param progress is current progress when block height increased.
 			 */
-			virtual void OnBlockHeightIncreased(uint32_t currentBlockHeight, double progress) = 0;
+			virtual void OnBlockHeightIncreased(uint32_t currentBlockHeight, int progress) = 0;
 
 			/**
 			 * Callback method fired when block end synchronizing with a peer. This callback could be used to show progress.
 			 */
 			virtual void OnBlockSyncStopped() = 0;
 
-			/**
-			 * Callback method fired when subwallet was destroyed.
-			 */
-			virtual void OnDestroyWallet() = 0;
+			virtual void OnBalanceChanged(uint64_t balance) = 0;
+
 		};
 
 	}

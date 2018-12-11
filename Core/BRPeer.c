@@ -53,7 +53,7 @@
 #define MIN_PROTO_VERSION  70002 // peers earlier than this protocol version not supported (need v0.9 txFee relay rules)
 #define LOCAL_HOST         ((UInt128) { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x01 })
 #define CONNECT_TIMEOUT    3.0
-#define MESSAGE_TIMEOUT    10.0
+#define MESSAGE_TIMEOUT    120.0
 
 #define PTHREAD_STACK_SIZE  (512 * 1024)
 
@@ -239,7 +239,7 @@ static void *_peerThreadRoutine(void *arg)
 
                 gettimeofday(&tv, NULL);
                 time = tv.tv_sec + (double)tv.tv_usec/1000000;
-                if (! error && time >= ctx->disconnectTime) error = ETIMEDOUT;
+//                if (! error && time >= ctx->disconnectTime) error = ETIMEDOUT;
 
                 if (! error && time >= ctx->mempoolTime) {
                     peer_log(peer, "done waiting for mempool response");
@@ -256,7 +256,7 @@ static void *_peerThreadRoutine(void *arg)
             }
 
             if (error) {
-                peer_log(peer, "read socket error: %s", strerror(error));
+                peer_log(peer, "read header length error: %s", strerror(error));
             }
             else if (header[15] != 0) { // verify header type field is NULL terminated
                 peer_log(peer, "malformed message header: type not NULL terminated");
@@ -303,7 +303,7 @@ static void *_peerThreadRoutine(void *arg)
                     }
 
                     if (error) {
-                        peer_log(peer, "read socket error: %s", strerror(error));
+                        peer_log(peer, "read message error: %s", strerror(error));
                     }
                     else if (len == msgLen) {
                         BRSHA256_2(&hash, payload, msgLen);
@@ -405,6 +405,7 @@ void BRPeerSetCallbacks(BRPeer *peer, void *info,
                         void (*hasTx)(void *info, UInt256 txHash),
                         void (*rejectedTx)(void *info, UInt256 txHash, uint8_t code),
                         void (*relayedBlock)(void *info, BRMerkleBlock *block),
+                        void (*relayedPingMsg)(void *info),
                         void (*notfound)(void *info, const UInt256 txHashes[], size_t txCount,
                                          const UInt256 blockHashes[], size_t blockCount),
                         void (*setFeePerKb)(void *info, uint64_t feePerKb),
@@ -422,6 +423,7 @@ void BRPeerSetCallbacks(BRPeer *peer, void *info,
     ctx->hasTx = hasTx;
     ctx->rejectedTx = rejectedTx;
     ctx->relayedBlock = relayedBlock;
+    ctx->relayedPingMsg = relayedPingMsg;
     ctx->notfound = notfound;
     ctx->setFeePerKb = setFeePerKb;
     ctx->requestedTx = requestedTx;
@@ -458,7 +460,7 @@ void BRPeerConnect(BRPeer *peer)
     if (ctx->status == BRPeerStatusDisconnected || ctx->waitingForNetwork) {
         ctx->status = BRPeerStatusConnecting;
 
-        if (ctx->networkIsReachable && ! ctx->networkIsReachable(ctx->info) && 0) { // delay until network is reachable
+        if (0 && ctx->networkIsReachable && ! ctx->networkIsReachable(ctx->info)) { // delay until network is reachable
             if (! ctx->waitingForNetwork) peer_log(peer, "waiting for network reachability");
             ctx->waitingForNetwork = 1;
         }
@@ -495,7 +497,7 @@ void BRPeerDisconnect(BRPeer *peer)
 
     if (socket >= 0) {
         ctx->socket = -1;
-        if (shutdown(socket, SHUT_RDWR) < 0) peer_log(peer, "%s", strerror(errno));
+        if (shutdown(socket, SHUT_RDWR) < 0) peer_log(peer, "peer shutdown error: %s", strerror(errno));
         close(socket);
     }
 }
@@ -599,7 +601,7 @@ void BRPeerSendMessage(BRPeer *peer, const uint8_t *msg, size_t msgLen, const ch
             if (n >= 0) msgLen += n;
             if (n < 0 && errno != EWOULDBLOCK) error = errno;
             gettimeofday(&tv, NULL);
-			if (! error && tv.tv_sec + (double)tv.tv_usec/1000000 >= ctx->disconnectTime) error = ETIMEDOUT;
+//			if (! error && tv.tv_sec + (double)tv.tv_usec/1000000 >= ctx->disconnectTime) error = ETIMEDOUT;
             socket = ctx->socket;
         }
 

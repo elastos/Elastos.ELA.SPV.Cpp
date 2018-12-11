@@ -24,6 +24,7 @@ namespace Elastos {
 			// Transaction's database interface
 			bool putTransaction(const std::string &iso, const TransactionEntity &tx);
 			bool deleteAllTransactions(const std::string &iso);
+			size_t getAllTransactionsCount(const std::string &iso) const;
 			std::vector<TransactionEntity> getAllTransactions(const std::string &iso) const;
 			bool updateTransaction(const std::string &iso, const TransactionEntity &txEntity);
 			bool deleteTxByHash(const std::string &iso, const std::string &hash);
@@ -33,6 +34,7 @@ namespace Elastos {
 			bool putPeers(const std::string &iso, const std::vector<PeerEntity> &peerEntities);
 			bool deletePeer(const std::string &iso, const PeerEntity &peerEntity);
 			bool deleteAllPeers(const std::string &iso);
+			size_t getAllPeersCount(const std::string &iso) const;
 			std::vector<PeerEntity> getAllPeers(const std::string &iso) const;
 
 			// MerkleBlock's database interface

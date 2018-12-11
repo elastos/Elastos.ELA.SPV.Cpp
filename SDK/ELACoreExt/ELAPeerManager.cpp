@@ -3,6 +3,8 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <time.h>
+#include <Core/BRMerkleBlock.h>
+#include <SDK/Common/Log.h>
 
 #include "Core/BRArray.h"
 
@@ -18,6 +20,7 @@ namespace Elastos {
 		}
 
 		ELAPeerManager *ELAPeerManagerNew(const BRChainParams *params, BRWallet *wallet, uint32_t earliestKeyTime,
+										  uint32_t reconnectSeconds,
 										  BRMerkleBlock *blocks[], size_t blocksCount, const BRPeer peers[],
 										  size_t peersCount, BRPeerMessages *peerMessages, const PluginTypes &plugins) {
 			ELAPeerManager *manager = (ELAPeerManager *)calloc(1, sizeof(*manager));
@@ -31,12 +34,12 @@ namespace Elastos {
 			assert(peers != NULL || peersCount == 0);
 			memset(manager, 0, sizeof(*manager));
 
-			manager->Raw.isShutDown = 0;
 			manager->Plugins = plugins;
 			manager->Raw.peerMessages = peerMessages;
 			manager->Raw.params = params;
 			manager->Raw.wallet = wallet;
 			manager->Raw.earliestKeyTime = earliestKeyTime;
+			manager->Raw.reconnectSeconds = reconnectSeconds;
 			manager->Raw.averageTxPerBlock = 1400;
 			manager->Raw.maxConnectCount = PEER_MAX_CONNECTIONS;
 			array_new(manager->Raw.peers, peersCount);
@@ -46,6 +49,7 @@ namespace Elastos {
 			manager->Raw.blocks = BRSetNew(BRMerkleBlockHash, BRMerkleBlockEq, blocksCount);
 			manager->Raw.orphans = BRSetNew(_BRPrevBlockHash, _BRPrevBlockEq, blocksCount); // orphans are indexed by prevBlock
 			manager->Raw.checkpoints = BRSetNew(_BRBlockHeightHash, _BRBlockHeightEq, 100); // checkpoints are indexed by height
+			manager->Raw.reconnectTaskCount = 0;
 
 			time_t now = time(nullptr);
 			for (size_t i = 0; i < manager->Raw.params->checkpointsCount; i++) {
@@ -86,6 +90,9 @@ namespace Elastos {
 			array_new(manager->Raw.publishedTxHashes, 10);
 			pthread_mutex_init(&manager->Raw.lock, NULL);
 			manager->Raw.threadCleanup = _dummyThreadCleanup;
+
+			manager->Raw.wallet->lastBlockHeight = manager->Raw.lastBlock->height;
+
 			return manager;
 		}
 

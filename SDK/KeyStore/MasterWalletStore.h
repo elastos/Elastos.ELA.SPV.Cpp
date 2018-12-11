@@ -8,17 +8,18 @@
 #include <vector>
 #include <boost/filesystem.hpp>
 
-#include "CMemBlock.h"
+#include "SDK/Account/IAccount.h"
 #include "CoinInfo.h"
-#include "MasterPubKey.h"
 #include "IdAgent/IdAgentImpl.h"
 
 namespace Elastos {
 	namespace ElaWallet {
 
+		typedef std::map<std::string, MasterPubKeyPtr> MasterPubKeyMap;
+
 		class MasterWalletStore {
 		public:
-			MasterWalletStore();
+			MasterWalletStore(const std::string &rootPath);
 
 			~MasterWalletStore();
 
@@ -26,25 +27,9 @@ namespace Elastos {
 
 			void Save(const boost::filesystem::path &path);
 
-			const CMBlock &GetEncrpytedKey() const;
+			bool IsSingleAddress() const;
 
-			void SetEncryptedKey(const CMBlock &data);
-
-			const CMBlock &GetEncryptedMnemonic() const;
-
-			void SetEncryptedMnemonic(const CMBlock &data);
-
-			const CMBlock &GetEncrptedPhrasePassword() const;
-
-			void SetEncryptedPhrasePassword(const CMBlock &data);
-
-			const std::string &GetPublicKey() const;
-
-			void SetPublicKey(const std::string &pubKey);
-
-			const std::string &GetLanguage() const;
-
-			void SetLanguage(const std::string &language);
+			bool &IsSingleAddress();
 
 			const IdAgentInfo &GetIdAgentInfo() const;
 
@@ -54,25 +39,50 @@ namespace Elastos {
 
 			void SetSubWalletInfoList(const std::vector<CoinInfo> &infoList);
 
-			const MasterPubKey &GetMasterPubKey() const;
+			const MasterPubKeyMap &GetMasterPubKeyMap() const;
 
-			void SetMasterPubKey(const MasterPubKey &masterPubKey);
+			void SetMasterPubKeyMap(const MasterPubKeyMap &map);
+
+			IAccount *Account() const;
+
+			void Reset(IAccount *account);
+
+			void Reset(const std::string &phrase,
+					   const std::string &phrasePassword,
+					   const std::string &payPassword);
+
+			void Reset(const nlohmann::json &coSigners,
+					   uint32_t requiredSignCount);
+
+			void Reset(const std::string &privKey,
+					   const nlohmann::json &coSigners,
+					   const std::string &payPassword,
+					   uint32_t requiredSignCount);
+
+			void Reset(const std::string &phrase,
+					   const std::string &phrasePassword,
+					   const nlohmann::json &coSigners,
+					   const std::string &payPassword,
+					   uint32_t requiredSignCount);
 
 		private:
 			JSON_SM_LS(MasterWalletStore);
+
 			JSON_SM_RS(MasterWalletStore);
+
 			TO_JSON(MasterWalletStore);
+
 			FROM_JSON(MasterWalletStore);
 
 		private:
-			CMBlock _encryptedKey;
-			CMBlock _encryptedMnemonic;
-			CMBlock _encryptedPhrasePass;
-			std::string _publicKey;
-			MasterPubKey _masterPubKey;
-			std::string _language;
+
+			bool _isSingleAddress;
+			std::string _rootPath;
+			AccountPtr _account;
 			IdAgentInfo _idAgentInfo;
 			std::vector<CoinInfo> _subWalletsInfoList;
+
+			MasterPubKeyMap _subWalletsPubKeyMap;
 		};
 
 	}

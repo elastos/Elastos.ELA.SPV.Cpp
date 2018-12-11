@@ -6,6 +6,8 @@
 #include <BRTransaction.h>
 #include <SDK/Common/Log.h>
 #include <Core/BRTransaction.h>
+#include <SDK/Common/ParamChecker.h>
+#include <Core/BRAddress.h>
 
 #include "Transaction.h"
 #include "Payload/PayloadCoinBase.h"
@@ -197,13 +199,22 @@ namespace Elastos {
 			_transaction->outputs.push_back(output);
 		}
 
+		void Transaction::removeChargeOutput() {
+			if (_transaction->outputs.size() > 1) {
+				delete _transaction->outputs[1];
+				_transaction->outputs.erase(_transaction->outputs.begin() + 1);
+			}
+		}
+
 		// shuffles order of tx outputs
 		void Transaction::shuffleOutputs() {
 			ELATransactionShuffleOutputs(_transaction);
 		}
 
 		size_t Transaction::getSize() {
-			return ELATransactionSize(_transaction);
+			ByteStream stream;
+			Serialize(stream);
+			return stream.getBuffer().GetSize();
 		}
 
 		uint64_t Transaction::getStandardFee() {
@@ -228,11 +239,10 @@ namespace Elastos {
 		bool Transaction::transactionSign(int forkId, const WrapperList<Key, BRKey> keys) {
 			const int SIGHASH_ALL = 0x01; // default, sign all of the outputs
 			size_t i, j, keysCount = keys.size();
-			BRAddress addrs[keysCount], address;
+			BRAddress addrs[keysCount];
 
-			if (keysCount <= 0) {
-				throw std::logic_error("transaction sign keysCount is 0.");
-			}
+			ParamChecker::checkCondition(keysCount <= 0, Error::Transaction,
+										 "Transaction sign key not found");
 			SPDLOG_DEBUG(Log::getLogger(), "Transaction transactionSign method begin, key counts = {}.", keysCount);
 
 			for (i = 0; i < keysCount; i++) {
@@ -243,17 +253,13 @@ namespace Elastos {
 				}
 			}
 
-			SPDLOG_DEBUG(Log::getLogger(),"Transaction transactionSign input sign begin.");
 			size_t size = _transaction->raw.inCount;
 			for (i = 0; i < size; i++) {
 				BRTxInput *input = &_transaction->raw.inputs[i];
-
-				if (!BRAddressFromScriptPubKey(address.s, sizeof(address), input->script, input->scriptLen)) continue;
-				j = 0;
-				while (j < keysCount && !BRAddressEq(&addrs[j], &address)) j++;
+				for (j = 0; j < keysCount && !BRAddressEq(&addrs[j], &input->address); j++);
 				if (j >= keysCount) continue;
 				Program *program = nullptr;
-				Address tempAddr(address.s);
+				Address tempAddr(input->address);
 				int signType = tempAddr.getSignType();
 				std::string redeemScript = keys[j].keyToRedeemScript(signType);
 				CMBlock code = Utils::decodeHex(redeemScript);
@@ -269,7 +275,6 @@ namespace Elastos {
 					program = _transaction->programs[i];
 				}
 
-				SPDLOG_DEBUG(Log::getLogger(),"Transaction transactionSign begin sign the {} input.", i);
 				const uint8_t *elems[BRScriptElements(NULL, 0, program->getCode(), program->getCode().GetSize())];
 				size_t elemsCount = BRScriptElements(elems, sizeof(elems) / sizeof(*elems), program->getCode(),
 													 program->getCode().GetSize());
@@ -282,7 +287,6 @@ namespace Elastos {
 				serializeUnsigned(ostream);
 				CMBlock data = ostream.getBuffer();
 				if (elemsCount >= 2 && *elems[elemsCount - 2] == OP_EQUALVERIFY) { // pay-to-pubkey-hash
-					SPDLOG_DEBUG(Log::getLogger(),"Transaction transactionSign the {} input pay to pubkey hash.", i);
 
 					BRSHA256_2(&md, data, data.GetSize());
 					sigLen = BRKeySign(keys[j].getRaw(), sig, sizeof(sig) - 1, md);
@@ -291,8 +295,6 @@ namespace Elastos {
 					scriptLen += BRScriptPushData(&script[scriptLen], sizeof(script) - scriptLen, pubKey, pkLen);
 					BRTxInputSetSignature(input, script, scriptLen);
 				} else { // pay-to-pubkey
-					SPDLOG_DEBUG(Log::getLogger(),"Transaction transactionSign the {} input pay to pubkey.", i);
-
 					BRSHA256_2(&md, data, data.GetSize());
 					sigLen = BRKeySign(keys[j].getRaw(), sig, sizeof(sig) - 1, md);
 					sig[sigLen++] = forkId | SIGHASH_ALL;
@@ -304,7 +306,6 @@ namespace Elastos {
 				BRSHA256(shaData, data, data.GetSize());
 				CMBlock signData = keys[j].compactSign(shaData);
 				program->setParameter(signData);
-				SPDLOG_DEBUG(Log::getLogger(),"Transaction transactionSign end sign the {} input.", i);
 			}
 
 			return isSigned();
@@ -394,10 +395,9 @@ namespace Elastos {
 
 			ostream.writeBytes(&_transaction->payloadVersion, 1);
 
-			if (_transaction->payload == nullptr) {
-				Log::getLogger()->error("payload should not be null, payload type = {}, version = {}", _transaction->type, _transaction->payloadVersion);
-				throw std::logic_error("payload should not be null");
-			}
+			ParamChecker::checkCondition(_transaction->payload == nullptr, Error::Transaction,
+										 "payload should not be null");
+
 			_transaction->payload->Serialize(ostream);
 
 			ostream.writeVarUint(_transaction->attributes.size());
@@ -657,8 +657,7 @@ namespace Elastos {
 		}
 
 		uint64_t Transaction::calculateFee(uint64_t feePerKb) {
-			uint64_t size = ELATransactionSize(_transaction);
-			return  ((size + 999) / 1000) * feePerKb;
+			return ((getSize() + 999) / 1000) * feePerKb;
 		}
 
 		uint64_t Transaction::getTxFee(const boost::shared_ptr<Wallet> &wallet) {
@@ -684,6 +683,10 @@ namespace Elastos {
 			return fee;
 		}
 
+		void Transaction::setFee(uint64_t fee) {
+			_transaction->fee = fee;
+		}
+
 		void
 		Transaction::generateExtraTransactionInfo(nlohmann::json &rawTxJson, const boost::shared_ptr<Wallet> &wallet, uint32_t blockHeight) {
 
@@ -691,11 +694,12 @@ namespace Elastos {
 			setRemark(remark);
 
 			nlohmann::json summary;
-			summary["TxHash"] = rawTxJson["TxHash"].get<std::string>();
+			summary["TxHash"] = Utils::UInt256ToString(getHash(), true);
 			summary["Status"] = getStatus(blockHeight);
 			summary["ConfirmStatus"] = getConfirmInfo(blockHeight);
 			summary["Remark"] = getRemark();
 			summary["Fee"] = getTxFee(wallet);
+			summary["Timestamp"] = getTimestamp();
 			nlohmann::json jOut;
 			nlohmann::json jIn;
 
@@ -726,7 +730,7 @@ namespace Elastos {
 
 				for (size_t i = 0; i < _transaction->outputs.size(); ++i) {
 					if (wallet->containsAddress(_transaction->outputs[i]->getAddress())) {
-						inputAmount = _transaction->outputs[i]->getAmount();
+						inputAmount += _transaction->outputs[i]->getAmount();
 						toAddress = _transaction->outputs[i]->getAddress();
 					}
 				}
@@ -741,7 +745,6 @@ namespace Elastos {
 			}
 
 			rawTxJson["Summary"] = summary;
-			Log::getLogger()->info("transaction summary = {}", summary.dump());
 		}
 
 		std::string Transaction::getConfirmInfo(uint32_t blockHeight) {
@@ -758,6 +761,15 @@ namespace Elastos {
 
 			uint32_t confirmCount = blockHeight >= getBlockHeight() ? blockHeight - getBlockHeight() + 1 : 0;
 			return confirmCount <= 6 ? "Pending" : "Confirmed";
+		}
+
+		CMBlock Transaction::GetShaData() const {
+			ByteStream ostream;
+			serializeUnsigned(ostream);
+			CMBlock data = ostream.getBuffer();
+			CMBlock shaData(sizeof(UInt256));
+			BRSHA256(shaData, data, data.GetSize());
+			return shaData;
 		}
 	}
 }

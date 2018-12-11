@@ -18,7 +18,6 @@
 #include "KeyStore/KeyStore.h"
 #include "SDK/Transaction/Transaction.h"
 #include "CMemBlock.h"
-#include "MasterPrivKey.h"
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -29,19 +28,12 @@ namespace Elastos {
 
 			WalletManager(const WalletManager &proto);
 
-			WalletManager(const MasterPubKeyPtr &masterPubKey,
+			WalletManager(const SubAccountPtr &subAccount,
 						  const boost::filesystem::path &dbPath,
 						  uint32_t earliestPeerTime,
-						  bool singleAddress,
+						  uint32_t reconnectSeconds,
 						  int forkId,
 						  const PluginTypes &pluginTypes,
-						  const ChainParams &chainParams);
-
-			WalletManager(const boost::filesystem::path &dbPath,
-						  uint32_t earliestPeerTime,
-						  int forkId,
-						  const PluginTypes &pluginTypes,
-						  const std::vector<std::string> &initialAddresses,
 						  const ChainParams &chainParams);
 
 			virtual ~WalletManager();
@@ -52,6 +44,8 @@ namespace Elastos {
 
 			SharedWrapperList<Transaction, BRTransaction *> getTransactions(
 					const boost::function<bool(const TransactionPtr &)> filter) const;
+
+			size_t getAllTransactionsCount();
 
 			void registerWalletListener(Wallet::Listener *listener);
 
@@ -100,6 +94,8 @@ namespace Elastos {
 
 			virtual void blockHeightIncreased(uint32_t blockHeight);
 
+			virtual void syncIsInactive(uint32_t time);
+
 		protected:
 			virtual SharedWrapperList<Transaction, BRTransaction *> loadTransactions();
 
@@ -113,10 +109,20 @@ namespace Elastos {
 
 			virtual const WalletListenerPtr &createWalletListener();
 
+			void startReconnect(uint32_t time);
+
+			void resetReconnect();
+
+			void asyncConnect(const boost::system::error_code& error);
+
 		private:
 			DatabaseManager _databaseManager;
 			BackgroundExecutor _executor;
+			BackgroundExecutor _reconnectExecutor;
 			int _forkId;
+
+			boost::asio::io_service _reconnectService;
+			boost::shared_ptr<boost::asio::deadline_timer> _reconnectTimer;
 
 			std::vector<Wallet::Listener *> _walletListeners;
 			std::vector<PeerManager::Listener *> _peerManagerListeners;

@@ -25,6 +25,7 @@ namespace Elastos {
 			uint64_t MinFee;
 			std::string GenesisAddress;
 			std::string BlockType;
+			uint32_t ReconnectSeconds;
 			bool EnableP2P;
 		};
 
@@ -43,6 +44,8 @@ namespace Elastos {
 			void Load(const boost::filesystem::path &path);
 
 			std::vector<std::string> GetAllChainId() const;
+
+			std::map<std::string, uint32_t> GetChainIdsAndIndices() const;
 
 			const CoinConfig &FindConfig(const std::string &chainId);
 

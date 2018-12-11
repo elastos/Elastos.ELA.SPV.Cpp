@@ -49,6 +49,7 @@ namespace Elastos {
 			bool putPeers(const std::string &iso, const std::vector<PeerEntity> &peerEntities);
 			bool deletePeer(const std::string &iso, const PeerEntity &peerEntity);
 			bool deleteAllPeers(const std::string &iso);
+			size_t getAllPeersCount(const std::string &iso) const;
 			std::vector<PeerEntity> getAllPeers(const std::string &iso) const;
 
 		private:
@@ -63,7 +64,7 @@ namespace Elastos {
 			const std::string PEER_ADDRESS = "peerAddress";
 			const std::string PEER_PORT = "peerPort";
 			const std::string PEER_TIMESTAMP = "peerTimestamp";
-			const std::string PEER_ISO = "peerIso";
+			const std::string PEER_ISO = "peerISO";
 
 			const std::string PEER_DATABASE_CREATE = "create table if not exists " + PEER_TABLE_NAME + " (" +
 				PEER_COLUMN_ID + " integer primary key autoincrement, " +

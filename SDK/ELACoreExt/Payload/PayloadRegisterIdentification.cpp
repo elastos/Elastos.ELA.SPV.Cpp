@@ -3,6 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <SDK/Common/Log.h>
+#include <SDK/Common/ParamChecker.h>
 #include "PayloadRegisterIdentification.h"
 #include "Utils.h"
 
@@ -128,7 +129,7 @@ namespace Elastos {
 				std::vector<nlohmann::json> values;
 				for (int k = 0; k < _contents[i].Values.size(); ++k) {
 					nlohmann::json value;
-					value["DataHash"] = Utils::UInt256ToString(_contents[i].Values[k].DataHash);
+					value["DataHash"] = Utils::UInt256ToString(_contents[i].Values[k].DataHash, true);
 					value["Proof"] = _contents[i].Values[k].Proof;
 					values.push_back(value);
 				}
@@ -155,7 +156,7 @@ namespace Elastos {
 				std::vector<nlohmann::json> values = contents[i]["Values"];
 				for (int k = 0; k < values.size(); ++k) {
 					ValueItem value;
-					value.DataHash = Utils::UInt256FromString(values[k]["DataHash"].get<std::string>());
+					value.DataHash = Utils::UInt256FromString(values[k]["DataHash"].get<std::string>(), true);
 					value.Proof = values[k]["Proof"].get<std::string>();
 					content.Values.push_back(value);
 				}
@@ -165,43 +166,37 @@ namespace Elastos {
 		}
 
 		const std::string &PayloadRegisterIdentification::getPath(size_t index) const {
-			if (index >= _contents.size())
-				throw std::logic_error("Index greater than exiting contents.");
+			ParamChecker::checkCondition(index >= _contents.size(), Error::PayloadRegisterID, "Index too large");
 
 			return _contents[index].Path;
 		}
 
 		void PayloadRegisterIdentification::setPath(const std::string &path, size_t index) {
-			if (index >= _contents.size())
-				throw std::logic_error("Index greater than exiting contents.");
+			ParamChecker::checkCondition(index >= _contents.size(), Error::PayloadRegisterID, "Index too large");
 
 			_contents[index].Path = path;
 		}
 
 		const UInt256 &PayloadRegisterIdentification::getDataHash(size_t index, size_t valueIndex) const {
-			if (index >= _contents.size())
-				throw std::logic_error("Index greater than exiting contents.");
+			ParamChecker::checkCondition(index >= _contents.size(), Error::PayloadRegisterID, "Index too large");
 
 			return _contents[index].Values[valueIndex].DataHash;
 		}
 
 		void PayloadRegisterIdentification::setDataHash(const UInt256 &dataHash, size_t index, size_t valueIndex) {
-			if (index >= _contents.size())
-				throw std::logic_error("Index greater than exiting contents.");
+			ParamChecker::checkCondition(index >= _contents.size(), Error::PayloadRegisterID, "Index too large");
 
 			_contents[index].Values[valueIndex].DataHash = dataHash;
 		}
 
 		const std::string &PayloadRegisterIdentification::getProof(size_t index, size_t valueIndex) const {
-			if (index >= _contents.size())
-				throw std::logic_error("Index greater than exiting contents.");
+			ParamChecker::checkCondition(index >= _contents.size(), Error::PayloadRegisterID, "Index too large");
 
 			return _contents[index].Values[valueIndex].Proof;
 		}
 
 		void PayloadRegisterIdentification::setProof(const std::string &proof, size_t index, size_t valueIndex) {
-			if (index >= _contents.size())
-				throw std::logic_error("Index greater than exiting contents.");
+			ParamChecker::checkCondition(index >= _contents.size(), Error::PayloadRegisterID, "Index too large");
 
 			_contents[index].Values[valueIndex].Proof = proof;
 		}
@@ -215,8 +210,7 @@ namespace Elastos {
 		}
 
 		void PayloadRegisterIdentification::removeContent(size_t index) {
-			if (index >= _contents.size())
-				throw std::logic_error("Index greater than exiting contents.");
+			ParamChecker::checkCondition(index >= _contents.size(), Error::PayloadRegisterID, "Index too large");
 
 			_contents.erase(_contents.begin() + index);
 		}

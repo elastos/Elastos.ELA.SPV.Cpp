@@ -17,7 +17,6 @@ namespace Elastos {
 
 			virtual nlohmann::json CreateWithdrawTransaction(
 					const std::string &fromAddress,
-					const std::string &toAddress,
 					const uint64_t amount,
 					const nlohmann::json& mainchainAccounts,
 					const nlohmann::json& mainchainAmounts,
@@ -31,10 +30,12 @@ namespace Elastos {
 			friend class MasterWallet;
 
 			SidechainSubWallet(const CoinInfo &info,
+							   const MasterPubKeyPtr &masterPubKey,
 							   const ChainParams &chainParams,
-							   const std::string &payPassword,
 							   const PluginTypes &pluginTypes,
 							   MasterWallet *parent);
+
+			virtual nlohmann::json GetBasicInfo() const;
 
 			virtual boost::shared_ptr<Transaction> createTransaction(TxParam *param) const;
 

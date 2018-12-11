@@ -25,9 +25,21 @@ namespace Elastos {
 	namespace ElaWallet {
 
 		class CoinInfo;
+
 		class ChainParams;
+
 		class SubWallet;
+
 		class KeyStore;
+
+		typedef enum {
+			CreateNormal,          // Select newest check point
+			CreateMultiSign,       // Select oldest check point
+			ImportFromMnemonic,    // Select oldest check point
+			ImportFromLocalStore,  // Select check point from local store
+			ImportFromKeyStore,    // Select check point from key store
+			ImportFromOldKeyStore, // Select oldest check point
+		} MasterWalletInitFrom;
 
 		class MasterWallet : public IMasterWallet, public IIdAgent {
 		public:
@@ -37,24 +49,24 @@ namespace Elastos {
 
 			virtual void ClearLocal();
 
+			bool IsEqual(const MasterWallet &wallet) const;
+
 		public: //override from IMasterWallet
 
 			static std::string GenerateMnemonic(const std::string &language, const std::string &rootPath);
 
 			virtual std::string GetId() const;
 
+			virtual nlohmann::json GetBasicInfo() const;
+
 			virtual std::vector<ISubWallet *> GetAllSubWallets() const;
 
 			virtual ISubWallet *CreateSubWallet(
 					const std::string &chainID,
-					const std::string &payPassword,
-					bool singleAddress,
 					uint64_t feePerKb = 0);
 
 			virtual ISubWallet *RecoverSubWallet(
 					const std::string &chainID,
-					const std::string &payPassword,
-					bool singleAddress,
 					uint32_t limitGap,
 					uint64_t feePerKb = 0);
 
@@ -102,8 +114,6 @@ namespace Elastos {
 
 			friend class MasterWalletManager;
 
-			friend class WalletFactoryInner;
-
 			friend class IdAgentImpl;
 
 			friend class SubWallet;
@@ -113,56 +123,106 @@ namespace Elastos {
 			MasterWallet(
 					const boost::filesystem::path &localStore,
 					const std::string &rootPath,
-					bool p2pEnable);
+					bool p2pEnable,
+					MasterWalletInitFrom from);
 
 			MasterWallet(
 					const std::string &id,
 					const std::string &mnemonic,
 					const std::string &phrasePassword,
 					const std::string &payPassword,
-					const std::string &language,
+					bool singleAddress,
 					bool p2pEnable,
-					const std::string &rootPath);
+					const std::string &rootPath,
+					MasterWalletInitFrom from);
+
+			MasterWallet(
+					const std::string &id,
+					const nlohmann::json &keystoreContent,
+					const std::string &backupPassword,
+					const std::string &phrasePassword,
+					const std::string &payPassword,
+					const std::string &rootPath,
+					bool p2pEnable,
+					MasterWalletInitFrom from);
 
 			MasterWallet(
 					const std::string &id,
 					const nlohmann::json &keystoreContent,
 					const std::string &backupPassword,
 					const std::string &payPassword,
-					const std::string &phrasePassword,
 					const std::string &rootPath,
-					bool p2pEnable);
+					bool p2pEnable,
+					MasterWalletInitFrom from);
 
-			bool importFromKeyStore(const nlohmann::json &keystoreContent,
+			MasterWallet(
+					const std::string &id,
+					const nlohmann::json &coSigners,
+					uint32_t requiredSignCount,
+					const std::string &rootPath,
+					bool p2pEnable,
+					MasterWalletInitFrom from);
+
+			MasterWallet(
+					const std::string &id,
+					const std::string &privKey,
+					const std::string &payPassword,
+					const nlohmann::json &coSigners,
+					uint32_t requiredSignCount,
+					const std::string &rootPath,
+					bool p2pEnable,
+					MasterWalletInitFrom from);
+
+			MasterWallet(
+					const std::string &id,
+					const std::string &mnemonic,
+					const std::string &phrasePassword,
+					const std::string &payPassword,
+					const nlohmann::json &coSigners,
+					uint32_t requiredSignCount,
+					bool p2pEnable,
+					const std::string &rootPath,
+					MasterWalletInitFrom from);
+
+			// to support old web keystore
+			void importFromKeyStore(const nlohmann::json &keystoreContent,
 									const std::string &backupPassword,
 									const std::string &payPassword,
 									const std::string &phrasePassword);
 
-			bool importFromMnemonic(const std::string &mnemonic,
+			void importFromKeyStore(const nlohmann::json &keystoreContent,
+									const std::string &backupPassword,
+									const std::string &payPassword);
+
+			void importFromMnemonic(const std::string &mnemonic,
 									const std::string &phrasePassword,
 									const std::string &payPassword);
 
 			nlohmann::json exportKeyStore(const std::string &backupPassword,
-								const std::string &payPassword);
+										  const std::string &payPassword);
 
 			bool exportMnemonic(const std::string &payPassword,
 								std::string &mnemonic);
 
-			bool initFromEntropy(const UInt128 &entropy,
-								 const std::string &phrasePassword,
-								 const std::string &payPassword);
-
-			bool initFromPhrase(const std::string &phrase,
-								const std::string &phrasePassword,
-								const std::string &payPassword);
-
 			void initFromLocalStore(const MasterWalletStore &localStore);
 
 			void initFromKeyStore(const KeyStore &keyStore,
-								  const std::string &payPassword,
-								  const std::string &phrasePassword);
+								  const std::string &payPassword);
 
-			void initSubWallets(const std::vector<CoinInfo> &coinInfoList, const std::string &payPassword);
+			void initFromMultiSigners(
+					const std::string &privKey,
+					const std::string &payPassword,
+					const nlohmann::json &coSigners,
+					uint32_t requiredSignCount);
+
+			void initFromMultiSigners(
+					const std::string &mnemonic,
+					const std::string &phrasePassword,
+					const std::string &payPassword,
+					const nlohmann::json &coSigners,
+					uint32_t requiredSignCount);
+
+			void initSubWallets(const std::vector<CoinInfo> &coinInfoList);
 
 			void restoreSubWallets(const std::vector<CoinInfo> &coinInfoList);
 
@@ -170,19 +230,12 @@ namespace Elastos {
 
 			void restoreLocalStore();
 
-			Key deriveKey(const std::string &payPassword);
-
-			UInt512 deriveSeed(const std::string &payPassword);
-
-			void initPublicKey(const std::string &payPassword);
-
 			SubWallet *SubWalletFactoryMethod(const CoinInfo &info,
+											  const CoinConfig &config,
 											  const ChainParams &chainParams,
-											  const std::string &payPassword,
 											  const PluginTypes &pluginTypes,
 											  MasterWallet *parent);
 
-			void resetMnemonic(const std::string &language);
 
 			virtual void startPeerManager(SubWallet *wallet);
 
@@ -190,11 +243,14 @@ namespace Elastos {
 
 			void tryInitCoinConfig();
 
+			void initSubWalletsPubKeyMap(const std::string &payPassword);
+
 		protected:
 			WalletMap _createdWallets;
 
 			MasterWalletStore _localStore;
-			boost::shared_ptr<Mnemonic> _mnemonic;
+
+			MasterWalletInitFrom _initFrom;
 
 			std::string _id;
 			std::string _rootPath;
@@ -202,6 +258,7 @@ namespace Elastos {
 			CoinConfigReader _coinConfigReader;
 			boost::shared_ptr<IdAgentImpl> _idAgentImpl;
 			bool _p2pEnable;
+
 		};
 
 	}

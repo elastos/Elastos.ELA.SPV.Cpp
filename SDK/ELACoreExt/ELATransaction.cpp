@@ -16,11 +16,15 @@
 #include <SDK/ELACoreExt/Payload/PayloadWithDrawAsset.h>
 #include <SDK/ELACoreExt/Payload/PayloadTransferCrossChainAsset.h>
 #include <SDK/ELACoreExt/Payload/PayloadRegisterIdentification.h>
+#include <SDK/ELACoreExt/Payload/PayloadCancelProducer.h>
+#include <SDK/ELACoreExt/Payload/PayloadVoteProducer.h>
+#include <SDK/ELACoreExt/Payload/PayloadRegisterProducer.h>
 
 #include "BRArray.h"
 #include "ELATransaction.h"
 #include "ELATxOutput.h"
 #include "Utils.h"
+#include "Transaction/Transaction.h"
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -47,6 +51,12 @@ namespace Elastos {
 				return new PayloadTransferCrossChainAsset();
 			} else if (type == ELATransaction::RegisterIdentification) {
 				return new PayloadRegisterIdentification();
+			} else if(type == ELATransaction::RegisterProducer) {
+				return new PayloadRegisterProducer;
+			} else if (type == ELATransaction::CancelProducer) {
+				return new PayloadCancelProducer;
+			} else if (type == ELATransaction::VoteProducer) {
+				return new PayloadVoteProducer;
 			}
 
 			return nullptr;
@@ -212,13 +222,15 @@ namespace Elastos {
 		}
 
 		bool ELATransactionIsSign(const ELATransaction *tx) {
-			if (tx->type == ELATransaction::Type::TransferAsset) {
+			if (tx->type == ELATransaction::Type::TransferAsset || tx->type == ELATransaction::Type::TransferCrossChainAsset) {
 				size_t len = tx->programs.size();
 				if (len <= 0) {
 					return false;
 				}
 				for (size_t i = 0; i < len; ++i) {
-					if (!tx->programs[i]->isValid()) {
+
+					TransactionPtr transaction(new Transaction((ELATransaction *)tx, false));
+					if (!tx->programs[i]->isValid(transaction)) {
 						return false;
 					}
 				}

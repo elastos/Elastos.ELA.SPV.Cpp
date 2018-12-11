@@ -10,7 +10,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "BRBIP32Sequence.h"
-
+#include "ByteStream.h"
 #include "Wrapper.h"
 #include "Key.h"
 #include "CMemBlock.h"
@@ -30,13 +30,15 @@ namespace Elastos {
 
 			MasterPubKey(const BRKey &key, const UInt256 &chainCode);
 
+			explicit MasterPubKey(const BRMasterPubKey &pubKey);
+
 			virtual std::string toString() const;
 
 			virtual BRMasterPubKey *getRaw() const;
 
-			CMBlock serialize() const;
+			void Serialize(ByteStream &stream) const;
 
-			void deserialize(const CMBlock &data);
+			bool Deserialize(ByteStream &stream);
 
 			CMBlock getPubKey() const;
 
@@ -50,9 +52,6 @@ namespace Elastos {
 			static bool validateRecoveryPhrase(const std::vector<std::string> &words, const std::string &phrase);
 
 			static std::string generatePaperKey(const UInt128 &seed, const std::vector<std::string> &words);
-
-			static size_t BIP32PubKey(uint8_t *pubKey, size_t pubKeyLen, BRMasterPubKey mpk, uint32_t chain,
-			                          uint32_t index);
 
 		private:
 			boost::shared_ptr<BRMasterPubKey> _masterPubKey;

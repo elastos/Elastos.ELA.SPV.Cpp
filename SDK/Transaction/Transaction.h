@@ -59,6 +59,8 @@ namespace Elastos {
 
 			uint64_t getTxFee(const boost::shared_ptr<Wallet> &wallet);
 
+			void setFee(uint64_t fee);
+
 			bool isRegistered() const;
 
 			bool &isRegistered();
@@ -105,6 +107,8 @@ namespace Elastos {
 			void setTimestamp(uint32_t timestamp);
 
 			void addOutput(TransactionOutput *output);
+
+			void removeChargeOutput();
 
 			void shuffleOutputs();
 
@@ -174,12 +178,16 @@ namespace Elastos {
 			void generateExtraTransactionInfo(nlohmann::json &rawTxJson, const boost::shared_ptr<Wallet> &wallet, uint32_t blockHeight);
 
 			void removeDuplicatePrograms();
+
+			void serializeUnsigned(ByteStream &ostream) const;
+
+			CMBlock GetShaData() const;
+
 		private:
+
 			void reinit();
 
 			IPayload *newPayload(ELATransaction::Type type);
-
-			void serializeUnsigned(ByteStream &ostream) const;
 
 			bool transactionSign(int forkId, const WrapperList<Key, BRKey> keys);
 

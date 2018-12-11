@@ -3,16 +3,20 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <fstream>
+#include <SDK/Wrapper/ByteStream.h>
 
 #include "MasterWalletStore.h"
 #include "ParamChecker.h"
 #include "Utils.h"
+#include "SDK/Account/StandardAccount.h"
+#include "SDK/Account/MultiSignAccount.h"
+#include "SDK/Account/SimpleAccount.h"
+#include "AccountFactory.h"
 
 namespace Elastos {
 	namespace ElaWallet {
 
-		MasterWalletStore::MasterWalletStore() {
-
+		MasterWalletStore::MasterWalletStore(const std::string &rootPath) : _rootPath(rootPath) {
 		}
 
 		MasterWalletStore::~MasterWalletStore() {
@@ -33,39 +37,8 @@ namespace Elastos {
 			nlohmann::json j;
 			j << *this;
 			std::ofstream o(path.string());
-			j >> o;
-		}
-
-		const CMBlock &MasterWalletStore::GetEncrpytedKey() const {
-			return _encryptedKey;
-		}
-
-		void MasterWalletStore::SetEncryptedKey(const CMBlock &data) {
-			_encryptedKey = data;
-		}
-
-		const CMBlock &MasterWalletStore::GetEncryptedMnemonic() const {
-			return _encryptedMnemonic;
-		}
-
-		void MasterWalletStore::SetEncryptedMnemonic(const CMBlock &data) {
-			_encryptedMnemonic = data;
-		}
-
-		const CMBlock &MasterWalletStore::GetEncrptedPhrasePassword() const {
-			return _encryptedPhrasePass;
-		}
-
-		void MasterWalletStore::SetEncryptedPhrasePassword(const CMBlock &data) {
-			_encryptedPhrasePass = data;
-		}
-
-		const std::string& MasterWalletStore::GetPublicKey() const {
-			return _publicKey;
-		}
-
-		void MasterWalletStore::SetPublicKey(const std::string &pubKey) {
-			_publicKey = pubKey;
+			o << j;
+			o.flush();
 		}
 
 		const std::vector<CoinInfo> &MasterWalletStore::GetSubWalletInfoList() const {
@@ -74,6 +47,14 @@ namespace Elastos {
 
 		void MasterWalletStore::SetSubWalletInfoList(const std::vector<CoinInfo> &infoList) {
 			_subWalletsInfoList = infoList;
+		}
+
+		const MasterPubKeyMap &MasterWalletStore::GetMasterPubKeyMap() const {
+			return _subWalletsPubKeyMap;
+		}
+
+		void MasterWalletStore::SetMasterPubKeyMap(const MasterPubKeyMap &map) {
+			_subWalletsPubKeyMap = map;
 		}
 
 		const IdAgentInfo &MasterWalletStore::GetIdAgentInfo() const {
@@ -97,31 +78,31 @@ namespace Elastos {
 		}
 
 		void to_json(nlohmann::json &j, const MasterWalletStore &p) {
-			j["Key"] = Utils::encodeHex(p.GetEncrpytedKey());
-			j["Mmemonic"] = Utils::encodeHex(p.GetEncryptedMnemonic());
-			j["PhrasePasword"] = Utils::encodeHex(p.GetEncrptedPhrasePassword());
-			j["Language"] = p.GetLanguage();
-			j["PublicKey"] = p.GetPublicKey();
-			j["ChainCode"] = Utils::UInt256ToString(p.GetMasterPubKey().getChainCode());
-			j["MasterKeyPubKey"] = Utils::encodeHex(p.GetMasterPubKey().getPubKey());
+			j["Account"] = p.Account()->ToJson();
+			j["AccountType"] = p.Account()->GetType();
+			j["IsSingleAddress"] = p.IsSingleAddress();
 			j["IdAgent"] = p.GetIdAgentInfo();
 			std::vector<nlohmann::json> subWallets;
 			for (size_t i = 0; i < p.GetSubWalletInfoList().size(); i++) {
 				subWallets.push_back(p.GetSubWalletInfoList()[i]);
 			}
 			j["SubWallets"] = subWallets;
+
+			nlohmann::json masterPubKey;
+			const MasterPubKeyMap &map = p.GetMasterPubKeyMap();
+			for (MasterPubKeyMap::const_iterator it = map.cbegin(); it != map.cend(); it++) {
+				ByteStream stream;
+				stream.setPosition(0);
+				it->second->Serialize(stream);
+				masterPubKey[it->first] = Utils::encodeHex(stream.getBuffer());
+			}
+			j["MasterPubKey"] = masterPubKey;
 		}
 
 		void from_json(const nlohmann::json &j, MasterWalletStore &p) {
-			p.SetEncryptedKey(Utils::decodeHex(j["Key"].get<std::string>()));
-			p.SetEncryptedMnemonic(Utils::decodeHex(j["Mmemonic"].get<std::string>()));
-			p.SetEncryptedPhrasePassword(Utils::decodeHex(j["PhrasePasword"].get<std::string>()));
-			p.SetLanguage(j["Language"].get<std::string>());
-			p.SetPublicKey(j["PublicKey"].get<std::string>());
-			UInt256 chainCode = Utils::UInt256FromString(j["ChainCode"].get<std::string>());
-			CMBlock pubKey = Utils::decodeHex(j["MasterKeyPubKey"].get<std::string>());
-			p.SetMasterPubKey(MasterPubKey(pubKey, chainCode));
+			p._account = AccountPtr(AccountFactory::CreateFromJson(p._rootPath, j));
 			p.SetIdAgentInfo(j["IdAgent"]);
+			p.IsSingleAddress() = j["IsSingleAddress"].get<bool>();
 
 			std::vector<CoinInfo> coinInfoList;
 			std::vector<nlohmann::json> subWallets = j["SubWallets"];
@@ -129,23 +110,56 @@ namespace Elastos {
 				coinInfoList.push_back(subWallets[i]);
 			}
 			p.SetSubWalletInfoList(coinInfoList);
+
+			MasterPubKeyMap masterPubKeyMap;
+			nlohmann::json masterPubKeyJson = j["MasterPubKey"];
+			for (nlohmann::json::iterator it = masterPubKeyJson.begin(); it != masterPubKeyJson.end(); ++it) {
+				CMBlock value = Utils::decodeHex(it.value());
+				MasterPubKeyPtr masterPubKey = MasterPubKeyPtr(new MasterPubKey());
+				ByteStream stream(value, value.GetSize(), false);
+				masterPubKey->Deserialize(stream);
+				masterPubKeyMap[it.key()] = masterPubKey;
+			}
+			p.SetMasterPubKeyMap(masterPubKeyMap);
 		}
 
-		const std::string &MasterWalletStore::GetLanguage() const {
-			return _language;
+		IAccount *MasterWalletStore::Account() const {
+			return _account.get();
 		}
 
-		void MasterWalletStore::SetLanguage(const std::string &language) {
-			_language = language;
+		void MasterWalletStore::Reset(Elastos::ElaWallet::IAccount *account) {
+			_account = AccountPtr(account);
 		}
 
-		const MasterPubKey &MasterWalletStore::GetMasterPubKey() const {
-			return _masterPubKey;
+		void MasterWalletStore::Reset(const std::string &phrase,
+									  const std::string &phrasePassword, const std::string &payPassword) {
+			_account = AccountPtr(new StandardAccount(_rootPath, phrase, phrasePassword, payPassword));
 		}
 
-		void MasterWalletStore::SetMasterPubKey(const MasterPubKey &masterPubKey) {
-			_masterPubKey = masterPubKey;
+		void MasterWalletStore::Reset(const nlohmann::json &coSigners, uint32_t requiredSignCount) {
+			_account = AccountPtr(new MultiSignAccount(nullptr, coSigners, requiredSignCount));
 		}
 
+		void MasterWalletStore::Reset(const std::string &privKey, const nlohmann::json &coSigners,
+									  const std::string &payPassword, uint32_t requiredSignCount) {
+			_account = AccountPtr(
+					new MultiSignAccount(new SimpleAccount(privKey, payPassword), coSigners, requiredSignCount));
+		}
+
+		void MasterWalletStore::Reset(const std::string &phrase,
+									  const std::string &phrasePassword, const nlohmann::json &coSigners,
+									  const std::string &payPassword, uint32_t requiredSignCount) {
+			_account = AccountPtr(new MultiSignAccount(
+					new StandardAccount(_rootPath, phrase, phrasePassword, payPassword),
+					coSigners, requiredSignCount));
+		}
+
+		bool MasterWalletStore::IsSingleAddress() const {
+			return _isSingleAddress;
+		}
+
+		bool &MasterWalletStore::IsSingleAddress() {
+			return _isSingleAddress;
+		}
 	}
 }

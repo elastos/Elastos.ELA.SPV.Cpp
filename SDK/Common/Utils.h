@@ -32,8 +32,6 @@ namespace Elastos {
 
 			static UInt128 UInt128FromString(const std::string &str);
 
-			static UInt128 generateRandomSeed();
-
 			static inline uint8_t getRandomByte() {
 				std::random_device rd;
 				std::mt19937_64 gen(rd());
@@ -42,36 +40,19 @@ namespace Elastos {
 				return dice();
 			}
 
-			static CMBlock
-			encrypt(const CMBlock &data, const std::string &password);
+			static bool Encrypt(std::string &ctBase64, const std::string &data, const std::string &passwd);
 
-			static CMBlock
-			decrypt(const CMBlock &encryptedData, const std::string &password);
+			static bool Decrypt(std::string &data, const std::string &ctBase64, const std::string &passwd);
 
-			static CMBlock
-			encrypt(const CMBlock &data, const std::string &password, CMBlock &salt, CMBlock &iv, bool bAes128 = false);
+			static bool Encrypt(std::string &ctBase64, const CMBlock &data, const std::string &passwd);
 
-			static CMBlock
-			decrypt(const CMBlock &encryptedData, const std::string &password, CMBlock &salt, CMBlock &iv,
-					bool bAes128 = false);
+			static bool Decrypt(CMBlock &data, const std::string &ctBase64, const std::string &passwd);
 
 			static std::string encodeHex(const CMBlock &in);
 
-			static void encodeHex(char *target, size_t targetLen, const uint8_t *source, size_t sourceLen);
-
 			static std::string encodeHex(const uint8_t *hex, size_t hexLen);
 
-			static size_t encodeHexLength(size_t byteArrayLen);
-
-			static std::string encodeHexCreate(size_t *targetLen, uint8_t *source, size_t sourceLen);
-
 			static CMBlock decodeHex(const std::string &s);
-
-			static void decodeHex(uint8_t *target, size_t targetLen, const char *source, size_t sourceLen);
-
-			static size_t decodeHexLength(size_t stringLen);
-
-			static uint8_t *decodeHexCreate(size_t *targetLen, char *source, size_t sourceLen);
 
 			static std::string convertToString(const CMBlock &data) {
 				char p[data.GetSize()];
@@ -95,6 +76,7 @@ namespace Elastos {
 			static UInt168 codeToProgramHash(const std::string &redeemScript);
 
 			static UInt168 codeToProgramHash(const CMBlock &redeemScript);
+
 		};
 	}
 }
