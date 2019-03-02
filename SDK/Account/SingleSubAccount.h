@@ -22,13 +22,13 @@ namespace Elastos {
 
 			virtual bool IsSingleAddress() const;
 
-			virtual std::vector<Address> UnusedAddresses(uint32_t gapLimit, bool internal);
+			virtual std::vector<std::string> UnusedAddresses(uint32_t gapLimit, bool internal);
 
-			virtual std::vector<Address> GetAllAddresses(size_t addrsCount) const;
+			virtual std::vector<std::string> GetAllAddresses(size_t addrsCount) const;
 
-			virtual bool ContainsAddress(const Address &address) const;
+			virtual bool ContainsAddress(const std::string &address) const;
 
-			virtual bool IsAddressUsed(const Address &address) const;
+			virtual bool IsAddressUsed(const std::string &address) const;
 
 			virtual Key DeriveVoteKey(const std::string &payPasswd);
 

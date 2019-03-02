@@ -18,11 +18,11 @@
 #include <SDK/Common/Utils.h>
 #include <SDK/Common/Log.h>
 #include <SDK/Common/arith_uint256.h>
+#include <SDK/Common/Base58.h>
 #include <SDK/Base/BloomFilter.h>
 #include <SDK/BIPs/BIP32Sequence.h>
 
 #include <Core/BRArray.h>
-#include <Core/BRAddress.h>
 
 #include <netdb.h>
 #include <netinet/in.h>
@@ -1115,16 +1115,13 @@ namespace Elastos {
 
 						// the transaction likely consumed one or more wallet addresses, so check that at least the next <gap limit>
 						// unused addresses are still matched by the bloom filter
-						std::vector<Address> externalAddrs = _wallet->UnusedAddresses(SEQUENCE_GAP_LIMIT_EXTERNAL, 0);
-						std::vector<Address> internalAddrs = _wallet->UnusedAddresses(SEQUENCE_GAP_LIMIT_INTERNAL, 1);
+						std::vector<std::string> externalAddrs = _wallet->UnusedAddresses(SEQUENCE_GAP_LIMIT_EXTERNAL, 0);
+						std::vector<std::string> internalAddrs = _wallet->UnusedAddresses(SEQUENCE_GAP_LIMIT_INTERNAL, 1);
 
-						UInt168 hash;
-						CMBlock hashData(sizeof(UInt168));
-						for (std::vector<Address>::iterator externalIt = externalAddrs.begin(), internalIt = internalAddrs.begin();
+						for (std::vector<std::string>::iterator externalIt = externalAddrs.begin(), internalIt = internalAddrs.begin();
 							 externalIt != externalAddrs.end() || internalIt != internalAddrs.end();) {
-							if (externalIt != externalAddrs.end() && BRAddressHash168(&hash, (*externalIt).GetChar())) {
-								memcpy(hashData, hash.u8, sizeof(UInt168));
-								if (!_bloomFilter->ContainsData(hashData)) {
+							if (externalIt != externalAddrs.end()) {
+								if (!_bloomFilter->ContainsData(Base58::CheckDecode(*externalIt))) {
 									_bloomFilter.reset();
 									updateBloomFilter();
 									break;
@@ -1132,9 +1129,8 @@ namespace Elastos {
 								externalIt++;
 							}
 
-							if (internalIt != internalAddrs.end() && BRAddressHash168(&hash, (*internalIt).GetChar())) {
-								memcpy(hashData, hash.u8, sizeof(UInt168));
-								if (!_bloomFilter->ContainsData(hashData)) {
+							if (internalIt != internalAddrs.end()) {
+								if (!_bloomFilter->ContainsData(Base58::CheckDecode(*internalIt))) {
 									_bloomFilter.reset();
 									updateBloomFilter();
 									break;

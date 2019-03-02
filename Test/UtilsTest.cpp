@@ -10,7 +10,7 @@
 #include <Core/BRInt.h>
 #include <SDK/Common/Utils.h>
 #include <SDK/Common/Log.h>
-#include <SDK/Base/Address.h>
+#include <SDK/Implement/SidechainSubWallet.h>
 
 using namespace Elastos::ElaWallet;
 
@@ -67,6 +67,10 @@ TEST_CASE("Utils test", "[Utils]") {
 
 		addrHash = UINT168_ZERO;
 		REQUIRE(ELA_SIDECHAIN_DESTROY_ADDR == Utils::UInt168ToAddress(addrHash));
+
+		REQUIRE(true == Utils::UInt168FromAddress(addrHash, ELA_SIDECHAIN_DESTROY_ADDR));
+		REQUIRE(UInt168IsZero(&addrHash));
+		REQUIRE(addrHash.u8[0] == PrefixDestroy);
 	}
 
 	SECTION("Encrypt and decrypt") {

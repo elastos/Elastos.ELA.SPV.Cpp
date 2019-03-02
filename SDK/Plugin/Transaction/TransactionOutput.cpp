@@ -4,7 +4,6 @@
 
 #include "TransactionOutput.h"
 
-#include <SDK/Base/Address.h>
 #include <SDK/Plugin/Transaction/Asset.h>
 #include <SDK/Common/Utils.h>
 #include <SDK/Common/Log.h>

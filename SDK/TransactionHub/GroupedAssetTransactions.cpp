@@ -11,7 +11,6 @@
 #include <SDK/Common/Log.h>
 
 #include <Core/BRTransaction.h>
-#include <Core/BRAddress.h>
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -350,10 +349,10 @@ namespace Elastos {
 				txn->setFee(fee);
 				if (totalInputAmount > totalOutputAmount + fee) {
 					UInt256 assetID = txn->getOutputs()[0].getAssetId();
-					std::vector<Address> addresses = _subAccount->UnusedAddresses(1, 1);
+					std::vector<std::string> addresses = _subAccount->UnusedAddresses(1, 1);
 					ParamChecker::checkCondition(addresses.empty(), Error::GetUnusedAddress, "Get address failed.");
 					uint64_t changeAmount = totalInputAmount - totalOutputAmount - fee;
-					TransactionOutput changeOutput(changeAmount, addresses[0].stringify(), assetID);
+					TransactionOutput changeOutput(changeAmount, addresses[0], assetID);
 					txn->AddOutput(changeOutput);
 				}
 			}
@@ -446,153 +445,15 @@ namespace Elastos {
 					outputs.back().setAmount(newChangeAmount);
 				} else {
 					UInt256 assetID = outputs[0].getAssetId();
-					std::vector<Address> addresses = _subAccount->UnusedAddresses(1, 1);
+					std::vector<std::string> addresses = _subAccount->UnusedAddresses(1, 1);
 					ParamChecker::checkCondition(addresses.empty(), Error::GetUnusedAddress, "Get address failed.");
-					outputs.emplace_back(newChangeAmount, addresses[0].stringify(), assetID);
+					outputs.emplace_back(newChangeAmount, addresses[0], assetID);
 				}
 			} else {
 				tx->removeChangeOutput();
 			}
 			tx->setFee(fee);
 		}
-
-#if 0
-		TransactionPtr
-		AssetTransactions::CreateTxForOutputs(const std::vector<TransactionOutput> &outputs,
-											  const std::string &fromAddress,
-											  bool useVotedUTXO,
-											  const boost::function<bool(const std::string &,
-																		 const std::string &)> &filter) {
-			TransactionPtr transaction = TransactionPtr(new Transaction);
-			uint64_t feeAmount, amount = 0, balance = 0;
-			size_t i, cpfpSize = 0;
-
-			assert(outputs.size() > 0);
-			for (i = 0; i < outputs.size(); i++) {
-				amount += outputs[i].getAmount();
-			}
-			transaction->getOutputs() = outputs;
-
-			_lockable->Lock();
-			feeAmount = transaction->calculateFee(_feePerKb);
-
-			_utxos.SortBaseOnOutputAmount(amount, _feePerKb);
-			// TODO: use up all UTXOs for all used addresses to avoid leaving funds in addresses whose public key is revealed
-			// TODO: avoid combining addresses in a single transaction when possible to reduce information leakage
-			// TODO: use up UTXOs received from any of the output scripts that this transaction sends funds to, to mitigate an
-			//       attacker double spending and requesting a refund
-			for (i = 0; i < _utxos.size(); i++) {
-
-				if (!useVotedUTXO && _utxos[i].isVote) {
-					Log::debug("skip voted utxo: {}, n: {}", Utils::UInt256ToString(_utxos[i].hash, true), _utxos[i].n);
-					continue;
-				}
-
-				const TransactionPtr &tx = _allTx.Get(_utxos[i].hash);
-				if (!tx || _utxos[i].n >= tx->getOutputs().size()) continue;
-				if (filter && !fromAddress.empty() &&
-					!filter(fromAddress, tx->getOutputs()[_utxos[i].n].getAddress())) {
-					continue;
-				}
-
-				if (_utxos[i].confirms < 2) {
-					Log::warn("utxo: '{}' n: '{}', confirms: '{}', can't spend for now.",
-							  Utils::UInt256ToString(_utxos[i].hash, true), _utxos[i].n, _utxos[i].confirms);
-					continue;
-				}
-
-				transaction->getInputs().push_back(TransactionInput(_utxos[i].hash, _utxos[i].n));
-
-				if (transaction->getSize() + TX_OUTPUT_SIZE > TX_MAX_SIZE) { // transaction size-in-bytes too large
-					bool balanceEnough = true;
-					feeAmount = transaction->calculateFee(_feePerKb) + _feePerKb;
-					transaction = nullptr;
-
-					// check for sufficient total funds before building a smaller transaction
-					if (_balance < amount + feeAmount) {
-						balanceEnough = false;
-					}
-					_lockable->Unlock();
-
-					ParamChecker::checkCondition(!balanceEnough, Error::CreateTransaction,
-												 "Available token is not enough");
-
-					uint64_t maxAmount = 0;
-					if (outputs[outputs.size() - 1].getAmount() > amount + feeAmount - balance) {
-						for (int k = 0; k < outputs.size() - 1; ++k) {
-							maxAmount += outputs[k].getAmount();
-						}
-						maxAmount += outputs[outputs.size() - 1].getAmount() - (amount + feeAmount - balance);
-
-						ParamChecker::checkCondition(true, Error::CreateTransactionExceedSize,
-													 "Tx size too large, amount should less than " +
-													 std::to_string(maxAmount), maxAmount);
-						//todo automatic create new transaction if needed
-//						std::vector<TransactionOutput> newOutputs = outputs;
-//						newOutputs[outputs.size() - 1].setAmount(newOutputs[outputs.size() - 1].getAmount() -
-//																 amount + feeAmount -
-//																 balance); // reduce last output amount
-//						transaction = CreateTxForOutputs(newOutputs, fromAddress, filter);
-					} else {
-						for (int k = 0; k < outputs.size() - 1; ++k) {
-							maxAmount += outputs[k].getAmount();
-						}
-						ParamChecker::checkCondition(true, Error::CreateTransactionExceedSize,
-													 "Tx size too large, amount should less than " +
-													 std::to_string(maxAmount), maxAmount);
-						//todo automatic create new transaction if needed
-//						std::vector<TransactionOutput> newOutputs;
-//						newOutputs.insert(newOutputs.end(), outputs.begin(), outputs.begin() + outputs.size() - 1);
-//						transaction = CreateTxForOutputs(newOutputs, fromAddress, filter); // remove last output
-					}
-
-					balance = amount = feeAmount = 0;
-					_lockable->Lock();
-					break;
-				}
-
-				balance += tx->getOutputs()[_utxos[i].n].getAmount();
-
-//        // size of unconfirmed, non-change inputs for child-pays-for-parent fee
-//        // don't include parent tx with more than 10 inputs or 10 outputs
-//        if (tx->_blockHeight == TX_UNCONFIRMED && tx->inCount <= 10 && tx->outCount <= 10 &&
-//            ! _BRWalletTxIsSend(wallet, tx)) cpfpSize += BRTransactionSize(tx);
-
-				// fee amount after adding a change output
-				feeAmount = tx->calculateFee(_feePerKb);
-
-				// increase fee to round off remaining wallet balance to nearest 100 satoshi
-				//if (_balance > amount + feeAmount) feeAmount += (_balance - (amount + feeAmount)) % 100;
-
-				if (balance >= amount + feeAmount) break;
-			}
-			_lockable->Unlock();
-
-			if (transaction != nullptr) {
-				transaction->setFee(feeAmount);
-			}
-
-			if (transaction && (transaction->getOutputs().size() < 1 ||
-								balance < amount + feeAmount)) { // no outputs/insufficient funds
-				transaction = nullptr;
-				ParamChecker::checkCondition(balance < amount + feeAmount, Error::BalanceNotEnough,
-											 "Available token is not enough");
-				ParamChecker::checkCondition(transaction->getOutputs().size() < 1, Error::CreateTransaction,
-											 "Output count is not enough");
-			} else if (transaction && balance - (amount + feeAmount) > 0) { // add change output
-				std::vector<Address> addrs = _subAccount->UnusedAddresses(1, 1);
-				ParamChecker::checkCondition(addrs.empty(), Error::CreateTransaction, "Get address failed.");
-
-				UInt168 programHash;
-				ParamChecker::checkCondition(!Utils::UInt168FromAddress(programHash, addrs[i].stringify()),
-											 Error::CreateTransaction, "Convert from address to program hash error.");
-				TransactionOutput changeOutput(balance - (amount + feeAmount), programHash, outputs[0].getAssetId());
-				transaction->getOutputs().push_back(changeOutput);
-			}
-
-			return transaction;
-		}
-#endif
 
 		uint64_t AssetTransactions::getMinOutputAmount() {
 			uint64_t amount;
@@ -938,15 +799,6 @@ namespace Elastos {
 			UInt256 assetID = GetUniqueAssetID(tx->getOutputs());
 			_groupedTransactions[assetID]->UpdateTxFee(tx, fee, fromAddress, blockHeight);
 		}
-
-//		TransactionPtr GroupedAssetTransactions::CreateTxForOutputs(const std::vector<TransactionOutput> &outputs,
-//																	const std::string &fromAddress,
-//																	bool useVotedUTXO,
-//																	const boost::function<bool(const std::string &,
-//																							   const std::string &)> &filter) {
-//			UInt256 assetID = GetUniqueAssetID(outputs);
-//			return _groupedTransactions[assetID]->CreateTxForOutputs(outputs, fromAddress, useVotedUTXO, filter);
-//		}
 
 		TransactionPtr GroupedAssetTransactions::TransactionForHash(const UInt256 &transactionHash) {
 			for (AssetTransactionMap::MapType::iterator it = _groupedTransactions.Begin();

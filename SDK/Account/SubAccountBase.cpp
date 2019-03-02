@@ -45,7 +45,7 @@ namespace Elastos {
 			return _votePublicKey;
 		}
 
-		bool SubAccountBase::IsDepositAddress(const Address &address) const {
+		bool SubAccountBase::IsDepositAddress(const std::string &address) const {
 			if (GetVotePublicKey().GetSize() == 0) {
 				return false;
 			}
@@ -55,7 +55,7 @@ namespace Elastos {
 				return false;
 			}
 
-			return address.IsEqual(key.GetAddress(PrefixDeposit));
+			return address == key.GetAddress(PrefixDeposit);
 		}
 
 		void SubAccountBase::SignTransaction(const TransactionPtr &tx, const std::string &payPasswd) {

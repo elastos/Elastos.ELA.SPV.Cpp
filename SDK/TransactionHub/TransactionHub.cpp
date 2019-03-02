@@ -11,7 +11,6 @@
 #include <SDK/Common/Utils.h>
 #include <SDK/Account/MultiSignSubAccount.h>
 
-#include <Core/BRAddress.h>
 #include <Core/BRBIP39Mnemonic.h>
 #include <Core/BRArray.h>
 #include <Core/BRTransaction.h>
@@ -432,19 +431,12 @@ namespace Elastos {
 		}
 
 		std::string TransactionHub::getReceiveAddress() const {
-			std::vector<Address> addr = _subAccount->UnusedAddresses(1, 0);
-			return addr[0].stringify();
+			std::vector<std::string> addr = _subAccount->UnusedAddresses(1, 0);
+			return addr[0];
 		}
 
 		std::vector<std::string> TransactionHub::getAllAddresses() {
-
-			std::vector<Address> addrs = _subAccount->GetAllAddresses(size_t(-1));
-
-			std::vector<std::string> results;
-			for (int i = 0; i < addrs.size(); i++) {
-				results.push_back(addrs[i].stringify());
-			}
-			return results;
+			return _subAccount->GetAllAddresses(size_t(-1));
 		}
 
 		std::string TransactionHub::GetVoteDepositAddress() const {
@@ -612,7 +604,7 @@ namespace Elastos {
 			return _listeningAddrs;
 		}
 
-		std::vector<Address> TransactionHub::UnusedAddresses(uint32_t gapLimit, bool internal) {
+		std::vector<std::string> TransactionHub::UnusedAddresses(uint32_t gapLimit, bool internal) {
 			return _subAccount->UnusedAddresses(gapLimit, internal);
 		}
 

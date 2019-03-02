@@ -156,12 +156,6 @@ namespace Elastos {
 
 			void UpdateTxFee(TransactionPtr &tx, uint64_t fee, const std::string &fromAddress, uint32_t blockHeight);
 
-//			TransactionPtr
-//			CreateTxForOutputs(const std::vector<TransactionOutput> &outputs,
-//							   const std::string &fromAddress,
-//							   bool useVotedUTXO,
-//							   const boost::function<bool(const std::string &, const std::string &)> &filter);
-
 			TransactionPtr TransactionForHash(const UInt256 &transactionHash);
 
 			TransactionPtr TransactionForHash(const UInt256 &transactionHash, const UInt256 &assetID);

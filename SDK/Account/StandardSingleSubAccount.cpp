@@ -61,16 +61,16 @@ namespace Elastos {
 			return false;
 		}
 
-		std::vector<Address> StandardSingleSubAccount::UnusedAddresses(uint32_t gapLimit, bool internal) {
-			std::vector<Address> address;
+		std::vector<std::string> StandardSingleSubAccount::UnusedAddresses(uint32_t gapLimit, bool internal) {
+			std::vector<std::string> address;
 
 			address.push_back(GetAddress());
 
 			return address;
 		}
 
-		std::vector<Address> StandardSingleSubAccount::GetAllAddresses(size_t addrsCount) const {
-			std::vector<Address> address;
+		std::vector<std::string> StandardSingleSubAccount::GetAllAddresses(size_t addrsCount) const {
+			std::vector<std::string> address;
 
 			if (addrsCount > 0)
 				address.emplace_back(GetAddress());
@@ -78,16 +78,16 @@ namespace Elastos {
 			return address;
 		}
 
-		bool StandardSingleSubAccount::ContainsAddress(const Address &address) const {
+		bool StandardSingleSubAccount::ContainsAddress(const std::string &address) const {
 			const CMBlock &producerPubKey = GetVotePublicKey();
 			if (producerPubKey.GetSize() > 0) {
 				Key key;
 				key.SetPubKey(GetVotePublicKey());
-				if (address.IsEqual(key.GetAddress(PrefixDeposit)))
+				if (address == key.GetAddress(PrefixDeposit))
 					return true;
 			}
 
-			return address.IsEqual(GetAddress());
+			return address == GetAddress();
 		}
 
 		Key StandardSingleSubAccount::DeriveVoteKey(const std::string &payPasswd) {

@@ -29,7 +29,7 @@ namespace Elastos {
 
 			virtual CMBlock GetVotePublicKey() const;
 
-			virtual bool IsDepositAddress(const Address &address) const;
+			virtual bool IsDepositAddress(const std::string &address) const;
 
 			virtual void SignTransaction(const TransactionPtr &transaction, const std::string &payPassword);
 

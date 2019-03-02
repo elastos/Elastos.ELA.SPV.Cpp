@@ -12,7 +12,6 @@
 #include <SDK/Plugin/Transaction/Transaction.h>
 #include <SDK/Plugin/Transaction/TransactionOutput.h>
 #include <SDK/Base/Lockable.h>
-#include <SDK/Base/Address.h>
 #include <SDK/Common/ElementSet.h>
 #include <SDK/Crypto/MasterPubKey.h>
 #include <SDK/Account/ISubAccount.h>
@@ -155,7 +154,7 @@ namespace Elastos {
 
 			const std::vector<std::string> &getListeningAddrs() const;
 
-			std::vector<Address> UnusedAddresses(uint32_t gapLimit, bool internal);
+			std::vector<std::string> UnusedAddresses(uint32_t gapLimit, bool internal);
 
 			void UpdateAssets(const std::vector<Asset> &assetArray);
 

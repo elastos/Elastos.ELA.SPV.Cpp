@@ -39,26 +39,26 @@ namespace Elastos {
 			return true;
 		}
 
-		std::vector<Address> SingleSubAccount::GetAllAddresses(size_t addrsCount) const {
-			std::vector<Address> result;
+		std::vector<std::string> SingleSubAccount::GetAllAddresses(size_t addrsCount) const {
+			std::vector<std::string> result;
 			if (addrsCount > 0) {
 				result.push_back(GetParent()->GetAddress());
 			}
 			return result;
 		}
 
-		std::vector<Address> SingleSubAccount::UnusedAddresses(uint32_t gapLimit, bool internal) {
-			std::vector<Address> result;
+		std::vector<std::string> SingleSubAccount::UnusedAddresses(uint32_t gapLimit, bool internal) {
+			std::vector<std::string> result;
 			result.push_back(GetParent()->GetAddress());
 			return result;
 		}
 
-		bool SingleSubAccount::IsAddressUsed(const Address &address) const {
+		bool SingleSubAccount::IsAddressUsed(const std::string &address) const {
 			return true;
 		}
 
-		bool SingleSubAccount::ContainsAddress(const Address &address) const {
-			return address.IsEqual(GetParent()->GetAddress());
+		bool SingleSubAccount::ContainsAddress(const std::string &address) const {
+			return address == GetParent()->GetAddress();
 		}
 
 		Key SingleSubAccount::DeriveVoteKey(const std::string &payPasswd) {

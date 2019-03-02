@@ -29,13 +29,13 @@ namespace Elastos {
 
 			virtual void AddUsedAddrs(const TransactionPtr &tx);
 
-			virtual std::vector<Address> GetAllAddresses(size_t addrsCount) const;
+			virtual std::vector<std::string> GetAllAddresses(size_t addrsCount) const;
 
-			virtual std::vector<Address> UnusedAddresses(uint32_t gapLimit, bool internal);
+			virtual std::vector<std::string> UnusedAddresses(uint32_t gapLimit, bool internal);
 
-			virtual bool ContainsAddress(const Address &address) const;
+			virtual bool ContainsAddress(const std::string &address) const;
 
-			virtual bool IsAddressUsed(const Address &address) const;
+			virtual bool IsAddressUsed(const std::string &address) const;
 
 			virtual void ClearUsedAddresses();
 
@@ -44,8 +44,8 @@ namespace Elastos {
 		private:
 			MasterPubKey _masterPubKey;
 			uint32_t _coinIndex;
-			std::vector<Address> internalChain, externalChain;
-			std::set<Address> usedAddrs, allAddrs;
+			std::vector<std::string> internalChain, externalChain;
+			std::set<std::string> usedAddrs, allAddrs;
 			Lockable *_lock;
 		};
 	}

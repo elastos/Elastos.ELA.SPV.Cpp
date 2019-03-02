@@ -12,6 +12,8 @@
 namespace Elastos {
 	namespace ElaWallet {
 
+#define ELA_SIDECHAIN_DESTROY_ADDR "1111111111111111111114oLvT2"
+
 		class SidechainSubWallet : public virtual ISidechainSubWallet, public SubWallet {
 		public:
 			virtual ~SidechainSubWallet();

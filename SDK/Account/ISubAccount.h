@@ -8,7 +8,6 @@
 #include "IAccount.h"
 
 #include <SDK/Crypto/Key.h>
-#include <SDK/Base/Address.h>
 #include <SDK/Plugin/Transaction/Transaction.h>
 
 #include <boost/shared_ptr.hpp>
@@ -56,15 +55,15 @@ namespace Elastos {
 
 			virtual void AddUsedAddrs(const TransactionPtr &tx) = 0;
 
-			virtual std::vector<Address> UnusedAddresses(uint32_t gapLimit, bool internal) = 0;
+			virtual std::vector<std::string> UnusedAddresses(uint32_t gapLimit, bool internal) = 0;
 
-			virtual std::vector<Address> GetAllAddresses(size_t addrsCount) const = 0;
+			virtual std::vector<std::string> GetAllAddresses(size_t addrsCount) const = 0;
 
-			virtual bool ContainsAddress(const Address &address) const = 0;
+			virtual bool ContainsAddress(const std::string &address) const = 0;
 
-			virtual bool IsDepositAddress(const Address &address) const = 0;
+			virtual bool IsDepositAddress(const std::string &address) const = 0;
 
-			virtual bool IsAddressUsed(const Address &address) const = 0;
+			virtual bool IsAddressUsed(const std::string &address) const = 0;
 
 			virtual void ClearUsedAddresses() = 0;
 

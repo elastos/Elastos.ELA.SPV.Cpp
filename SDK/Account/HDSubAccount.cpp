@@ -48,14 +48,14 @@ namespace Elastos {
 			}
 
 			for (index = internalChain.size(); index > 0; index--) {
-				if (internalChain[index - 1].stringify() == addr) {
+				if (internalChain[index - 1] == addr) {
 					pubKey = BIP32Sequence::PubKey(_masterPubKey, SEQUENCE_INTERNAL_CHAIN, index - 1);
 					break;
 				}
 			}
 
 			for (index = externalChain.size(); index > 0 && pubKey.GetSize() == 0; index--) {
-				if (externalChain[index - 1].stringify() == addr) {
+				if (externalChain[index - 1] == addr) {
 					pubKey = BIP32Sequence::PubKey(_masterPubKey, SEQUENCE_EXTERNAL_CHAIN, index - 1);
 					break;
 				}
@@ -83,7 +83,7 @@ namespace Elastos {
 			coinIndex = _coinIndex;
 
 			for (index = (uint32_t) internalChain.size(); index > 0; --index) {
-				if (addr == internalChain[index - 1].stringify()) {
+				if (addr == internalChain[index - 1]) {
 					found = true;
 					change = SEQUENCE_INTERNAL_CHAIN;
 					break;
@@ -92,7 +92,7 @@ namespace Elastos {
 
 			if (!found) {
 				for (index = (uint32_t) externalChain.size(); index > 0; --index) {
-					if (addr == externalChain[index - 1].stringify()) {
+					if (addr == externalChain[index - 1]) {
 						found = true;
 						change = SEQUENCE_EXTERNAL_CHAIN;
 						break;
@@ -131,8 +131,8 @@ namespace Elastos {
 			return false;
 		}
 
-		std::vector<Address> HDSubAccount::GetAllAddresses(size_t addrsCount) const {
-			std::vector<Address> result;
+		std::vector<std::string> HDSubAccount::GetAllAddresses(size_t addrsCount) const {
+			std::vector<std::string> result;
 			size_t i, internalCount = 0, externalCount = 0;
 
 			_lock->Lock();
@@ -156,7 +156,7 @@ namespace Elastos {
 			return result;
 		}
 
-		std::vector<Address> HDSubAccount::UnusedAddresses(uint32_t gapLimit, bool internal) {
+		std::vector<std::string> HDSubAccount::UnusedAddresses(uint32_t gapLimit, bool internal) {
 
 			size_t i, j = 0, count, startCount;
 			uint32_t chain = (internal) ? SEQUENCE_INTERNAL_CHAIN : SEQUENCE_EXTERNAL_CHAIN;
@@ -164,21 +164,21 @@ namespace Elastos {
 			assert(gapLimit > 0);
 
 			_lock->Lock();
-			std::vector<Address> &addrChain = internal ? internalChain : externalChain;
+			std::vector<std::string> &addrChain = internal ? internalChain : externalChain;
 			i = count = startCount = addrChain.size();
 
 			// keep only the trailing contiguous block of addresses with no transactions
 			while (i > 0 && usedAddrs.find(addrChain[i - 1]) == usedAddrs.end()) i--;
 
-			std::vector<Address> addrs;
+			std::vector<std::string> addrs;
 			while (i + gapLimit > count) { // generate new addresses up to gapLimit
 				CMBlock pubKey = BIP32Sequence::PubKey(_masterPubKey, chain, count);
 
 				Key key;
 				key.SetPubKey(pubKey);
-				Address address = key.GetAddress(PrefixStandard);
+				std::string address = key.GetAddress(PrefixStandard);
 
-				if (address.IsEqual(Address::None))
+				if (address.empty())
 					break;
 
 				addrChain.push_back(address);
@@ -210,16 +210,16 @@ namespace Elastos {
 			}
 		}
 
-		bool HDSubAccount::IsAddressUsed(const Address &address) const {
+		bool HDSubAccount::IsAddressUsed(const std::string &address) const {
 			return usedAddrs.find(address) != usedAddrs.end();
 		}
 
-		bool HDSubAccount::ContainsAddress(const Address &address) const {
+		bool HDSubAccount::ContainsAddress(const std::string &address) const {
 			const CMBlock &producerPubKey = GetVotePublicKey();
 			if (producerPubKey.GetSize() > 0) {
 				Key key;
 				key.SetPubKey(GetVotePublicKey());
-				if (address.IsEqual(key.GetAddress(PrefixDeposit)))
+				if (address == key.GetAddress(PrefixDeposit))
 					return true;
 			}
 

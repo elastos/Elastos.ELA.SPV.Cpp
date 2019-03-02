@@ -22,6 +22,7 @@
 
 #include <vector>
 #include <boost/filesystem.hpp>
+#include <SDK/Common/Base58.h>
 
 #define MASTER_WALLET_STORE_FILE "MasterWalletStore.json"
 #define COIN_COINFIG_FILE "CoinConfig.json"
@@ -395,7 +396,12 @@ namespace Elastos {
 		}
 
 		bool MasterWallet::IsIdValid(const std::string &id) {
-			return Address::isValidIdAddress(id);
+			CMBlock programHash = Base58::CheckDecode(id);
+
+			if (programHash.GetSize() == 21 && programHash[0] == PrefixIDChain)
+				return true;
+
+			return false;
 		}
 
 		SubWallet *MasterWallet::SubWalletFactoryMethod(const CoinInfo &info, const CoinConfig &config,
@@ -491,7 +497,18 @@ namespace Elastos {
 		}
 
 		bool MasterWallet::IsAddressValid(const std::string &address) const {
-			return Address::isValidAddress(address);
+			CMBlock programHash = Base58::CheckDecode(address);
+			if (programHash.GetSize() == 21) {
+				if (programHash[0] == PrefixStandard ||
+					programHash[0] == PrefixCrossChain ||
+					programHash[0] == PrefixMultiSign ||
+					programHash[0] == PrefixIDChain ||
+					programHash[0] == PrefixDeposit ||
+					programHash[0] == PrefixDestroy)
+					return true;
+			}
+
+			return false;
 		}
 
 		std::vector<std::string> MasterWallet::GetSupportedChains() const {
