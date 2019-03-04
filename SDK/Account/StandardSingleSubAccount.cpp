@@ -69,7 +69,7 @@ namespace Elastos {
 			return address;
 		}
 
-		std::vector<std::string> StandardSingleSubAccount::GetAllAddresses(size_t addrsCount) const {
+		std::vector<std::string> StandardSingleSubAccount::GetAllAddresses(uint32_t start, size_t addrsCount, bool containInternal) const {
 			std::vector<std::string> address;
 
 			if (addrsCount > 0)

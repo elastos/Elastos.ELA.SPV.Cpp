@@ -435,8 +435,8 @@ namespace Elastos {
 			return addr[0];
 		}
 
-		std::vector<std::string> TransactionHub::getAllAddresses() {
-			return _subAccount->GetAllAddresses(size_t(-1));
+		std::vector<std::string> TransactionHub::getAllAddresses(uint32_t start, size_t count, bool containInternal) {
+			return _subAccount->GetAllAddresses(start, count, containInternal);
 		}
 
 		std::string TransactionHub::GetVoteDepositAddress() const {

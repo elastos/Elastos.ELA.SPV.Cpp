@@ -39,7 +39,7 @@ namespace Elastos {
 			return true;
 		}
 
-		std::vector<std::string> SingleSubAccount::GetAllAddresses(size_t addrsCount) const {
+		std::vector<std::string> SingleSubAccount::GetAllAddresses(uint32_t start, size_t addrsCount, bool containInternal) const {
 			std::vector<std::string> result;
 			if (addrsCount > 0) {
 				result.push_back(GetParent()->GetAddress());

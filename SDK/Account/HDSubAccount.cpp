@@ -131,24 +131,24 @@ namespace Elastos {
 			return false;
 		}
 
-		std::vector<std::string> HDSubAccount::GetAllAddresses(size_t addrsCount) const {
+		std::vector<std::string> HDSubAccount::GetAllAddresses(uint32_t start, size_t addrsCount, bool containInternal) const {
 			std::vector<std::string> result;
-			size_t i, internalCount = 0, externalCount = 0;
+
+			if ((!containInternal && start >= externalChain.size()) ||
+				(containInternal && start >= externalChain.size() + internalChain.size())) {
+				return result;
+			}
 
 			_lock->Lock();
 
-			externalCount = externalChain.size() < addrsCount?
-							externalChain.size() : addrsCount;
-
-			for (i = 0; i < externalCount; i++) {
+			for (size_t i = start; i < externalChain.size() && result.size() < addrsCount; i++) {
 				result.push_back(externalChain[i]);
 			}
 
-			internalCount = internalChain.size() < addrsCount - externalCount ?
-							internalChain.size() : addrsCount - externalCount;
-
-			for (i = 0; i < internalCount; i++) {
-				result.push_back(internalChain[i]);
+			if (containInternal && result.size() < addrsCount) {
+				for (size_t i = start + result.size(); i < externalChain.size() + internalChain.size() && result.size() < addrsCount; i++) {
+					result.push_back(internalChain[i - externalChain.size()]);
+				}
 			}
 
 			_lock->Unlock();

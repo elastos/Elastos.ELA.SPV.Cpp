@@ -78,7 +78,7 @@ namespace Elastos {
 
 			// writes all addresses previously generated with BRWalletUnusedAddrs() to addrs
 			// returns the number addresses written, or total number available if addrs is NULL
-			std::vector<std::string> getAllAddresses();
+			std::vector<std::string> getAllAddresses(uint32_t start, size_t count, bool containInternal);
 
 			std::string GetVoteDepositAddress() const;
 

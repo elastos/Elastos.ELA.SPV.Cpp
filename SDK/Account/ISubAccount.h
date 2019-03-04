@@ -57,7 +57,7 @@ namespace Elastos {
 
 			virtual std::vector<std::string> UnusedAddresses(uint32_t gapLimit, bool internal) = 0;
 
-			virtual std::vector<std::string> GetAllAddresses(size_t addrsCount) const = 0;
+			virtual std::vector<std::string> GetAllAddresses(uint32_t start, size_t addrsCount, bool containInternal) const = 0;
 
 			virtual bool ContainsAddress(const std::string &address) const = 0;
 

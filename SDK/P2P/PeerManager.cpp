@@ -647,7 +647,7 @@ namespace Elastos {
 			CMBlock hashData;
 
 			std::string voteDepositAddress = _wallet->GetVoteDepositAddress();
-			std::vector<std::string> addrs = _wallet->getAllAddresses();
+			std::vector<std::string> addrs = _wallet->getAllAddresses(0, size_t(-1), true);
 			std::vector<UTXO> utxos = _wallet->getAllUTXOsSafe();
 			uint32_t blockHeight = (_lastBlock->getHeight() > 100) ? _lastBlock->getHeight() - 100 : 0;
 
@@ -905,8 +905,6 @@ namespace Elastos {
 					loadMempools();
 				}
 			}
-
-			_wallet->UpdateBalance();
 		}
 
 		void PeerManager::OnDisconnected(const PeerPtr &peer, int error) {
