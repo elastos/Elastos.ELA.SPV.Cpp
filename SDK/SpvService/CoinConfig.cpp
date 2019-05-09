@@ -21,6 +21,9 @@ namespace Elastos {
 					return Idchain;
 				else if (str == "Tokenchain")
 					return Tokenchain;
+				else if (str == "Neochain") {
+					return Neochain;
+				}
 				else
 					return Normal;
 			}

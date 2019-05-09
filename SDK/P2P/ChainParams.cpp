@@ -266,6 +266,10 @@ namespace Elastos {
 			_targetTimePerBlock = 120;
 		}
 
+		void ChainParams::MainNetNeoChainParamsInit() {
+			//todo complete this when has mainnet
+		}
+
 		// test net
 		void ChainParams::TestNetMainChainParamsInit() {
 			_dnsSeeds.emplace_back("node-testnet-002.elastos.org");
@@ -393,6 +397,16 @@ namespace Elastos {
 			_targetTimePerBlock = 120;
 		}
 
+		void ChainParams::TestNetNeoChainParamsInit() {
+			_dnsSeeds.emplace_back("127.0.0.1");
+			_checkpoints.emplace_back(0,      "b5c629ebb1416a5a377144c70878ab5b6afc5d406c4a372ea65ba6ab7558c57b", 1545624000, 486801407);
+			_standardPort = 21628;
+			_magicNumber = 201812013;
+			_services = 0;
+			_targetTimeSpan = 86400;
+			_targetTimePerBlock = 120;
+		}
+
 		// reg net (reg test)
 		void ChainParams::RegNetMainChainParamsInit() {
 			_dnsSeeds.emplace_back("node-regtest-102.eadd.co");
@@ -497,6 +511,10 @@ namespace Elastos {
 			_targetTimePerBlock = 120;
 		}
 
+		void ChainParams::RegNetNeoChainParamsInit() {
+			//todo complete this when hash RegNet
+		}
+
 		void ChainParams::MainNetParamsInit(SubWalletType type) {
 			if (type == Mainchain || type == Normal) {
 				MainNetMainChainParamsInit();
@@ -504,6 +522,8 @@ namespace Elastos {
 				MainNetIDChainParamsInit();
 			} else if (type == Tokenchain) {
 				MainNetTokenChainParamsInit();
+			} else if (type == Neochain) {
+				MainNetNeoChainParamsInit();
 			} else {
 				ErrorChecker::CheckCondition(true, Error::InvalidCoinType,
 											 "Unsupport coin type in coin config");
@@ -517,6 +537,8 @@ namespace Elastos {
 				TestNetIDChainParamsInit();
 			} else if (type == Tokenchain) {
 				TestNetTokenChainParamsInit();
+			} else if (type == Neochain) {
+				TestNetNeoChainParamsInit();
 			} else {
 				ErrorChecker::CheckCondition(true, Error::InvalidCoinType,
 											 "Unsupport coin type in coin config");
@@ -530,6 +552,8 @@ namespace Elastos {
 				RegNetIDChainParamsInit();
 			} else if (type == Tokenchain) {
 				RegNetTokenChainParamsInit();
+			} else if (type == Neochain) {
+				RegNetNeoChainParamsInit();
 			} else {
 				ErrorChecker::CheckCondition(true, Error::InvalidCoinType,
 											 "Unsupport coin type in coin config");

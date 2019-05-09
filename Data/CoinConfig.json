@@ -25,5 +25,14 @@
     "ReconnectSeconds": 300,
     "PluginType": "Token",
     "GenesisAddress" : "XVfmhjxGxBKgzYxyXCJTb6YmaRfWPVunj4"
+  },
+  "NeoChain": {
+    "Type": "Neochain",
+    "CoinIndex": 3,
+    "NetType": "TestNet",
+    "MinFee": 10000,
+    "ReconnectSeconds": 300,
+    "PluginType": "Neo",
+    "GenesisAddress" : "XF9LHicD41iLG1Qr1aL7QxrFhUxnNLX8B8"
   }
 }
