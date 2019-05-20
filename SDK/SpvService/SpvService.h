@@ -75,6 +75,8 @@ namespace Elastos {
 
 			virtual void savePeers(bool replace, const std::vector<PeerInfo> &peers);
 
+			virtual void saveNep5Log(const Nep5LogPtr nep5Logs);
+
 			virtual bool networkIsReachable();
 
 			virtual void txPublished(const std::string &hash, const nlohmann::json &result);

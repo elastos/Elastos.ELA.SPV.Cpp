@@ -399,7 +399,7 @@ namespace Elastos {
 
 		void ChainParams::TestNetNeoChainParamsInit() {
 			_dnsSeeds.emplace_back("127.0.0.1");
-			_checkpoints.emplace_back(0,      "b5c629ebb1416a5a377144c70878ab5b6afc5d406c4a372ea65ba6ab7558c57b", 1545624000, 486801407);
+			_checkpoints.emplace_back(0,      "5505c74a1ee1f69a6f10e31cb89ade7f542258ae8eeeb8d66a2839fd5eba4e05", 1545624000, 486801407);
 			_standardPort = 21628;
 			_magicNumber = 201812013;
 			_services = 0;

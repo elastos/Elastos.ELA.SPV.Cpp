@@ -118,6 +118,8 @@ namespace Elastos {
 
 			virtual void savePeers(bool replace, const std::vector<PeerInfo> &peers);
 
+			virtual void saveNep5Log(const Nep5LogPtr nep5LogPtr);
+
 			virtual bool networkIsReachable();
 
 			virtual void txPublished(const std::string &hash, const nlohmann::json &result);
@@ -151,6 +153,8 @@ namespace Elastos {
 			virtual void saveBlocks(bool replace, const std::vector<MerkleBlockPtr> &blocks);
 
 			virtual void savePeers(bool replace, const std::vector<PeerInfo> &peers);
+
+			virtual void saveNep5Log(Nep5LogPtr nep5LogPtr);
 
 			virtual bool networkIsReachable();
 

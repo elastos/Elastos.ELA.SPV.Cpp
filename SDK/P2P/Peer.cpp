@@ -19,6 +19,7 @@
 #include "Message/FilterLoadMessage.h"
 #include "Message/GetAddressMessage.h"
 #include "Message/RejectMessage.h"
+#include "Message/Nep5LogMessage.h"
 
 #include <SDK/Common/Log.h>
 #include <SDK/Common/Utils.h>
@@ -444,6 +445,7 @@ namespace Elastos {
 			InitSingleMessage(new MerkleBlockMessage(shared_from_this()));
 			InitSingleMessage(new GetAddressMessage(shared_from_this()));
 			InitSingleMessage(new RejectMessage(shared_from_this()));
+			InitSingleMessage(new Nep5LogMessage(shared_from_this()));
 		}
 
 		bool Peer::AcceptMessage(const bytes_t &msg, const std::string &type) {

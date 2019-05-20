@@ -7,7 +7,7 @@
 
 #include <SDK/Plugin/Interface/IPlugin.h>
 #include <SDK/Plugin/Registry.h>
-#include <SDK/Plugin/Block/SidechainMerkleBlock.h>
+#include <SDK/Plugin/Block/NeoMerkleBlock.h>
 
 #include <fruit/fruit.h>
 
@@ -16,13 +16,13 @@ namespace Elastos {
 
 		class NeoPlugin : public IPlugin {
 		public:
-			INJECT (NeoPlugin(ISidechainMerkleBlockFactory * merkleBlockFactory)) :
+			INJECT (NeoPlugin(INeoMerkleBlockFactory * merkleBlockFactory)) :
 					_merkleBlockFactory(merkleBlockFactory) {
 			}
 
 			virtual MerkleBlockPtr CreateBlock();
 		private:
-			ISidechainMerkleBlockFactory *_merkleBlockFactory;
+			INeoMerkleBlockFactory *_merkleBlockFactory;
 		};
 
 		fruit::Component<> getNeoPluginComponent();

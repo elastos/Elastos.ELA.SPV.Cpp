@@ -9,6 +9,7 @@
 #include "TransactionDataStore.h"
 #include "PeerDataSource.h"
 #include "AssetDataStore.h"
+#include "Nep5LogDataStore.h"
 #include "Sqlite.h"
 
 namespace Elastos {
@@ -50,6 +51,13 @@ namespace Elastos {
 			bool GetAssetDetails(const std::string &assetID, AssetEntity &asset) const;
 			std::vector<AssetEntity> GetAllAssets() const;
 
+			// Nep5Log's database interface
+			bool PutNep5Log(const std::string &iso, const Nep5LogEntity &nep5LogEntity);
+			bool DeleteNep5Log(const std::string &iso, const std::string &txid);
+			bool DeleteAllNep5Logs(const std::string &iso);
+			bool GetNep5Log(const std::string &iso, const std::string &txid, Nep5LogEntity &nep5LogEntity);
+			const std::vector<Nep5LogEntity> GetAllLogs() const;
+
 			const boost::filesystem::path &GetPath() const;
 
 		private:
@@ -59,6 +67,7 @@ namespace Elastos {
 			TransactionDataStore  	_transactionDataStore;
 			MerkleBlockDataSource 	_merkleBlockDataSource;
 			AssetDataStore 			_assetDataStore;
+			Nep5LogDataStore        _nep5LogDataStore;
 		};
 
 	}

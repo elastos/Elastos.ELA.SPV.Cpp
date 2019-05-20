@@ -255,6 +255,16 @@ namespace Elastos {
 						  });
 		}
 
+		void SpvService::saveNep5Log(const Nep5LogPtr nep5Logs) {
+			Nep5LogEntity logEntity;
+			logEntity.txid = nep5Logs->GetNep5Hash();
+			logEntity.nep5Hash = nep5Logs->GetNep5Hash();
+			logEntity.fromAddr = nep5Logs->GetFrom();
+			logEntity.toAddr = nep5Logs->GetTo();
+			logEntity.value = nep5Logs->GetData();
+			_databaseManager.PutNep5Log(ISO, logEntity);
+		}
+
 		bool SpvService::networkIsReachable() {
 
 			bool reachable = true;

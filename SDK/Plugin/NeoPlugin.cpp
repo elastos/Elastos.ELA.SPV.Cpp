@@ -12,7 +12,8 @@ namespace Elastos {
 
 		fruit::Component<> getNeoPluginComponent() {
 			return fruit::createComponent().addMultibinding<IPlugin, NeoPlugin>().install(
-					getSidechainMerkleBlockFactoryComponent);
+					getNeoBlockFactoryComponent);
+
 		}
 
 		REGISTER_MERKLEBLOCKPLUGIN(Neo, getNeoPluginComponent);

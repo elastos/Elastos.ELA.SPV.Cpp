@@ -232,6 +232,16 @@ namespace Elastos {
 			}
 		}
 
+		void WrappedExceptionPeerManagerListener::saveNep5Log(const Nep5LogPtr nep5LogPtr) {
+			try {
+				_listener->saveNep5Log(nep5LogPtr);
+			} catch (const std::exception &ex) {
+				Log::error("Peer manager callback (saveNep5Log) error: {}", ex.what());
+			} catch (...) {
+				Log::error("Peer manager callback (saveNep5Log) error.");
+			}
+		}
+
 		bool WrappedExceptionPeerManagerListener::networkIsReachable() {
 			try {
 				return _listener->networkIsReachable();
@@ -350,6 +360,18 @@ namespace Elastos {
 			_executor->Execute(Runnable([this, replace, peers]() -> void {
 				try {
 					_listener->savePeers(replace, peers);
+				} catch (const std::exception &ex) {
+					Log::error("Peer manager callback (savePeers) error: {}", ex.what());
+				} catch (...) {
+					Log::error("Peer manager callback (savePeers) error.");
+				}
+			}));
+		}
+
+		void WrappedExecutorPeerManagerListener::saveNep5Log(Nep5LogPtr nep5LogPtr) {
+			_executor->Execute(Runnable([this, nep5LogPtr]() -> void {
+				try {
+					_listener->saveNep5Log(nep5LogPtr);
 				} catch (const std::exception &ex) {
 					Log::error("Peer manager callback (savePeers) error: {}", ex.what());
 				} catch (...) {
