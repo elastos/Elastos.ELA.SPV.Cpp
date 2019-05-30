@@ -142,6 +142,11 @@ namespace Elastos {
 			return std::vector<AssetPtr>();
 		}
 
+		std::vector<Nep5LogPtr> CoreSpvService::loadNep5Logs() {
+			// todo complete me
+			return std::vector<Nep5LogPtr>();
+		}
+
 		int CoreSpvService::getForkId() const {
 			//todo complete me
 			return -1;

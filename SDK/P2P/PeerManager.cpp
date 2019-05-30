@@ -1524,12 +1524,12 @@ namespace Elastos {
 		}
 
 		void PeerManager::OnFilterLogBloom(const PeerPtr &peer, const MerkleBlockPtr &block) {
-			Bloom9 bloom9;
-			if (block->GetBlockType() == "NeoSide") {
-				NeoMerkleBlock *merkleBlock = (NeoMerkleBlock *)block.get();
-			    bloom9.SetBloomData(merkleBlock->GetBloom());
+			if (block->GetBlockType() != "NeoSide") {
+				return;
 			}
-
+			Bloom9 bloom9;
+			NeoMerkleBlock *merkleBlock = (NeoMerkleBlock *)block.get();
+		    bloom9.SetBloomData(merkleBlock->GetBloom());
 
 			std::vector<Address> addrs;
 			_wallet->GetAllAddresses(addrs, 0, size_t(-1), true);

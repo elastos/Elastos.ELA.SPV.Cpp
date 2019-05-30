@@ -21,6 +21,26 @@ namespace Elastos {
 
 		}
 
+		void Nep5Log::SetNep5Hash(const std::string &nep5Hash) {
+			_nep5Hash = nep5Hash;
+		}
+
+		void Nep5Log::SetFrom(const std::string &from) {
+			_from = from;
+		}
+
+		void Nep5Log::SetTo(const std::string &to) {
+			_to = to;
+		}
+
+		void Nep5Log::SetData(const BigInt &value) {
+			_data = value;
+		}
+
+		void Nep5Log::SetTxId(const std::string txid) {
+			_txid = txid;
+		}
+
 		const std::string Nep5Log::GetNep5Hash() const {
 			return _nep5Hash;
 		}

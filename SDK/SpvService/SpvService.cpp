@@ -257,7 +257,7 @@ namespace Elastos {
 
 		void SpvService::saveNep5Log(const Nep5LogPtr nep5Logs) {
 			Nep5LogEntity logEntity;
-			logEntity.txid = nep5Logs->GetNep5Hash();
+			logEntity.txid = nep5Logs->GetTxID();
 			logEntity.nep5Hash = nep5Logs->GetNep5Hash();
 			logEntity.fromAddr = nep5Logs->GetFrom();
 			logEntity.toAddr = nep5Logs->GetTo();
@@ -374,6 +374,37 @@ namespace Elastos {
 			}
 
 			return assets;
+		}
+
+		std::vector<Nep5LogPtr> SpvService::loadNep5Logs() {
+			std::vector<Nep5LogPtr> nep5Logs;
+
+			std::vector<Nep5LogEntity> nep5LogEntitys = _databaseManager.GetAllLogs();
+
+			for (size_t i = 0; i < nep5LogEntitys.size(); ++i) {
+				Nep5LogEntity entity = nep5LogEntitys[i];
+				Nep5LogPtr nep5LogPtr(new Nep5Log());
+				nep5LogPtr->SetNep5Hash(entity.nep5Hash);
+				nep5LogPtr->SetFrom(entity.fromAddr);
+				nep5LogPtr->SetTo(entity.toAddr);
+				nep5LogPtr->SetData(entity.value);
+				nep5LogPtr->SetTxId(entity.txid);
+				nep5Logs.push_back(nep5LogPtr);
+			}
+
+			return nep5Logs;
+		}
+
+		Nep5LogPtr SpvService::getNep5Log(std::string txid) {
+			Nep5LogEntity nep5LogEntity;
+			_databaseManager.GetNep5Log(ISO, txid, nep5LogEntity);
+			Nep5LogPtr nep5LogPtr(new Nep5Log());
+			nep5LogPtr->SetNep5Hash(nep5LogEntity.nep5Hash);
+			nep5LogPtr->SetFrom(nep5LogEntity.fromAddr);
+			nep5LogPtr->SetTo(nep5LogEntity.toAddr);
+			nep5LogPtr->SetData(nep5LogEntity.value);
+			nep5LogPtr->SetTxId(nep5LogEntity.txid);
+			return nep5LogPtr;
 		}
 
 		int SpvService::getForkId() const {

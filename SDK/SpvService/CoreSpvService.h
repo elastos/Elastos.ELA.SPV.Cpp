@@ -64,6 +64,9 @@ namespace Elastos {
 
 			virtual void syncIsInactive(uint32_t time) {}
 
+		public:
+			virtual std::vector<Nep5LogPtr> loadNep5Logs();
+
 		protected:
 			virtual std::vector<TransactionPtr> loadTransactions();
 
