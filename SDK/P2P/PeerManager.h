@@ -60,6 +60,8 @@ namespace Elastos {
 				// func savePeers(_ replace: Bool, _ peers: [BRPeer])
 				virtual void savePeers(bool replace, const std::vector<PeerInfo> &peers) = 0;
 
+				virtual void onSaveNep5Log(const Nep5LogPtr &nep5LogPtr) = 0;
+
 				// func networkIsReachable() -> Bool}
 				virtual bool networkIsReachable() = 0;
 
@@ -185,6 +187,10 @@ namespace Elastos {
 
 			virtual void OnThreadCleanup(const PeerPtr &peer);
 
+			virtual void OnFilterLogBloom(const PeerPtr &peer, const MerkleBlockPtr &block);
+
+			virtual void OnNep5Log(const Nep5LogPtr &nep5LogPtr);
+
 		private:
 			void FireSyncStarted();
 
@@ -197,6 +203,8 @@ namespace Elastos {
 			void FireSaveBlocks(bool replace, const std::vector<MerkleBlockPtr> &blocks);
 
 			void FireSavePeers(bool replace, const std::vector<PeerInfo> &peers);
+
+			void FireSaveNep5Log(const Nep5LogPtr nep5LogPtr);
 
 			bool FireNetworkIsReachable();
 

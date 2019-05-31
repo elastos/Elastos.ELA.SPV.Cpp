@@ -15,6 +15,7 @@
 #include <Interface/ISidechainSubWallet.h>
 #include <Interface/ITokenchainSubWallet.h>
 #include <Interface/IIDAgent.h>
+#include <Interface/INeochainSubWallet.h>
 #include <spdlog/logger.h>
 #include <spdlog/spdlog.h>
 
@@ -26,6 +27,7 @@ static const std::string gMasterWalletID = "WalletID";
 static const std::string gMainchainSubWalletID = "ELA";
 static const std::string gIDchainSubWalletID = "IDChain";
 static const std::string gTokenchainSubWalletID = "TokenChain";
+static const std::string gNeochainSubWalletID = "NeoChain";
 static const std::string rootPath = "Data";
 static const std::string payPasswd = "s12345678";
 static uint64_t feePerKB = 10000;
@@ -34,6 +36,7 @@ static std::shared_ptr<spdlog::logger> logger = spdlog::stdout_color_mt("sample"
 static bool IDChainSyncSucceed = false;
 static bool ELASyncSucceed = false;
 static bool TokenSyncSucceed = false;
+static bool NeoSyncSucceed = false;
 
 MasterWalletManager *manager = nullptr;
 
@@ -66,6 +69,8 @@ public:
 				IDChainSyncSucceed = true;
 			} else if (_walletID.find(gTokenchainSubWalletID) != std::string::npos) {
 				TokenSyncSucceed = true;
+			} else if (_walletID.find(gNeochainSubWalletID) != std::string::npos) {
+				NeoSyncSucceed = true;
 			}
 		}
 	}
@@ -433,6 +438,7 @@ static void InitWallets() {
 			masterWallet->CreateSubWallet(gMainchainSubWalletID, 10000);
 			masterWallet->CreateSubWallet(gIDchainSubWalletID, 10000);
 			masterWallet->CreateSubWallet(gTokenchainSubWalletID, 10000);
+			masterWallet->CreateSubWallet(gNeochainSubWalletID, 10000);
 		}
 		masterWallets.push_back(masterWallet);
 	}
@@ -471,6 +477,21 @@ static void GetBalance(const std::string &masterWalletID, const std::string &sub
 	} else {
 		logger->debug("{}:{} balance -> {}", masterWalletID, subWalletID, subWallet->GetBalance());
 		logger->debug("{}:{} balance info -> {}", masterWalletID, subWalletID, subWallet->GetBalanceInfo().dump());
+	}
+
+	if (subWalletID == gNeochainSubWalletID) {
+		INeochainSubWallet *neochainSubWallet = dynamic_cast<INeochainSubWallet *>(subWallet);
+
+		std::vector<std::string> tokens = neochainSubWallet->GetAllNep5Token();
+
+		for (size_t i = 0; i < tokens.size(); ++i) {
+			logger->debug("{}:{} nep5 hash->{}, balance -> {}", masterWalletID, subWalletID, tokens[i],
+			              neochainSubWallet->GetBalance(tokens[i]));
+		}
+
+		logger->debug("{}:{} nep5 hash->{}, balanceWithAddr -> {}", masterWalletID, subWalletID, tokens[0],
+		              neochainSubWallet->GetBalanceWithAddress(tokens[0], "db215de2758b7d743f66e4c66cfcc35dc54ccbcb"));
+		logger->debug("{}:{} balance info -> {}", masterWalletID, subWalletID, neochainSubWallet->GetBalanceInfo().dump());
 	}
 }
 
@@ -596,6 +617,28 @@ static void DIDTest() {
 	logger->debug("DID {}", separator);
 }
 
+static void NeoTest() {
+	static bool transferDone = true, withdrawDone = true;
+
+	logger->debug("Neo {}", separator);
+	GetAllTxSummary(gMasterWalletID, gNeochainSubWalletID);
+	GetBalance(gMasterWalletID, gNeochainSubWalletID);
+
+	if (!transferDone) {
+		Transafer(gMasterWalletID, gNeochainSubWalletID,
+		          "", "EYMVuGs1FscpgmghSzg243R6PzPiszrgj7", 100000000);
+		transferDone = true;
+	}
+
+	if (!withdrawDone) {
+		Withdraw(gMasterWalletID, gNeochainSubWalletID,
+		         "", "EYMVuGs1FscpgmghSzg243R6PzPiszrgj7", 100000000);
+		withdrawDone = true;
+	}
+
+	logger->debug("Neo {}", separator);
+}
+
 int main(int argc, char *argv[]) {
 	bool delay = false;
 	logger->set_level(spdlog::level::level_enum::debug);
@@ -625,11 +668,17 @@ int main(int argc, char *argv[]) {
 			delay = true;
 		}
 
+		if (NeoSyncSucceed) {
+			NeoTest();
+			delay = true;
+		}
+
 		if (delay) {
 			sleep(60);
 		} else {
 			sleep(1);
 		}
+
 	}
 
 	return 0;
