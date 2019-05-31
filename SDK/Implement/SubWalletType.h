@@ -14,6 +14,7 @@ namespace Elastos {
 			Sidechain,
 			Idchain,
 			Tokenchain,
+			Neochain,
 		};
 
 	}

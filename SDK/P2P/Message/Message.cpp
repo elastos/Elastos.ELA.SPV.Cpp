@@ -86,6 +86,11 @@ namespace Elastos {
 				_peer->_listener->OnThreadCleanup(_peer->shared_from_this());
 		}
 
+		void Message::FireRelayNep5Log(const Nep5LogPtr &nep5LogPtr) {
+			if (_peer->_listener != nullptr)
+				_peer->_listener->OnNep5Log(nep5LogPtr);
+		}
+
 		void Message::SendMessage(const bytes_t &msg, const std::string &type) {
 			_peer->SendMessage(msg, type);
 		}

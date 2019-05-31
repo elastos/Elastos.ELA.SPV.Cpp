@@ -77,6 +77,8 @@ namespace Elastos {
 				virtual bool OnNetworkIsReachable(const PeerPtr &peer) = 0;
 
 				virtual void OnThreadCleanup(const PeerPtr &peer) = 0;
+
+				virtual void OnNep5Log(const Nep5LogPtr &nep5LogPtr) = 0;
 			};
 
 			typedef boost::function<void(int)> PeerCallback;

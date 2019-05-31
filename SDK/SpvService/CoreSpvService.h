@@ -64,6 +64,9 @@ namespace Elastos {
 
 			virtual void syncIsInactive(uint32_t time) {}
 
+		public:
+			virtual std::vector<Nep5LogPtr> loadNep5Logs();
+
 		protected:
 			virtual std::vector<TransactionPtr> loadTransactions();
 
@@ -118,6 +121,8 @@ namespace Elastos {
 
 			virtual void savePeers(bool replace, const std::vector<PeerInfo> &peers);
 
+			virtual void onSaveNep5Log(const Nep5LogPtr nep5LogPtr);
+
 			virtual bool networkIsReachable();
 
 			virtual void txPublished(const std::string &hash, const nlohmann::json &result);
@@ -151,6 +156,8 @@ namespace Elastos {
 			virtual void saveBlocks(bool replace, const std::vector<MerkleBlockPtr> &blocks);
 
 			virtual void savePeers(bool replace, const std::vector<PeerInfo> &peers);
+
+			virtual void onSaveNep5Log(Nep5LogPtr nep5LogPtr);
 
 			virtual bool networkIsReachable();
 

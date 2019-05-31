@@ -16,6 +16,8 @@
 #include "Payload/PayloadCancelProducer.h"
 #include "Payload/PayloadUpdateProducer.h"
 #include "Payload/PayloadReturnDepositCoin.h"
+#include "Payload/PayloadDeploy.h"
+#include "Payload/PayloadInvoke.h"
 
 #include <SDK/Common/Utils.h>
 #include <SDK/Wallet/Wallet.h>
@@ -384,7 +386,7 @@ namespace Elastos {
 				return false;
 			}
 
-			if (flagByte >= TxVersion::V09) {
+			if (flagByte >= TxVersion::V09 && flagByte != Invoke) {
 				_version = static_cast<TxVersion>(flagByte);
 				uint8_t txType = 0;
 				if (!istream.ReadByte(txType)) {
@@ -753,8 +755,7 @@ namespace Elastos {
 			} else if (type == Record) {
 				_payload = PayloadPtr(new PayloadRecord());
 			} else if (type == Deploy) {
-				//todo add deploy _payload
-				//_payload = boost::shared_ptr<PayloadDeploy>(new PayloadDeploy());
+				_payload = boost::shared_ptr<PayloadDeploy>(new PayloadDeploy());
 			} else if (type == SideChainPow) {
 				_payload = PayloadPtr(new PayloadSideMining());
 			} else if (type == RechargeToSideChain) { // side chain payload
@@ -773,6 +774,8 @@ namespace Elastos {
 				_payload = PayloadPtr(new PayloadReturnDepositCoin());
 			} else if (type == RegisterIdentification) { // ID chain payload
 				_payload = PayloadPtr(new PayloadRegisterIdentification());
+			} else if (type == Invoke) {
+				_payload = boost::shared_ptr<PayloadInvoke>(new PayloadInvoke());
 			}
 		}
 

@@ -44,6 +44,7 @@ namespace Elastos {
 				IllegalVoteEvidence     = 0x0e,
 				IllegalBlockEvidence    = 0x0f,
 
+				Invoke                  = 0xF0,
 				RegisterIdentification  = 0xFF, // will refactor later
 				TypeMaxCount
 			};

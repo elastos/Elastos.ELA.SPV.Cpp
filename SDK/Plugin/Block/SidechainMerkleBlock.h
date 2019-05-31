@@ -30,7 +30,7 @@ namespace Elastos {
 
 			virtual std::string GetBlockType() const;
 
-		private:
+		protected:
 			IDAuxPow idAuxPow;
 		};
 
