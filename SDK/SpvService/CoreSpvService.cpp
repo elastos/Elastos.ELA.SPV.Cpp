@@ -158,6 +158,11 @@ namespace Elastos {
 			return std::vector<AssetPtr>();
 		}
 
+		std::vector<Nep5LogPtr> CoreSpvService::loadNep5Logs() {
+			// todo complete me
+			return std::vector<Nep5LogPtr>();
+		}
+
 		const CoreSpvService::PeerManagerListenerPtr &CoreSpvService::createPeerManagerListener() {
 			if (_peerManagerListener == nullptr) {
 				_peerManagerListener = PeerManagerListenerPtr(
@@ -226,6 +231,16 @@ namespace Elastos {
 				_listener->savePeers(replace, peers);
 			} catch (const std::exception &e) {
 				Log::error("savePeers exception: {}", e.what());
+			}
+		}
+
+		void WrappedExceptionPeerManagerListener::onSaveNep5Log(const Nep5LogPtr &nep5LogPtr) {
+			try {
+				_listener->onSaveNep5Log(nep5LogPtr);
+			} catch (const std::exception &ex) {
+				Log::error("Peer manager callback (saveNep5Log) error: {}", ex.what());
+			} catch (...) {
+				Log::error("Peer manager callback (saveNep5Log) error.");
 			}
 		}
 
@@ -322,6 +337,18 @@ namespace Elastos {
 					_listener->savePeers(replace, peers);
 				} catch (const std::exception &e) {
 					Log::error("savePeers exception: {}", e.what());
+				}
+			}));
+		}
+
+		void WrappedExecutorPeerManagerListener::onSaveNep5Log(const Nep5LogPtr &nep5LogPtr) {
+			_executor->Execute(Runnable([this, nep5LogPtr]() -> void {
+				try {
+					_listener->onSaveNep5Log(nep5LogPtr);
+				} catch (const std::exception &ex) {
+					Log::error("Peer manager callback (savePeers) error: {}", ex.what());
+				} catch (...) {
+					Log::error("Peer manager callback (savePeers) error.");
 				}
 			}));
 		}

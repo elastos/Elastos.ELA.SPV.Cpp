@@ -2,22 +2,15 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#ifndef __SPVSDK_SUBWALLETTYPE_H__
-#define __SPVSDK_SUBWALLETTYPE_H__
+#ifndef __ELASTOS_SDK_INEOMERKLEBLOCK_H__
+#define __ELASTOS_SDK_INEOMERKLEBLOCK_H__
 
 namespace Elastos {
 	namespace ElaWallet {
-
-		enum SubWalletType {
-			Normal = 0,
-			Mainchain,
-			Sidechain,
-			Idchain,
-			Tokenchain,
-			Neochain,
+		class INeoMerkleBlock {
+			virtual bytes_t GetBloom() const = 0;
 		};
-
 	}
 }
 
-#endif //__SPVSDK_SUBWALLETTYPE_H__
+#endif //__ELASTOS_SDK_INEOMERKLEBLOCK_H__

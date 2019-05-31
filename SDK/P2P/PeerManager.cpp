@@ -9,16 +9,20 @@
 #include "Message/MempoolMessage.h"
 #include "Message/GetDataMessage.h"
 #include "Message/InventoryMessage.h"
+#include "Message/Nep5LogMessage.h"
 
 #include <SDK/Plugin/Transaction/Asset.h>
 #include <SDK/Plugin/Block/ELAMerkleBlock.h>
 #include <SDK/Plugin/Registry.h>
 #include <SDK/Plugin/Block/MerkleBlock.h>
+#include <SDK/Plugin/Block/NeoMerkleBlock.h>
 #include <SDK/Common/Utils.h>
 #include <SDK/Common/Log.h>
 #include <SDK/WalletCore/BIPs/Base58.h>
 #include <SDK/WalletCore/BIPs/BloomFilter.h>
 #include <SDK/Wallet/Wallet.h>
+#include <SDK/P2P/ChainParams.h>
+#include <SDK/WalletCore/Bloom9/Bloom9.h>
 #include <SDK/P2P/ChainParams.h>
 
 #include <netdb.h>
@@ -68,6 +72,12 @@ namespace Elastos {
 		void PeerManager::FireSavePeers(bool replace, const std::vector<PeerInfo> &peers) {
 			if (!_listener.expired()) {
 				_listener.lock()->savePeers(replace, peers);
+			}
+		}
+
+		void PeerManager::FireSaveNep5Log(const Nep5LogPtr nep5LogPtr) {
+			if (!_listener.expired()) {
+				_listener.lock()->onSaveNep5Log(nep5LogPtr);
 			}
 		}
 
@@ -1543,7 +1553,34 @@ namespace Elastos {
 				_wallet->UpdateBalance();
 			}
 
+			OnFilterLogBloom(peer, block);
+
 			if (next) OnRelayedBlock(peer, next);
+		}
+
+		void PeerManager::OnFilterLogBloom(const PeerPtr &peer, const MerkleBlockPtr &block) {
+			NeoMerkleBlock *b = dynamic_cast<NeoMerkleBlock *>(block.get());
+			if (b == nullptr)
+				return;
+
+			if (b->GetBloom().isZero())
+				return;
+
+			Bloom9 bloom9(b->GetBloom());
+
+			std::vector<Address> addrs;
+			size_t len = _wallet->GetAllAddresses(addrs, 0, size_t(-1), true);
+
+			for (size_t i = 0; i < len; i++) { // add addresses to watch for tx receiveing money to the wallet
+				Bloom9 filter;
+				const bytes_t &uInt168 = addrs[i].ProgramHash().bytes();
+				uint160 u160(bytes_t(uInt168.data() + 1, uInt168.size() - 1));
+				filter.AddTopic(u160);
+				if (addrs[i].Valid() && bloom9.Match(filter)) {
+					Nep5LogMessageParameter parameter(block->GetHash(), block->GetHeight(), u160);
+					peer->SendMessage(MSG_NEP5LOG, parameter);
+				}
+			}
 		}
 
 		void PeerManager::OnRelayedPingMsg(const PeerPtr &peer) {
@@ -1612,6 +1649,10 @@ namespace Elastos {
 		}
 
 		void PeerManager::OnThreadCleanup(const PeerPtr &peer) {
+		}
+
+		void PeerManager::OnNep5Log(const Nep5LogPtr &nep5LogPtr) {
+			FireSaveNep5Log(nep5LogPtr);
 		}
 
 		void PeerManager::PublishPendingTx(const PeerPtr &peer) {

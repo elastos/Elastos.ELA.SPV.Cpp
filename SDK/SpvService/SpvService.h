@@ -80,11 +80,18 @@ namespace Elastos {
 
 			virtual void savePeers(bool replace, const std::vector<PeerInfo> &peers);
 
+			virtual void onSaveNep5Log(const Nep5LogPtr &nep5Log);
+
 			virtual bool networkIsReachable();
 
 			virtual void txPublished(const std::string &hash, const nlohmann::json &result);
 
 			virtual void syncIsInactive(uint32_t time);
+
+		public:
+			virtual std::vector<Nep5LogPtr> loadNep5Logs();
+
+			virtual Nep5LogPtr getNep5Log(const std::string &txid);
 
 		protected:
 			virtual std::vector<CoinBaseUTXOPtr> loadCoinBaseUTXOs();

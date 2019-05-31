@@ -14,7 +14,8 @@ namespace Elastos {
 			_coinbaseDataStore(&_sqlite),
 			_transactionDataStore(&_sqlite),
 			_assetDataStore(&_sqlite),
-			_merkleBlockDataSource(&_sqlite) {
+			_merkleBlockDataSource(&_sqlite),
+			_nep5LogDataStore(&_sqlite) {
 
 		}
 
@@ -156,6 +157,27 @@ namespace Elastos {
 
 		std::vector<AssetEntity> DatabaseManager::GetAllAssets() const {
 			return _assetDataStore.GetAllAssets();
+		}
+
+		bool DatabaseManager::PutNep5Log(const std::string &iso, const Nep5LogEntity &nep5LogEntity) {
+			return _nep5LogDataStore.PutNep5Log(iso, nep5LogEntity);
+		}
+
+		bool DatabaseManager::DeleteNep5Log(const std::string &iso, const std::string &txid) {
+			return _nep5LogDataStore.DeleteLogByTxID(iso, txid);
+		}
+
+		bool DatabaseManager::DeleteAllNep5Logs(const std::string &iso) {
+			return _nep5LogDataStore.DeleteAllNep5Logs(iso);
+		}
+
+		bool DatabaseManager::GetNep5Log(const std::string &iso, const std::string &txid,
+		                                 Nep5LogEntity &nep5LogEntity) const {
+			return _nep5LogDataStore.GetNep5LogByTxID(iso, txid, nep5LogEntity);
+		}
+
+		const std::vector<Nep5LogEntity> DatabaseManager::GetAllLogs() const {
+			return _nep5LogDataStore.GetAllLogs();
 		}
 
 	}

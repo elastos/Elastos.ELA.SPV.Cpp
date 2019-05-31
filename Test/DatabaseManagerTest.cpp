@@ -418,4 +418,58 @@ TEST_CASE("DatabaseManager test", "[DatabaseManager]") {
 
 	}
 
+#define TEST_NEP5LOG_CNT 20
+	SECTION("Nep5Log test") {
+		static std::vector<Nep5LogEntity> neo5LogToSave;
+		SECTION("Nep5Log Prepare for test") {
+			for (int i = 0; i < TEST_NEP5LOG_CNT; i++) {
+				Nep5LogEntity nep5LogEntity;
+				nep5LogEntity.txid = getRandBytes(32).getHex();
+				nep5LogEntity.nep5Hash = getRandBytes(32).getHex();
+				nep5LogEntity.fromAddr = getRandBytes(20).getHex();
+				nep5LogEntity.toAddr = getRandBytes(20).getHex();
+				nep5LogEntity.value = getRandUInt64();
+
+				neo5LogToSave.push_back(nep5LogEntity);
+			}
+			REQUIRE(TEST_NEP5LOG_CNT == neo5LogToSave.size());
+		}
+
+		SECTION("Nep5Log save test") {
+			DatabaseManager dbm(DBFILE);
+			for (size_t i = 0; i < neo5LogToSave.size(); ++i) {
+				bool result = dbm.PutNep5Log(ISO, neo5LogToSave[i]);
+				REQUIRE(result == true);
+			}
+		}
+
+		SECTION("Nep5Log read test") {
+			DatabaseManager dbm(DBFILE);
+
+			for (int i = 0; i < TEST_NEP5LOG_CNT; ++i) {
+				Nep5LogEntity nep5LogEntity;
+				bool result = dbm.GetNep5Log(ISO, neo5LogToSave[i].txid, nep5LogEntity);
+				REQUIRE(result == true);
+				REQUIRE(nep5LogEntity.txid == neo5LogToSave[i].txid);
+				REQUIRE(nep5LogEntity.nep5Hash == neo5LogToSave[i].nep5Hash);
+				REQUIRE(nep5LogEntity.fromAddr == neo5LogToSave[i].fromAddr);
+				REQUIRE(nep5LogEntity.toAddr == neo5LogToSave[i].toAddr);
+				REQUIRE(nep5LogEntity.value == neo5LogToSave[i].value);
+			}
+		}
+
+		SECTION("Nep5Log delete one by one test") {
+			DatabaseManager dbm(DBFILE);
+
+			const std::vector<Nep5LogEntity> neo5LogToDeletes = dbm.GetAllLogs();
+			REQUIRE(neo5LogToDeletes.size() == TEST_NEP5LOG_CNT);
+
+			for (int i = 0; i < TEST_NEP5LOG_CNT; ++i) {
+				REQUIRE(dbm.DeleteNep5Log(ISO, neo5LogToDeletes[i].txid));
+			}
+
+			std::vector<Nep5LogEntity> neo5LogDeleted = dbm.GetAllLogs();
+			REQUIRE(0 == neo5LogDeleted.size());
+		}
+	}
 }

@@ -8,6 +8,7 @@
 #include <SDK/P2P/PeerInfo.h>
 #include <SDK/Plugin/Transaction/Transaction.h>
 #include <SDK/Plugin/Interface/IMerkleBlock.h>
+#include <SDK/Plugin/Nep5/Nep5Log.h>
 
 #include <string>
 #include <boost/shared_ptr.hpp>
@@ -34,6 +35,7 @@
 #define MSG_ALERT       "alert"
 #define MSG_REJECT      "reject"   // described in BIP61: https://github.com/bitcoin/bips/blob/master/bip-0061.mediawiki
 #define MSG_FEEFILTER   "feefilter"// described in BIP133 https://github.com/bitcoin/bips/blob/master/bip-0133.mediawiki
+#define MSG_NEP5LOG     "nep5log"
 
 #define MAX_GETDATA_HASHES 50000
 
@@ -99,6 +101,8 @@ namespace Elastos {
 			bool FireNetworkIsReachable();
 
 			void FireThreadCleanup();
+
+			void FireRelayNep5Log(const Nep5LogPtr &nep5LogPtr);
 
 			void SendMessage(const bytes_t &msg, const std::string &type);
 
