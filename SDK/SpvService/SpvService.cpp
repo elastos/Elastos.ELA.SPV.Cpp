@@ -255,14 +255,19 @@ namespace Elastos {
 						  });
 		}
 
-		void SpvService::saveNep5Log(const Nep5LogPtr nep5Logs) {
+		void SpvService::onSaveNep5Log(const Nep5LogPtr nep5Log) {
 			Nep5LogEntity logEntity;
-			logEntity.txid = nep5Logs->GetTxID();
-			logEntity.nep5Hash = nep5Logs->GetNep5Hash();
-			logEntity.fromAddr = nep5Logs->GetFrom();
-			logEntity.toAddr = nep5Logs->GetTo();
-			logEntity.value = nep5Logs->GetData();
+			logEntity.txid = nep5Log->GetTxID();
+			logEntity.nep5Hash = nep5Log->GetNep5Hash();
+			logEntity.fromAddr = nep5Log->GetFrom();
+			logEntity.toAddr = nep5Log->GetTo();
+			logEntity.value = nep5Log->GetData();
 			_databaseManager.PutNep5Log(ISO, logEntity);
+
+			std::for_each(_peerManagerListeners.begin(), _peerManagerListeners.end(),
+			              [&nep5Log](PeerManager::Listener *listener) {
+				              listener->onSaveNep5Log(nep5Log);
+			              });
 		}
 
 		bool SpvService::networkIsReachable() {

@@ -59,7 +59,7 @@ namespace Elastos {
 				// func savePeers(_ replace: Bool, _ peers: [BRPeer])
 				virtual void savePeers(bool replace, const std::vector<PeerInfo> &peers) = 0;
 
-				virtual void saveNep5Log(const Nep5LogPtr nep5LogPtr) = 0;
+				virtual void onSaveNep5Log(const Nep5LogPtr nep5LogPtr) = 0;
 
 				// func networkIsReachable() -> Bool}
 				virtual bool networkIsReachable() = 0;

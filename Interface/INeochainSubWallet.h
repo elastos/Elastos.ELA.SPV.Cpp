@@ -11,43 +11,35 @@ namespace Elastos {
 	namespace ElaWallet {
 		class INeochainSubWallet: public virtual ISidechainSubWallet {
 		public:
-			/**
-			 * Deploy smart contract.
-			 * @param avmBytes contract's code bytes
-			 * @param name contract's name.
-			 * @param version contract's version
-			 * @param author contract's author name or owner's ela address.
-			 * @param email owner's email address.
-			 * @param desc description of the contract.
-			 * @param gas fee of deploy transaction, default 500 ela
-			 * @return Transaction in json format.
-			 */
-			virtual nlohmann::json CreateDeployContractTx (
-					const std::string &avmBytes,
-					const std::string &name,
-					const std::string &version,
-					const std::string author,
-					const std::string email,
-					const std::string desc,
-					const std::string gas,
-					const std::string memo,
-					const std::string &remark) = 0;
 
 			/**
-			 * Invoke smart contract.
-			 * @param contractAddrHash contract's code hash
-			 * @param params contract parameters list to invoke. separate params with comma ','.
-			 * @param fee transaction fee
-			 * @param gas contract's execution of consumption.
-			 * @return Transaction in json format.
+			 * Get sum of balances of all addresses.
+			 * @param nep5Hash nep5 smartcontract hash.
+			 * @return sum of balances in big int string.
 			 */
-			virtual nlohmann::json CreateInvokeContractTx (
-					const std::string &contractAddrHash,
-					const std::string &params,
-					const std::string fee,
-					const std::string gas,
-					const std::string memo,
-					const std::string &remark) = 0;
+			virtual std::string GetBalance(const std::string &nep5Hash) = 0;
+
+			/**
+			 * Get balance of only the specified address.
+			 * @param assetID asset hex code from asset hash.
+			 * @param address is one of addresses created by current sub wallet.
+			 * @return balance of specified address in big int string.
+			 */
+			virtual std::string GetBalanceWithAddress(const std::string &nep5Hash,
+			                                          const std::string &addrProgramHash) = 0;
+
+			/**
+			 * Get all Nep5 token hash
+			 * @return
+			 */
+			virtual std::vector<std::string> GetAllNep5Token() = 0;
+
+			/**
+			 * Get balances of all addresses in json format.
+			 * @return balances of all addresses in json format.
+			 */
+			virtual nlohmann::json GetBalanceInfo() = 0;
+
 		};
 	}
 }

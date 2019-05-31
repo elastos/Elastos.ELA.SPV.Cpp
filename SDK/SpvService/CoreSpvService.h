@@ -121,7 +121,7 @@ namespace Elastos {
 
 			virtual void savePeers(bool replace, const std::vector<PeerInfo> &peers);
 
-			virtual void saveNep5Log(const Nep5LogPtr nep5LogPtr);
+			virtual void onSaveNep5Log(const Nep5LogPtr nep5LogPtr);
 
 			virtual bool networkIsReachable();
 
@@ -157,7 +157,7 @@ namespace Elastos {
 
 			virtual void savePeers(bool replace, const std::vector<PeerInfo> &peers);
 
-			virtual void saveNep5Log(Nep5LogPtr nep5LogPtr);
+			virtual void onSaveNep5Log(Nep5LogPtr nep5LogPtr);
 
 			virtual bool networkIsReachable();
 

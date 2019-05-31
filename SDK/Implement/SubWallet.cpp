@@ -459,7 +459,7 @@ namespace Elastos {
 			return info;
 		}
 
-		void SubWallet::saveNep5Log(const Nep5LogPtr nep5LogPtr) {
+		void SubWallet::onSaveNep5Log(const Nep5LogPtr nep5LogPtr) {
 			std::cout<< "saveNep5Log on SubWallet" << std::endl;
 		}
 

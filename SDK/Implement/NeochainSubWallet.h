@@ -29,30 +29,23 @@ namespace Elastos {
 
 			virtual void onTxUpdated(const uint256 &hash, uint32_t blockHeight, uint32_t timeStamp);
 
-			virtual nlohmann::json CreateDeployContractTx (
-					const std::string &avmBytes,
-					const std::string &name,
-					const std::string &version,
-					const std::string author,
-					const std::string email,
-					const std::string desc,
-					const std::string gas,
-					const std::string memo,
-					const std::string &remark);
+			virtual void onSaveNep5Log(const Nep5LogPtr nep5LogPtr);
 
-			virtual nlohmann::json CreateInvokeContractTx (
-					const std::string &contractAddrHash,
-					const std::string &params,
-					const std::string fee,
-					const std::string gas,
-					const std::string memo,
-					const std::string &remark);
+			virtual std::string GetBalance(const std::string &nep5Hash);
 
-			void InitNep5Assets(const std::vector<Nep5LogPtr> &nep5Assets);
+			virtual std::string GetBalanceWithAddress(const std::string &nep5Hash,
+			                                          const std::string &addrProgramHash);
+
+			virtual std::vector<std::string> GetAllNep5Token();
+
+			virtual nlohmann::json GetBalanceInfo();
 
 		private:
+			void InitNep5Assets(const std::vector<Nep5LogPtr> &nep5Assets);
+
 			bool ContainNep5Asset(const std::string &nep5Hash) const;
 
+			bool ContainsAddrHash(const std::string &addrHash);
 		private:
 			typedef std::map<std::string, GroupNep5Ptr> Nep5AssetMap;
 			Nep5AssetMap _nep5AssetMap;

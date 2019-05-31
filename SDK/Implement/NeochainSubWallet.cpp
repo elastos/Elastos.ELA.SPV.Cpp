@@ -5,7 +5,8 @@
 #include "NeochainSubWallet.h"
 
 #include <SDK/Common/ErrorChecker.h>
-#include <SDK/Common/Log.h>
+
+#include <map>
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -13,10 +14,8 @@ namespace Elastos {
 		                                     const PluginType &pluginTypes,
 		                                     MasterWallet *parent) :
 				SidechainSubWallet(info, chainParams, pluginTypes, parent) {
-
 			std::vector<Nep5LogPtr> nep5logs = _walletManager->loadNep5Logs();
 			InitNep5Assets(nep5logs);
-
 		}
 
 		NeochainSubWallet::~NeochainSubWallet() {
@@ -37,17 +36,32 @@ namespace Elastos {
 			SubWallet::onTxUpdated(hash, blockHeight, timeStamp);
 		}
 
+		void NeochainSubWallet::onSaveNep5Log(const Nep5LogPtr nep5LogPtr) {
+			std::string hash = nep5LogPtr->GetNep5Hash();
+			GroupNep5Ptr nep5Asset;
+			if (ContainNep5Asset(hash)) {
+				nep5Asset = _nep5AssetMap[hash];
+			} else {
+				nep5Asset = GroupNep5Ptr(new GroupNep5Asset());
+				_nep5AssetMap[hash] = nep5Asset;
+			}
+			const std::string from = nep5LogPtr->GetFrom();
+			if (ContainsAddrHash(from)) {
+				nep5Asset->MinusBalance(from, nep5LogPtr->GetData());
+			}
+
+			const std::string to = nep5LogPtr->GetTo();
+			if (ContainsAddrHash(to)) {
+				nep5Asset->AddBalance(to, nep5LogPtr->GetData());
+			}
+
+		}
+
 		void NeochainSubWallet::InitNep5Assets(const std::vector<Nep5LogPtr> &nep5Assets) {
+			_nep5AssetMap.clear();
+
 			for (size_t i = 0; i < nep5Assets.size(); ++i) {
-				std::string hash = nep5Assets[i]->GetNep5Hash();
-				GroupNep5Ptr nep5Asset;
-				if (!ContainNep5Asset(hash)) {
-					nep5Asset = GroupNep5Ptr(new GroupNep5Asset());
-					_nep5AssetMap[hash] = nep5Asset;
-				} else {
-					nep5Asset = _nep5AssetMap[hash];
-				}
-				nep5Asset->AddNep5Log(nep5Assets[i]);
+				onSaveNep5Log(nep5Assets[i]);
 			}
 		}
 
@@ -55,34 +69,61 @@ namespace Elastos {
 			return _nep5AssetMap.find(nep5Hash) != _nep5AssetMap.end();
 		}
 
-		nlohmann::json NeochainSubWallet::CreateDeployContractTx(
-				const std::string &avmBytes,
-				const std::string &name,
-				const std::string &version,
-				const std::string author,
-				const std::string email,
-				const std::string desc,
-				const std::string gas,
-				const std::string memo,
-				const std::string &remark) {
-			ErrorChecker::CheckParam(avmBytes.size() > 0, Error::InvalidArgument, "avmBytes is empty");
+		bool NeochainSubWallet::ContainsAddrHash(const std::string &addrHash) {
+			std::vector<Address> addrs;
+			_subAccount->GetAllAddresses(addrs, 0, size_t(-1), true);
+			size_t len = addrs.size();
+			for (size_t i = 0; i < len; ++i) {
+				uint168 uInt168 = addrs[i].ProgramHash();
+				bytes_t data(sizeof(uint160));
+				memcpy(&data[0], &uInt168.bytes()[1], sizeof(uint160));
+				data.reverse();
+				uint160 u160(data);
+				if (u160.GetHex() == addrHash) {
+					return true;
+				}
+			}
+			return false;
+		}
 
-			//todo complete this
+		std::vector<std::string> NeochainSubWallet::GetAllNep5Token() {
+			std::vector<std::string> tokens;
+			for(std::map<std::string, GroupNep5Ptr>::iterator iter = _nep5AssetMap.begin(); iter != _nep5AssetMap.end(); iter++) {
+				tokens.push_back(iter->first);
+			}
+			return tokens;
+		}
+
+		std::string NeochainSubWallet::GetBalance(const std::string &nep5Hash) {
+			GroupNep5Ptr groupNep5Ptr =	_nep5AssetMap[nep5Hash];
+			if (groupNep5Ptr) {
+				return groupNep5Ptr->GetBalance().getDec();
+			}
+
+			return "0";
+		}
+
+		std::string NeochainSubWallet::GetBalanceWithAddress(const std::string &nep5Hash,
+		                                                     const std::string &addrProgramHash) {
+			GroupNep5Ptr groupNep5Ptr =	_nep5AssetMap[nep5Hash];
+			if (groupNep5Ptr) {
+				return groupNep5Ptr->GetBalance(addrProgramHash).getDec();
+			}
+			return "0";
+		}
+
+		nlohmann::json NeochainSubWallet::GetBalanceInfo() {
 			nlohmann::json jsonData;
+			for(std::map<std::string, GroupNep5Ptr>::iterator iter = _nep5AssetMap.begin(); iter != _nep5AssetMap.end(); iter++) {
+				nlohmann::json nep5Info;
+				nep5Info["hash"] = iter->first;
+				GroupNep5Ptr groupNep5Ptr =	_nep5AssetMap[iter->first];
+				nep5Info["balance"] = groupNep5Ptr->GetBalance().getDec();
+
+				jsonData.push_back(nep5Info);
+			}
 			return jsonData;
 		}
 
-		nlohmann::json NeochainSubWallet::CreateInvokeContractTx(
-				const std::string &contractAddrHash,
-				const std::string &params,
-				const std::string fee,
-				const std::string gas,
-				const std::string memo,
-				const std::string &remark) {
-
-				//todo complete this
-			nlohmann::json jsonData;
-			return jsonData;
-		}
 	}
 }

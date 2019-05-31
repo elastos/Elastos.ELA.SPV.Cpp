@@ -26,6 +26,7 @@ namespace Elastos {
 				FireRelayNep5Log(nep5LogPtr);
 			}
 
+			return true;
 		}
 
 		void Nep5LogMessage::Send(const SendMessageParameter &param) {

@@ -135,7 +135,8 @@ namespace Elastos {
 					logEntity.nep5Hash = _sqlite->ColumnText(stmt, 1);
 					logEntity.fromAddr = _sqlite->ColumnText(stmt, 2);
 					logEntity.toAddr = _sqlite->ColumnText(stmt, 3);
-					logEntity.value = _sqlite->ColumnText(stmt, 4);
+					std::string value = _sqlite->ColumnText(stmt, 4);
+					logEntity.value.setHex(value);
 
 					logEntitys.push_back(logEntity);
 				}

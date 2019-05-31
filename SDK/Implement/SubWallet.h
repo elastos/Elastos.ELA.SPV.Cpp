@@ -148,7 +148,7 @@ namespace Elastos {
 
 			virtual void syncIsInactive(uint32_t time) {}
 
-			virtual void saveNep5Log(const Nep5LogPtr nep5LogPtr);
+			virtual void onSaveNep5Log(const Nep5LogPtr nep5LogPtr);
 
 		protected:
 			friend class MasterWallet;

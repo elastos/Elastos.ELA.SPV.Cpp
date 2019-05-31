@@ -74,7 +74,7 @@ namespace Elastos {
 
 		void PeerManager::FireSaveNep5Log(const Nep5LogPtr nep5LogPtr) {
 			if (!_listener.expired()) {
-				_listener.lock()->saveNep5Log(nep5LogPtr);
+				_listener.lock()->onSaveNep5Log(nep5LogPtr);
 			}
 		}
 
