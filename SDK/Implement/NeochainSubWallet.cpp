@@ -74,11 +74,8 @@ namespace Elastos {
 			_subAccount->GetAllAddresses(addrs, 0, size_t(-1), true);
 			size_t len = addrs.size();
 			for (size_t i = 0; i < len; ++i) {
-				uint168 uInt168 = addrs[i].ProgramHash();
-				bytes_t data(sizeof(uint160));
-				memcpy(&data[0], &uInt168.bytes()[1], sizeof(uint160));
-				data.reverse();
-				uint160 u160(data);
+				const bytes_t &uInt168 = addrs[i].ProgramHash().bytes();
+				uint160 u160(bytes_t(uInt168.data() + 1, uInt168.size() - 1));
 				if (u160.GetHex() == addrHash) {
 					return true;
 				}
