@@ -42,11 +42,14 @@ namespace Elastos {
 
 			bool GetNep5LogByTxID(const std::string &iso, const std::string &hash, Nep5LogEntity &logEntity) const;
 
+			bool UpdateNep5Log(const std::string &iso, const Nep5LogEntity &nep5LogEntity);
+
 			const std::vector<Nep5LogEntity> GetAllLogs() const;
 
 		private:
 			bool SelectLogByHash(const std::string &iso, const std::string &hash, Nep5LogEntity &nep5LogEntity) const;
 
+			bool UpdateNep5LogInternal(const std::string &iso, const Nep5LogEntity &nep5LogEntity);
 		private:
 			/*
 			 * nep5 log table
@@ -57,14 +60,14 @@ namespace Elastos {
 			const std::string FROM_ADDR = "fromAddress";
 			const std::string TO_ADDR = "toAddress";
 			const std::string AMOUNT = "amount";
-			const std::string NEP5LOG_ISO = "merkleBlockISO";
+			const std::string NEP5LOG_ISO = "nep5LogISO";
 
 			const std::string NEP5LOG_DATABASE_CREATE = "create table if not exists " + LOG_TABLE_NAME + " (" +
-			                                            TXID + " text not null primary key, " +
+			                                            TXID + " text not null, " +
 			                                            NEP5_HASH + " text not null, " +
-			                                            FROM_ADDR + " text , " +
+			                                            FROM_ADDR + " text, " +
 			                                            TO_ADDR + " text not null, " +
-			                                            AMOUNT + " blob, " +
+			                                            AMOUNT + " text not null, " +
 			                                            NEP5LOG_ISO + " text DEFAULT 'ELA');";
 		};
 	}

@@ -74,7 +74,7 @@ namespace Elastos {
 			return "NeoSide";
 		}
 
-		bytes_t NeoMerkleBlock::GetBloom() const {
+		const bytes_t &NeoMerkleBlock::GetBloom() const {
 			return _bloom;
 		}
 
