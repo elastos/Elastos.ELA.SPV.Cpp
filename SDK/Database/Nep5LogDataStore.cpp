@@ -19,14 +19,6 @@ namespace Elastos {
 		}
 
 		bool Nep5LogDataStore::PutNep5Log(const std::string &iso, const Nep5LogEntity &nep5LogEntity) {
-
-			Nep5LogEntity LogEntity;
-			if (SelectLogByHash(iso, nep5LogEntity.txid, LogEntity)) {
-				return DoTransaction([&iso, &nep5LogEntity, this]() {
-					UpdateNep5LogInternal(iso, nep5LogEntity);
-				});
-			}
-
 			return DoTransaction([&iso, &nep5LogEntity, this]() {
 				std::stringstream ss;
 
@@ -47,7 +39,7 @@ namespace Elastos {
 				_sqlite->BindText(stmt, 2, nep5LogEntity.nep5Hash, nullptr);
 				_sqlite->BindText(stmt, 3, nep5LogEntity.fromAddr, nullptr);
 				_sqlite->BindText(stmt, 4, nep5LogEntity.toAddr, nullptr);
-				_sqlite->BindText(stmt, 5, nep5LogEntity.value.getDec(), nullptr);
+				_sqlite->BindText(stmt, 5, nep5LogEntity.value.getHex(), nullptr);
 				_sqlite->BindText(stmt, 6, iso, nullptr);
 
 				_sqlite->Step(stmt);
@@ -85,36 +77,6 @@ namespace Elastos {
 			return SelectLogByHash(iso, hash, logEntity);
 		}
 
-		bool Nep5LogDataStore::UpdateNep5Log(const std::string &iso, const Nep5LogEntity &nep5LogEntity) {
-			return DoTransaction([&iso, &nep5LogEntity, this]() {
-				UpdateNep5LogInternal(iso, nep5LogEntity);
-			});
-		}
-
-		bool Nep5LogDataStore::UpdateNep5LogInternal(const std::string &iso, const Nep5LogEntity &nep5LogEntity) {
-			std::stringstream ss;
-
-			ss << "UPDATE " << LOG_TABLE_NAME << " SET "
-			   << NEP5_HASH << " = ?, "
-			   << FROM_ADDR << " = ?, "
-			   << TO_ADDR << ","
-			   << AMOUNT
-			   << " WHERE " << TXID << " = '" << nep5LogEntity.txid << "';";
-
-			sqlite3_stmt *stmt;
-			ErrorChecker::CheckCondition(!_sqlite->Prepare(ss.str(), &stmt, nullptr), Error::SqliteError,
-			                             "Prepare sql " + ss.str());
-
-			_sqlite->BindText(stmt, 1, nep5LogEntity.nep5Hash, nullptr);
-			_sqlite->BindText(stmt, 2, nep5LogEntity.fromAddr, nullptr);
-			_sqlite->BindText(stmt, 3, nep5LogEntity.toAddr, nullptr);
-			_sqlite->BindText(stmt, 4, nep5LogEntity.value.getDec(), nullptr);
-
-			_sqlite->Step(stmt);
-
-			_sqlite->Finalize(stmt);
-		}
-
 		bool Nep5LogDataStore::SelectLogByHash(const std::string &iso, const std::string &hash,
 		                                       Nep5LogEntity &nep5LogEntity) const {
 			bool found = false;
@@ -142,7 +104,7 @@ namespace Elastos {
 					nep5LogEntity.fromAddr = _sqlite->ColumnText(stmt, 1);
 					nep5LogEntity.toAddr = _sqlite->ColumnText(stmt, 2);
 					std::string value = _sqlite->ColumnText(stmt, 3);
-					nep5LogEntity.value.setDec(value);
+					nep5LogEntity.value.setHex(value);
 				}
 			});
 
@@ -169,12 +131,12 @@ namespace Elastos {
 				                             "Prepare sql " + ss.str());
 
 				while (SQLITE_ROW == _sqlite->Step(stmt)) {
-					logEntity.txid = _sqlite->ColumnText(stmt, 0);
+					logEntity.txid =  _sqlite->ColumnText(stmt, 0);
 					logEntity.nep5Hash = _sqlite->ColumnText(stmt, 1);
 					logEntity.fromAddr = _sqlite->ColumnText(stmt, 2);
 					logEntity.toAddr = _sqlite->ColumnText(stmt, 3);
 					std::string value = _sqlite->ColumnText(stmt, 4);
-					logEntity.value.setDec(value);
+					logEntity.value.setHex(value);
 
 					logEntitys.push_back(logEntity);
 				}

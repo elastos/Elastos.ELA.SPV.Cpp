@@ -25,9 +25,9 @@ namespace Elastos {
 
 			const BigInt GetBalance();
 
-			void AddBalance(const std::string &addr, const BigInt &value);
+			void AddBalance(const std::string addr, BigInt value);
 
-			void MinusBalance(const std::string &addr, const BigInt &value);
+			void MinusBalance(const std::string add, BigInt value);
 
 			bool ContainsAddr(const std::string &addr);
 

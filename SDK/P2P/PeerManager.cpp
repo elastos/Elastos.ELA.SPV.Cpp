@@ -1541,25 +1541,26 @@ namespace Elastos {
 		}
 
 		void PeerManager::OnFilterLogBloom(const PeerPtr &peer, const MerkleBlockPtr &block) {
-			NeoMerkleBlock *b = dynamic_cast<NeoMerkleBlock *>(block.get());
-			if (b == nullptr)
+			if (block->GetBlockType() != "NeoSide") {
 				return;
-
-			if (b->GetBloom().isZero())
-				return;
-
-			Bloom9 bloom9(b->GetBloom());
+			}
+			Bloom9 bloom9;
+			NeoMerkleBlock *merkleBlock = (NeoMerkleBlock *)block.get();
+		    bloom9.SetBloomData(merkleBlock->GetBloom());
 
 			std::vector<Address> addrs;
-			size_t len = _wallet->GetAllAddresses(addrs, 0, size_t(-1), true);
+			_wallet->GetAllAddresses(addrs, 0, size_t(-1), true);
 			Bloom9 filter;
-			for (size_t i = 0; i < len; i++) { // add addresses to watch for tx receiveing money to the wallet
-				const bytes_t &uInt168 = addrs[i].ProgramHash().bytes();
-				uint160 u160(bytes_t(uInt168.data() + 1, uInt168.size() - 1));
+			for (size_t i = 0; i < addrs.size(); i++) { // add addresses to watch for tx receiveing money to the wallet
+				uint168 uInt168 = addrs[i].ProgramHash();
+				bytes_t data(sizeof(uint160));
+				memcpy(&data[0], &uInt168.bytes()[1], sizeof(uint160));
+				uint160 u160(data);
 				filter.AddTopic(u160);
 				if (addrs[i].Valid() && bloom9.Match(filter)) {
 					Nep5LogMessageParameter parameter(block->GetHash(), block->GetHeight(), u160);
 					peer->SendMessage(MSG_NEP5LOG, parameter);
+
 				}
 			}
 		}

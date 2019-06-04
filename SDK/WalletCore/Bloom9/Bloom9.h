@@ -19,8 +19,6 @@ namespace Elastos {
 
 			Bloom9();
 
-			Bloom9(const bytes_t &filter);
-
 			void AddAddress(const uint168 &address);
 
 			void AddTopic(const uint160 &address);

@@ -27,7 +27,7 @@ namespace Elastos {
 
 			virtual std::string GetBlockType() const;
 
-			virtual const bytes_t &GetBloom() const;
+			virtual bytes_t GetBloom() const;
 
 		protected:
 			void SerializeNoAux(ByteStream &ostream) const;

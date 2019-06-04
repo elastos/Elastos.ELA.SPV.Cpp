@@ -10,12 +10,9 @@
 namespace Elastos {
 	namespace ElaWallet {
 		Bloom9::Bloom9() {
-			_bloom.resize(ETHEREUM_BLOOM_FILTER_BYTES, 0);
+			_bloom.resize(ETHEREUM_BLOOM_FILTER_BYTES);
 		}
 
-		Bloom9::Bloom9(const bytes_t &filter) :
-			_bloom(filter) {
-		}
 
 		void Bloom9::AddAddress(const uint168 &address) {
 			const bytes_t data = address.bytes();
@@ -85,7 +82,10 @@ namespace Elastos {
 		}
 
 		void Bloom9::SetBloomData(const bytes_t &filter) {
-			_bloom = filter;
+			if (filter.size() != ETHEREUM_BLOOM_FILTER_BYTES) {
+				ErrorChecker::ThrowParamException(Error::InvalidArgument, "setBloomFilter filter length is error");
+			}
+			memcpy(&_bloom[ETHEREUM_BLOOM_FILTER_BYTES - filter.size()], &filter[0], filter.size());
 		}
 
 	}

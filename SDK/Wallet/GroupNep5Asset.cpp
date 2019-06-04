@@ -33,7 +33,7 @@ namespace Elastos {
 			return balance;
 		}
 
-		void GroupNep5Asset::AddBalance(const std::string &addr, const BigInt &value) {
+		void GroupNep5Asset::AddBalance(const std::string addr, BigInt value) {
 			if (ContainsAddr(addr)) {
 				_balanceMap[addr] += value;
 			} else {
@@ -41,7 +41,7 @@ namespace Elastos {
 			};
 		}
 
-		void GroupNep5Asset::MinusBalance(const std::string &addr, const BigInt &value) {
+		void GroupNep5Asset::MinusBalance(const std::string addr, BigInt value) {
 			ErrorChecker::CheckLogic(ContainsAddr(addr) == false, Error::InvalidArgument, "Invalid Nep5log addrress hash");
 			_balanceMap[addr] -= value;
 		}

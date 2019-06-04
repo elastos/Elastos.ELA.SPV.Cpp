@@ -242,7 +242,7 @@ public:
         memset(this->data(), 0, size());
     }
 
-    bool isZero() const {
+    bool isZero() {
         for (size_t i = 0; i < this->size(); ++i) {
             if ((*this)[i] != 0)
                 return false;
