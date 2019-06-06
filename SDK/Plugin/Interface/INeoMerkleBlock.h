@@ -8,7 +8,7 @@
 namespace Elastos {
 	namespace ElaWallet {
 		class INeoMerkleBlock {
-			virtual bytes_t GetBloom() const = 0;
+			virtual const bytes_t &GetBloom() const = 0;
 		};
 	}
 }

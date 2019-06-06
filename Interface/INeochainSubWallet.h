@@ -17,7 +17,7 @@ namespace Elastos {
 			 * @param nep5Hash nep5 smartcontract hash.
 			 * @return sum of balances in big int string.
 			 */
-			virtual std::string GetBalance(const std::string &nep5Hash) = 0;
+			virtual std::string GetBalance(const std::string &nep5Hash) const = 0;
 
 			/**
 			 * Get balance of only the specified address.
@@ -26,19 +26,19 @@ namespace Elastos {
 			 * @return balance of specified address in big int string.
 			 */
 			virtual std::string GetBalanceWithAddress(const std::string &nep5Hash,
-			                                          const std::string &addrProgramHash) = 0;
+			                                          const std::string &addrProgramHash) const = 0;
 
 			/**
 			 * Get all Nep5 token hash
 			 * @return
 			 */
-			virtual std::vector<std::string> GetAllNep5Token() = 0;
+			virtual std::vector<std::string> GetAllNep5Token() const = 0;
 
 			/**
 			 * Get balances of all addresses in json format.
 			 * @return balances of all addresses in json format.
 			 */
-			virtual nlohmann::json GetBalanceInfo() = 0;
+			virtual nlohmann::json GetBalanceInfo() const = 0;
 
 		};
 	}

@@ -44,7 +44,7 @@ namespace Elastos {
 
 			bool UpdateNep5Log(const std::string &iso, const Nep5LogEntity &nep5LogEntity);
 
-			const std::vector<Nep5LogEntity> GetAllLogs() const;
+			std::vector<Nep5LogEntity> GetAllLogs() const;
 
 		private:
 			bool SelectLogByHash(const std::string &iso, const std::string &hash, Nep5LogEntity &nep5LogEntity) const;

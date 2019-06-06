@@ -14,28 +14,28 @@
 namespace Elastos {
 	namespace ElaWallet {
 
-		class GroupNep5Asset {
+		class GroupedNep5Asset {
 		public:
-			GroupNep5Asset();
+			GroupedNep5Asset();
 
-			~GroupNep5Asset();
+			~GroupedNep5Asset();
 
 		public:
-			const BigInt GetBalance(const std::string &addr);
+			BigInt GetBalance(const std::string &addr) const;
 
-			const BigInt GetBalance();
+			BigInt GetBalance() const;
 
 			void AddBalance(const std::string &addr, const BigInt &value);
 
 			void MinusBalance(const std::string &addr, const BigInt &value);
 
-			bool ContainsAddr(const std::string &addr);
+			bool ContainsAddr(const std::string &addr) const;
 
 		private:
-			 std::map<std::string, BigInt> _balanceMap;
+			 mutable std::map<std::string, BigInt> _balanceMap;
 		};
 
-		typedef boost::shared_ptr<GroupNep5Asset> GroupNep5Ptr;
+		typedef boost::shared_ptr<GroupedNep5Asset> GroupedNep5Ptr;
 	}
 }
 

@@ -16,6 +16,7 @@
 #include <SDK/Plugin/Block/MerkleBlock.h>
 #include <SDK/Plugin/ELAPlugin.h>
 #include <SDK/Plugin/IDPlugin.h>
+#include <SDK/Plugin/NeoPlugin.h>
 #include <Interface/MasterWalletManager.h>
 #include <CMakeConfig.h>
 
@@ -311,6 +312,7 @@ namespace Elastos {
 			Log::info("Registering plugin ...");
 			REGISTER_MERKLEBLOCKPLUGIN(ELA, getELAPluginComponent);
 			REGISTER_MERKLEBLOCKPLUGIN(SideStandard, getIDPluginComponent);
+			REGISTER_MERKLEBLOCKPLUGIN(Neo, getNeoPluginComponent);
 #endif
 
 			ErrorChecker::CheckPathExists(rootPath);
