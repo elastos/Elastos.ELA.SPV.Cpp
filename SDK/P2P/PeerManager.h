@@ -204,7 +204,7 @@ namespace Elastos {
 
 			void FireSavePeers(bool replace, const std::vector<PeerInfo> &peers);
 
-			void FireSaveNep5Log(const Nep5LogPtr nep5LogPtr);
+			void FireSaveNep5Log(const Nep5LogPtr &nep5LogPtr);
 
 			bool FireNetworkIsReachable();
 

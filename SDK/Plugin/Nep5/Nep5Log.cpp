@@ -12,8 +12,9 @@ namespace Elastos {
 
 		}
 
-		Nep5Log::Nep5Log(std::string nep5Hash, std::string from, std::string to, BigInt data, std::string txid) :
-		_nep5Hash(nep5Hash), _from(from), _to(to), _data(data), _txid(txid) {
+		Nep5Log::Nep5Log(const std::string &nep5Hash, const std::string &from, const std::string &to,
+		                 const BigInt &data, const std::string &txid) :
+				_nep5Hash(nep5Hash), _from(from), _to(to), _data(data), _txid(txid) {
 
 		}
 
@@ -37,7 +38,7 @@ namespace Elastos {
 			_data = value;
 		}
 
-		void Nep5Log::SetTxId(const std::string txid) {
+		void Nep5Log::SetTxId(const std::string &txid) {
 			_txid = txid;
 		}
 
@@ -45,19 +46,19 @@ namespace Elastos {
 			return _nep5Hash;
 		}
 
-		const std::string Nep5Log::GetFrom() const {
+		const std::string &Nep5Log::GetFrom() const {
 			return _from;
 		}
 
-		const std::string Nep5Log::GetTo() const {
+		const std::string &Nep5Log::GetTo() const {
 			return _to;
 		}
 
-		const BigInt Nep5Log::GetData() const {
+		const BigInt &Nep5Log::GetData() const {
 			return _data;
 		}
 
-		const std::string Nep5Log::GetTxID() const {
+		const std::string &Nep5Log::GetTxID() const {
 			return _txid;
 		}
 

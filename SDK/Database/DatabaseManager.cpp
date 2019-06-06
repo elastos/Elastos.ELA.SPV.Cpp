@@ -176,7 +176,7 @@ namespace Elastos {
 			return _nep5LogDataStore.GetNep5LogByTxID(iso, txid, nep5LogEntity);
 		}
 
-		const std::vector<Nep5LogEntity> DatabaseManager::GetAllLogs() const {
+		std::vector<Nep5LogEntity> DatabaseManager::GetAllLogs() const {
 			return _nep5LogDataStore.GetAllLogs();
 		}
 

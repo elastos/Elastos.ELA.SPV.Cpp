@@ -68,7 +68,7 @@ namespace Elastos {
 			bool DeleteNep5Log(const std::string &iso, const std::string &txid);
 			bool DeleteAllNep5Logs(const std::string &iso);
 			bool GetNep5Log(const std::string &iso, const std::string &txid, Nep5LogEntity &nep5LogEntity) const ;
-			const std::vector<Nep5LogEntity> GetAllLogs() const;
+			std::vector<Nep5LogEntity> GetAllLogs() const;
 
 			const boost::filesystem::path &GetPath() const;
 

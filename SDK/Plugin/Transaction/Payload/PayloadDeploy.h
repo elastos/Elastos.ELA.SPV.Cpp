@@ -43,7 +43,7 @@ namespace Elastos {
 
 			~PayloadDeploy();
 
-			void SetFunctionCode(const FunctionCode functionCode);
+			void SetFunctionCode(const FunctionCode &functionCode);
 
 			void SetName(const std::string &name);
 

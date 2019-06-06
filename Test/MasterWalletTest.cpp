@@ -19,6 +19,7 @@
 #include <SDK/Plugin/Block/MerkleBlock.h>
 #include <SDK/Plugin/ELAPlugin.h>
 #include <SDK/Plugin/IDPlugin.h>
+#include <SDK/Plugin/NeoPlugin.h>
 
 using namespace Elastos::ElaWallet;
 
@@ -90,6 +91,7 @@ TEST_CASE("Master wallet constructor with language only", "[Constructor1]") {
 	Log::info("Registering plugin ...");
 	REGISTER_MERKLEBLOCKPLUGIN(ELA, getELAPluginComponent);
 	REGISTER_MERKLEBLOCKPLUGIN(SideStandard, getIDPluginComponent);
+	REGISTER_MERKLEBLOCKPLUGIN(Neo, getNeoPluginComponent);
 #endif
 
 	std::string phrasePassword = "phrasePassword";
@@ -138,6 +140,7 @@ TEST_CASE("Master wallet constructor with phrase password and pay password", "[C
 }
 
 TEST_CASE("Master wallet CreateSubWallet method test", "[CreateSubWallet]") {
+	Log::registerMultiLogger();
 	std::string phrasePassword = "phrasePassword";
 	std::string payPassword = "payPassword";
 	std::string language = "english";
