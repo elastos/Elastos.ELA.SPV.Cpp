@@ -16,7 +16,7 @@ namespace Elastos {
 			_functionCode.code.clear();
 		}
 
-		void PayloadDeploy::SetFunctionCode(const FunctionCode functionCode) {
+		void PayloadDeploy::SetFunctionCode(const FunctionCode &functionCode) {
 			_functionCode.code = functionCode.code;
 			_functionCode.parameters.assign(functionCode.parameters.begin(), functionCode.parameters.end());
 			_functionCode.returnType = functionCode.returnType;

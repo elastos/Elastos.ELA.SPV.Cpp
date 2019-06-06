@@ -15,7 +15,8 @@ namespace Elastos {
 		public:
 			Nep5Log();
 
-			Nep5Log(std::string nep5Hash, std::string from, std::string to, BigInt data, std::string txid);
+			Nep5Log(const std::string &nep5Hash, const std::string &from, const std::string &to, const BigInt &data,
+			        const std::string &txid);
 
 			~Nep5Log();
 
@@ -27,23 +28,25 @@ namespace Elastos {
 
 			void SetData(const BigInt &value);
 
-			void SetTxId(const std::string txid);
+			void SetTxId(const std::string &txid);
 
 			const std::string &GetNep5Hash() const;
 
-			const std::string GetFrom() const;
+			const std::string &GetFrom() const;
 
-			const std::string GetTo() const;
+			const std::string &GetTo() const;
 
-			const BigInt GetData() const;
+			const BigInt &GetData() const;
 
-			const std::string GetTxID() const;
+			const std::string &GetTxID() const;
 
 		public:
 			virtual void Serialize(ByteStream &ostream) const;
+
 			virtual bool Deserialize(const ByteStream &istream);
 
 			virtual nlohmann::json ToJson() const;
+
 			virtual void FromJson(const nlohmann::json &j);
 
 		private:
@@ -53,6 +56,7 @@ namespace Elastos {
 			BigInt _data;
 			std::string _txid;
 		};
+
 		typedef boost::shared_ptr<Nep5Log> Nep5LogPtr;
 	}
 }

@@ -113,6 +113,8 @@ namespace Elastos {
 			_sqlite->Step(stmt);
 
 			_sqlite->Finalize(stmt);
+
+			return true;
 		}
 
 		bool Nep5LogDataStore::SelectLogByHash(const std::string &iso, const std::string &hash,
@@ -149,7 +151,7 @@ namespace Elastos {
 			return found;
 		}
 
-		const std::vector<Nep5LogEntity> Nep5LogDataStore::GetAllLogs() const {
+		std::vector<Nep5LogEntity> Nep5LogDataStore::GetAllLogs() const {
 			std::vector<Nep5LogEntity> logEntitys;
 
 			DoTransaction([&logEntitys, this]() {

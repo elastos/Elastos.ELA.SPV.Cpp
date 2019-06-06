@@ -14,7 +14,7 @@ namespace Elastos {
 		}
 
 		Bloom9::Bloom9(const bytes_t &filter) :
-			_bloom(filter) {
+				_bloom(filter) {
 		}
 
 		void Bloom9::AddAddress(const uint168 &address) {
@@ -49,8 +49,8 @@ namespace Elastos {
 			assert (index < ETHEREUM_BLOOM_FILTER_BITS);
 			assert (NULL != byteIndex && NULL != bitIndex);
 
-			*byteIndex = (ETHEREUM_BLOOM_FILTER_BITS - 1 - index ) / 8;
-			*bitIndex  = index % 8;
+			*byteIndex = (ETHEREUM_BLOOM_FILTER_BITS - 1 - index) / 8;
+			*bitIndex = index % 8;
 		}
 
 		const Bloom9 Bloom9::BloomFilterOr(const Bloom9 &otherFilter) {

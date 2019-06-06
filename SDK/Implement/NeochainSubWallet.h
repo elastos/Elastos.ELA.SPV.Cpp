@@ -9,7 +9,7 @@
 
 #include <Interface/INeochainSubWallet.h>
 #include <SDK/Plugin/Nep5/Nep5Log.h>
-#include <SDK/Wallet/GroupNep5Asset.h>
+#include "../Wallet/GroupedNep5Asset.h"
 
 namespace Elastos {
 	namespace ElaWallet {
@@ -30,14 +30,14 @@ namespace Elastos {
 
 			virtual void onSaveNep5Log(const Nep5LogPtr &nep5LogPtr);
 
-			virtual std::string GetBalance(const std::string &nep5Hash);
+			virtual std::string GetBalance(const std::string &nep5Hash) const;
 
 			virtual std::string GetBalanceWithAddress(const std::string &nep5Hash,
-			                                          const std::string &addrProgramHash);
+			                                          const std::string &addrProgramHash) const;
 
-			virtual std::vector<std::string> GetAllNep5Token();
+			virtual std::vector<std::string> GetAllNep5Token() const;
 
-			virtual nlohmann::json GetBalanceInfo();
+			virtual nlohmann::json GetBalanceInfo() const;
 
 		private:
 			void InitNep5Assets(const std::vector<Nep5LogPtr> &nep5Assets);
@@ -46,8 +46,8 @@ namespace Elastos {
 
 			bool ContainsAddrHash(const std::string &addrHash);
 		private:
-			typedef std::map<std::string, GroupNep5Ptr> Nep5AssetMap;
-			Nep5AssetMap _nep5AssetMap;
+			typedef std::map<std::string, GroupedNep5Ptr> Nep5AssetMap;
+			mutable Nep5AssetMap _nep5AssetMap;
 		};
 	}
 }

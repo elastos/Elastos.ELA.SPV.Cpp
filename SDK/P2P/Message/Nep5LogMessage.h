@@ -15,7 +15,7 @@ namespace Elastos {
 			const uint32_t height;
 			const uint160 topicAddr;
 
-			Nep5LogMessageParameter(const uint256 hash, const uint32_t height, uint160 &topic) :
+			Nep5LogMessageParameter(const uint256 &hash, const uint32_t &height, const uint160 &topic) :
 					blockHash(hash),
 					height(height),
 					topicAddr(topic) {}
