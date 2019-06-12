@@ -421,6 +421,7 @@ TEST_CASE("DatabaseManager test", "[DatabaseManager]") {
 #define TEST_NEP5LOG_CNT 20
 	SECTION("Nep5Log test") {
 		static std::vector<Nep5LogEntity> neo5LogToSave;
+		static std::vector<Nep5LogEntity> neo5LogToUpdate;
 		SECTION("Nep5Log Prepare for test") {
 			for (int i = 0; i < TEST_NEP5LOG_CNT; i++) {
 				Nep5LogEntity nep5LogEntity;
@@ -433,6 +434,17 @@ TEST_CASE("DatabaseManager test", "[DatabaseManager]") {
 				neo5LogToSave.push_back(nep5LogEntity);
 			}
 			REQUIRE(TEST_NEP5LOG_CNT == neo5LogToSave.size());
+
+			for (uint64_t i = 0; i < TEST_NEP5LOG_CNT; ++i) {
+				Nep5LogEntity nep5LogEntity;
+
+				nep5LogEntity.txid = neo5LogToSave[i].txid;
+				nep5LogEntity.nep5Hash = getRandBytes(32).getHex();
+				nep5LogEntity.fromAddr = getRandBytes(20).getHex();
+				nep5LogEntity.toAddr = getRandBytes(20).getHex();
+				nep5LogEntity.value = getRandUInt64();
+				neo5LogToUpdate.push_back(nep5LogEntity);
+			}
 		}
 
 		SECTION("Nep5Log save test") {
@@ -455,6 +467,28 @@ TEST_CASE("DatabaseManager test", "[DatabaseManager]") {
 				REQUIRE(nep5LogEntity.fromAddr == neo5LogToSave[i].fromAddr);
 				REQUIRE(nep5LogEntity.toAddr == neo5LogToSave[i].toAddr);
 				REQUIRE(nep5LogEntity.value == neo5LogToSave[i].value);
+			}
+		}
+
+		SECTION("Nep5Log udpate test") {
+			DatabaseManager dbm(DBFILE);
+
+			for (int i = 0; i < neo5LogToUpdate.size(); ++i) {
+				REQUIRE(dbm.UpdateNep5Log(ISO, neo5LogToUpdate[i]));
+			}
+		}
+
+		SECTION("Nep5Log read after update test") {
+			DatabaseManager dbm(DBFILE);
+			const std::vector<Nep5LogEntity> allLogs = dbm.GetAllLogs();
+			REQUIRE(allLogs.size() == TEST_NEP5LOG_CNT);
+
+			for (int i = 0; i < allLogs.size(); ++i) {
+				REQUIRE(allLogs[i].txid == neo5LogToUpdate[i].txid);
+				REQUIRE(allLogs[i].nep5Hash == neo5LogToUpdate[i].nep5Hash);
+				REQUIRE(allLogs[i].fromAddr == neo5LogToUpdate[i].fromAddr);
+				REQUIRE(allLogs[i].toAddr == neo5LogToUpdate[i].toAddr);
+				REQUIRE(allLogs[i].value == neo5LogToUpdate[i].value);
 			}
 		}
 

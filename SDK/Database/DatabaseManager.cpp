@@ -180,5 +180,9 @@ namespace Elastos {
 			return _nep5LogDataStore.GetAllLogs();
 		}
 
+		bool DatabaseManager::UpdateNep5Log(const std::string &iso, const Nep5LogEntity &nep5LogEntity) {
+			return _nep5LogDataStore.UpdateNep5Log(iso, nep5LogEntity);
+		}
+
 	}
 }
