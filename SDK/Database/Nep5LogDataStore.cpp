@@ -97,9 +97,9 @@ namespace Elastos {
 			ss << "UPDATE " << LOG_TABLE_NAME << " SET "
 			   << NEP5_HASH << " = ?, "
 			   << FROM_ADDR << " = ?, "
-			   << TO_ADDR << ","
-			   << AMOUNT
-			   << " WHERE " << TXID << " = '" << nep5LogEntity.txid << "';";
+			   << TO_ADDR << " = ?, "
+			   << AMOUNT << " = ?"
+			   << " WHERE " << TXID << " = '" << nep5LogEntity.txid << "';";;
 
 			sqlite3_stmt *stmt;
 			ErrorChecker::CheckCondition(!_sqlite->Prepare(ss.str(), &stmt, nullptr), Error::SqliteError,
