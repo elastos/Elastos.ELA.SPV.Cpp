@@ -107,6 +107,21 @@ namespace Elastos {
 			_gas = j["gas"].get<uint64_t>();
 		}
 
+		size_t PayloadInvoke::EstimateSize(uint8_t version) const {
+			size_t size = 0;
+			ByteStream stream;
+
+			size += _codeHash.size();
+
+			size += _code.size();
+
+			size += _programHash.size();
+
+			size += sizeof(_gas);
+
+			return size;
+		}
+
 		IPayload &PayloadInvoke::operator=(const IPayload &payload) {
 			try {
 				const PayloadInvoke &payloadInvoke = dynamic_cast<const PayloadInvoke &>(payload);

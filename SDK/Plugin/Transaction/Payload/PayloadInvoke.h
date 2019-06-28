@@ -40,6 +40,8 @@ namespace Elastos {
 
 			virtual void FromJson(const nlohmann::json &j, uint8_t version);
 
+			virtual size_t EstimateSize(uint8_t version) const;
+
 			virtual IPayload &operator=(const IPayload &payload);
 
 			PayloadInvoke &operator=(const PayloadInvoke &payload);

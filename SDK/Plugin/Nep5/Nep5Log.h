@@ -49,6 +49,8 @@ namespace Elastos {
 
 			virtual void FromJson(const nlohmann::json &j);
 
+			size_t EstimateSize() const;
+
 		private:
 			std::string _nep5Hash;
 			std::string _from;

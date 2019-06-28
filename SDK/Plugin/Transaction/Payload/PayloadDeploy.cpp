@@ -251,6 +251,52 @@ namespace Elastos {
 
 		}
 
+		size_t PayloadDeploy::EstimateSize(uint8_t version) const {
+			size_t size = 0;
+			ByteStream stream;
+
+			size += stream.WriteVarUint(_functionCode.code.getHex().size());
+			size += _functionCode.code.getHex().size();
+
+			size_t len = _functionCode.parameters.size();
+			size += stream.WriteVarUint(len);
+			size += len * sizeof(ParameterType);
+
+			//returnType
+			size += sizeof(_functionCode.returnType);
+
+			//codeHash
+			size += _functionCode.codeHash.size();
+
+			//_name
+			size += stream.WriteVarUint(_name.size());
+			size += _name.size();
+
+			//_version
+			size += stream.WriteVarUint(_version.size());
+			size += _version.size();
+
+			//_author
+			size += stream.WriteVarUint(_author.size());
+			size += _author.size();
+
+			//_email
+			size += stream.WriteVarUint(_email.size());
+			size += _email.size();
+
+			//_description
+			size += stream.WriteVarUint(_description.size());
+			size += _description.size();
+
+			//_programHash
+			size += _programHash.size();
+
+			//_gas
+			size += stream.WriteVarUint(_gas);
+
+			return size;
+		}
+
 		IPayload &PayloadDeploy::operator=(const IPayload &payload) {
 			try {
 				const PayloadDeploy &payloadDeploy = dynamic_cast<const PayloadDeploy &>(payload);

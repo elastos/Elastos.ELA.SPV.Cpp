@@ -130,5 +130,27 @@ namespace Elastos {
 				                                                                std::string(e.what()));
 			}
 		}
+
+		size_t Nep5Log::EstimateSize() const {
+			size_t size = 0;
+			ByteStream stream;
+
+			size += stream.WriteVarUint(_nep5Hash.size());
+			size += _nep5Hash.size();
+
+			size += stream.WriteVarUint(_from.size());
+			size += _from.size();
+
+			size += stream.WriteVarUint(_to.size());
+			size += _to.size();
+
+			size += stream.WriteVarUint(_data.getHex().size());
+			size += _data.getHex().size();
+
+			size += stream.WriteVarUint(_txid.size());
+			size += _txid.size();
+
+			return size;
+		}
 	}
 }

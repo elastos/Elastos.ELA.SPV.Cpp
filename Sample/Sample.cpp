@@ -298,7 +298,9 @@ static void UpdateProducer(const std::string &masterWalletID, const std::string 
 
 static void CancelProducer(const std::string &masterWalletID, const std::string &subWalletID) {
 	ISubWallet *subWallet = GetSubWallet(masterWalletID, subWalletID);
-
+	if (!subWallet) {
+		return;
+	}
 	IMainchainSubWallet *mainchainSubWallet = dynamic_cast<IMainchainSubWallet *>(subWallet);
 	if (mainchainSubWallet == nullptr) {
 		logger->error("[{}:{}] is not instance of IMainchainSubWallet", masterWalletID, subWalletID);
@@ -316,7 +318,9 @@ static void CancelProducer(const std::string &masterWalletID, const std::string 
 
 static void GetRegisteredProducerInfo(const std::string &masterWalletID, const std::string &subWalletID) {
 	ISubWallet *subWallet = GetSubWallet(masterWalletID, subWalletID);
-
+	if (!subWallet) {
+		return;
+	}
 	IMainchainSubWallet *mainchainSubWallet = dynamic_cast<IMainchainSubWallet *>(subWallet);
 	if (mainchainSubWallet == nullptr) {
 		logger->error("[{}:{}] is not instance of IMainchainSubWallet", masterWalletID, subWalletID);
@@ -329,6 +333,9 @@ static void GetRegisteredProducerInfo(const std::string &masterWalletID, const s
 
 static void GetVotedList(const std::string &masterWalletID, const std::string &subWalletID) {
 	ISubWallet *subWallet = GetSubWallet(masterWalletID, subWalletID);
+	if (!subWallet) {
+		return;
+	}
 	IMainchainSubWallet *mainchainSubWallet = dynamic_cast<IMainchainSubWallet *>(subWallet);
 
 	logger->debug("voted list = {}", mainchainSubWallet->GetVotedProducerList().dump());
@@ -336,7 +343,9 @@ static void GetVotedList(const std::string &masterWalletID, const std::string &s
 
 static void RetrieveDeposit(const std::string &masterWalletID, const std::string &subWalletID) {
 	ISubWallet *subWallet = GetSubWallet(masterWalletID, subWalletID);
-
+	if (!subWallet) {
+		return;
+	}
 	IMainchainSubWallet *mainchainSubWallet = dynamic_cast<IMainchainSubWallet *>(subWallet);
 	if (mainchainSubWallet == nullptr) {
 		logger->error("[{}:{}] is not instance of IMainchainSubWallet", masterWalletID, subWalletID);
@@ -479,6 +488,9 @@ static void InitWallets() {
 
 static void GetAllTxSummary(const std::string &masterWalletID, const std::string &subWalletID) {
 	ISubWallet *subWallet = GetSubWallet(masterWalletID, subWalletID);
+	if (!subWallet) {
+		return;
+	}
 	nlohmann::json txSummary = subWallet->GetAllTransaction(0, 500, "");
 	logger->debug("[{}:{}] all tx -> {}", masterWalletID, subWalletID, txSummary.dump());
 
@@ -504,7 +516,9 @@ static void GetAllTxSummary(const std::string &masterWalletID, const std::string
 static void GetBalance(const std::string &masterWalletID, const std::string &subWalletID,
 					   const std::string &assetID = "a3d0eaa466df74983b5d7c543de6904f4c9418ead5ffd6d25814234a96db37b0") {
 	ISubWallet *subWallet = GetSubWallet(masterWalletID, subWalletID);
-
+	if (!subWallet) {
+		return;
+	}
 	if (subWalletID == gTokenchainSubWalletID) {
 		ITokenchainSubWallet *tokenSubWallet = dynamic_cast<ITokenchainSubWallet *>(subWallet);
 		logger->debug("{}:{} balance -> {}", masterWalletID, subWalletID, tokenSubWallet->GetBalance(assetID));
@@ -532,6 +546,9 @@ static void GetBalance(const std::string &masterWalletID, const std::string &sub
 
 static void GetAllAssets(const std::string &masterWalletID, const std::string &subWalletID) {
 	ISubWallet *subWallet = GetSubWallet(masterWalletID, subWalletID);
+	if (!subWallet) {
+		return;
+	}
 	ITokenchainSubWallet *tokenSubWallet = dynamic_cast<ITokenchainSubWallet *>(subWallet);
 	logger->debug("{}:{} supported assets -> {}", masterWalletID, subWalletID, tokenSubWallet->GetAllAssets().dump());
 }

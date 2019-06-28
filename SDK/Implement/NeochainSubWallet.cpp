@@ -32,7 +32,7 @@ namespace Elastos {
 			SubWallet::onTxAdded(transaction);
 		}
 
-		void NeochainSubWallet::onTxUpdated(const uint256 &hash, uint32_t blockHeight, uint32_t timeStamp) {
+		void NeochainSubWallet::onTxUpdated(const std::vector<uint256> &hash, uint32_t blockHeight, time_t timeStamp) {
 			SubWallet::onTxUpdated(hash, blockHeight, timeStamp);
 		}
 
