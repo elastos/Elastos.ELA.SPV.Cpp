@@ -432,6 +432,10 @@ namespace Elastos {
 				}
 				Unlock();
 
+				if (tx->GetBlockHeight() != TX_UNCONFIRMED) {
+					return r;
+				}
+
 				for (size_t i = 0; r && i < tx->GetInputs().size(); ++i) {
 					TransactionPtr t = TransactionForHash(tx->GetInputs()[i].GetTransctionHash());
 					if (t && !TransactionIsValid(t))
