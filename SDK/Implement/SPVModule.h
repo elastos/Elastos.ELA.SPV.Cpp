@@ -5,12 +5,13 @@
 #ifndef __ELASTOS_SDK_SPVMODULE_H__
 #define __ELASTOS_SDK_SPVMODULE_H__
 
-#include "SubWallet.h"
-
 #include <SDK/Account/SideAccount.h>
 #include <SDK/Common/uint256.h>
 #include <SDK/Database/NotifyQueue.h>
+#include <SDK/Plugin/Registry.h>
+#include <SDK/P2P/ChainParams.h>
 #include <SDK/SpvService/Config.h>
+#include <SDK/SpvService/SpvService.h>
 
 namespace Elastos {
 	namespace ElaWallet {
