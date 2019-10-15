@@ -11,4 +11,4 @@ target_include_directories(walletcore PUBLIC
 	${ThirdParty_OPENSSL_INC_DIR}
 	${CMAKE_CURRENT_BINARY_DIR}/../../)
 set_target_properties(walletcore PROPERTIES POSITION_INDEPENDENT_CODE ON)
-add_dependencies(walletcore ${OpenSSL_LIBRARIES} ${SPV_Boost_LIBRARIES})
+add_dependencies(walletcore ${OpenSSL_LIBRARIES})

@@ -136,7 +136,7 @@ target_include_directories(${SPVSDK_OBJECT_TARGET} PUBLIC
 	${ThirdParty_LIBCONFIG_INC_DIR}
 )
 
-add_dependencies(${SPVSDK_OBJECT_TARGET} ${SPV_Boost_LIBRARIES} ${OpenSSL_LIBRARIES} sqlite walletcore fruit config++ common)
+add_dependencies(${SPVSDK_OBJECT_TARGET} ${OpenSSL_LIBRARIES} sqlite walletcore fruit config++ common)
 set_target_properties(${SPVSDK_OBJECT_TARGET} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if("${BUILD_SHARED_LIBS}")
