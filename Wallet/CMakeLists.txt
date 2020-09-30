@@ -17,12 +17,6 @@ set(CMAKE_AUTORCC ON)
 find_package(Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt5 COMPONENTS Core REQUIRED)
 find_package(Qt5 COMPONENTS Gui REQUIRED)
-find_package(Qt5LinguistTools)
-
-set(TS_CN ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/ElastosWalletSPV_zh_CN.ts)
-set(TS_EN ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/ElastosWalletSPV_us_EN.ts)
-QT5_CREATE_TRANSLATION(TS_CN_FILE ${TS_CN})
-QT5_CREATE_TRANSLATION(TS_EN_FILE ${TS_EN})
 
 include(ProjectDefaults)
 include(CheckIncludeFile)
@@ -107,8 +101,6 @@ if(APPLE)
         ${HPP_FILES}
         ${UI_FILES}
         ${QRC_FILES}
-        ${TS_CN_FILE}
-        ${TS_EN_FILE}
         # set AppIcon
         ${${PROJECT_NAME}_MAC_ICON}
         )
@@ -125,8 +117,6 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
         ${HPP_FILES}
         ${UI_FILES}
         ${QRC_FILES}
-        ${TS_CN_FILE}
-        ${TS_EN_FILE}
         )
 endif()
 
