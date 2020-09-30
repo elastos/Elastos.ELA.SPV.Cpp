@@ -1,0 +1,24 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Images/Icons/AppIcon.icns</file>
+        <file>Images/Icons/AppIcon.png</file>
+        <file>Images/Icons/HomeIcon.png</file>
+        <file>Images/Icons/PreferencesIcon.png</file>
+        <file>Images/Icons/ReceivedIcon.png</file>
+        <file>Images/Icons/ReceivingIcon.png</file>
+        <file>Images/Icons/RecordIcon.png</file>
+        <file>Images/Icons/SentIcon.png</file>
+        <file>Images/Icons/TransferIcon.png</file>
+        <file>Images/Covers/HomeCover_S.png</file>
+        <file>Images/Covers/HomeCover.png</file>
+        <file>Images/Covers/LoginCover_S.png</file>
+        <file>Images/Covers/ReceivingCover_CN_S.png</file>
+        <file>Images/Covers/ReceivingCover_EN_S.png</file>
+        <file>ElastosWalletSPV_us_EN.qm</file>
+        <file>ElastosWalletSPV_us_EN.ts</file>
+        <file>ElastosWalletSPV_zh_CN.qm</file>
+        <file>ElastosWalletSPV_zh_CN.ts</file>
+        <file>Images/Icons/AddToListIcon.png</file>
+        <file>Images/Icons/DeleteFromListIcon.png</file>
+    </qresource>
+</RCC>
