@@ -23,6 +23,8 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    isAppStart = true;
+
     ui->setupUi(this);
     ///////////////////////////
     // set widget attributes //
@@ -120,6 +122,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->cbTransactionRecordAutoUpdate->setText(intervalText);
     // set Auto-Update interval
     ui->sbDataUpdateInterval->setValue(dataAutoUpdateInterval);
+
+    isAppStart = false;
 }
 
 MainWindow::~MainWindow()
@@ -674,6 +678,8 @@ void MainWindow::updateStatusBarInformation()
 /* transfer-billing-details-update */
 void MainWindow::updateTransferBillingDetails()
 {
+    if (isAppStart)
+        return;
     QString addr = ui->leAddress->text();
     double rawAmount = ui->dsbAmountForTransfer->value();
     setTransferTxAndUpdateBillingDetails(addr, rawAmount);
