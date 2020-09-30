@@ -115,6 +115,7 @@ class MainWindow : public QMainWindow
 {
     Q_OBJECT
 public:
+    bool isAppStart = false;
     // static windows
     static CreateWalletWindow1 *cwWindow1;
     static CreateWalletWindow2 *cwWindow2;
