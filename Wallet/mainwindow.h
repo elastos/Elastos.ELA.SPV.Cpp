@@ -199,6 +199,7 @@ private slots:
     void updateStatusBarInformation();
     void updateTransferBillingDetails();
     void updateRecordTableInformation();
+    void updateNetworkInformation();
 
     /* SLOT for DoublePasswordInputWindow's input-finish */
     void updateImportData(const QString &firstInput, const QString &secondInput);

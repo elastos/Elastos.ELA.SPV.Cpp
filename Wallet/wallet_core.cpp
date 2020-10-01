@@ -29,6 +29,8 @@ void signAndPublishTx(ISubWallet *subWallet, const nlohmann::json &tx, const std
 }
 
 void subWalletOpen(IMasterWallet *masterWallet, ISubWallet *subWallet) {
+    if (subWallet == nullptr)
+        return;
 	WalletData walletData;
 	ISubWalletCallback *callback = new SubWalletCallback(masterWallet->GetID(), subWallet->GetChainID());
 
@@ -47,6 +49,8 @@ void subWalletOpen(IMasterWallet *masterWallet, ISubWallet *subWallet) {
 }
 
 void subWalletClose(IMasterWallet *masterWallet, ISubWallet *subWallet) {
+    if (subWallet == nullptr)
+        return;
 	std::string walletName = masterWallet->GetID();
 	std::string chainID = subWallet->GetChainID();
 
@@ -147,7 +151,11 @@ std::pair<int,std::string> switchWallet(std::string walletName) {
 
 std::pair<int,std::string> openChainID(std::string chainID) {
 	try {
+        if (currentWallet == nullptr)
+            return { ERRNO_APP, "No master wallet" };
 		ISubWallet *subWallet = currentWallet->CreateSubWallet(chainID);
+        if (subWallet == nullptr)
+            return { ERRNO_APP, "No subwallet" };
 		subWalletOpen(currentWallet, subWallet);
 	} catch (const std::exception &e) {
         return { ERRNO_APP, e.what() };
@@ -157,7 +165,11 @@ std::pair<int,std::string> openChainID(std::string chainID) {
 
 std::pair<int,std::string> closeChainID(std::string chainID) {
 	try {
+        if (currentWallet == nullptr)
+            return { ERRNO_APP, "No master wallet" };
         ISubWallet *subWallet = currentWallet->GetSubWallet(chainID);
+        if (subWallet == nullptr)
+            return { ERRNO_APP, "No subwallet" };
 		subWalletClose(currentWallet, subWallet);
 		currentWallet->DestroyWallet(chainID);
 	} catch (const std::exception &e) {
@@ -168,6 +180,8 @@ std::pair<int,std::string> closeChainID(std::string chainID) {
 
 std::pair<int,std::string> depositToSideChain(nlohmann::json tx, std::string password) {
 	try {
+        if (currentWallet == nullptr)
+            return { ERRNO_APP, "No master wallet" };
         IMainchainSubWallet *subWallet = dynamic_cast<IMainchainSubWallet *>(currentWallet->GetSubWallet(CHAINID_ELA));
         
 		signAndPublishTx(subWallet, tx, password);
@@ -179,6 +193,8 @@ std::pair<int,std::string> depositToSideChain(nlohmann::json tx, std::string pas
 
 std::pair<int,std::string> withdrawToMainChain(std::string chainID, nlohmann::json tx, std::string password) {
 	try {
+        if (currentWallet == nullptr)
+            return { ERRNO_APP, "No master wallet" };
         ISidechainSubWallet *subWallet = dynamic_cast<ISidechainSubWallet *>(currentWallet->GetSubWallet(chainID));
         
 		signAndPublishTx(subWallet, tx, password);
@@ -190,7 +206,11 @@ std::pair<int,std::string> withdrawToMainChain(std::string chainID, nlohmann::js
 
 nlohmann::json getTransferTransaction(std::string chainID, std::string addr, std::string transferAmount) {
     try {
+        if (currentWallet == nullptr)
+            return nullptr;
         ISubWallet *subWallet = currentWallet->GetSubWallet(chainID);
+        if (subWallet == nullptr)
+            return nullptr;
         nlohmann::json tx = subWallet->CreateTransaction("", addr, transferAmount, "");
         return tx;
     } catch (const std::exception &e) {
@@ -200,7 +220,11 @@ nlohmann::json getTransferTransaction(std::string chainID, std::string addr, std
 
 std::pair<int,std::string> transferFromChainIDToAddress(std::string chainID, nlohmann::json tx, std::string password) {
 	try {
+        if (currentWallet == nullptr)
+            return { ERRNO_APP, "No master wallet" };
         ISubWallet *subWallet = currentWallet->GetSubWallet(chainID);
+        if (subWallet == nullptr)
+            return { ERRNO_APP, "No subwallet" };
 		signAndPublishTx(subWallet, tx, password);
 	} catch (const std::exception &e) {
         return { ERRNO_APP, e.what() };
@@ -210,7 +234,11 @@ std::pair<int,std::string> transferFromChainIDToAddress(std::string chainID, nlo
 
 std::pair<int,std::string> createReceiveAddress(std::string chainID, std::string &address) {
 	try {
+        if (currentWallet == nullptr)
+            return { ERRNO_APP, "No master wallet" };
         ISubWallet *subWallet = currentWallet->GetSubWallet(chainID);
+        if (subWallet == nullptr)
+            return { ERRNO_APP, "No subwallet" };
         address = subWallet->CreateAddress();
 	} catch (const std::exception &e) {
         return { ERRNO_APP, e.what() };
@@ -220,7 +248,11 @@ std::pair<int,std::string> createReceiveAddress(std::string chainID, std::string
 
 std::pair<int,std::string> changeSyncStatus(std::string chainID, bool start) {
 	try {
+        if (currentWallet == nullptr)
+            return { ERRNO_APP, "No master wallet" };
         ISubWallet *subWallet = currentWallet->GetSubWallet(chainID);
+        if (subWallet == nullptr)
+            return { ERRNO_APP, "No subwallet" };
 		if (start) {
 			subWallet->SyncStart();
         } else {

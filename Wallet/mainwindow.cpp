@@ -203,6 +203,7 @@ void MainWindow::on_btnShowRW_clicked()
 {
     std::string address;
     // create addres
+    curSubWalletChainID = ui->cbSubWalletChainID->currentText();
     std::pair<int,std::string> result = createReceiveAddress(curSubWalletChainID.toStdString(), address);
 
     // check address
@@ -309,38 +310,47 @@ void MainWindow::on_leSearch_textChanged(const QString &arg1)
 
 void MainWindow::on_cbLang_currentIndexChanged(const QString &arg1)
 {
-    if (arg1 == "English")
+    if (!isAppStart)
     {
-        curLang = "EN";
-        qApp->removeTranslator(trans);
-        delete trans;
-        trans = new QTranslator();
-        trans->load(":/ElastosWalletSPV_us_EN.qm");
-        qApp->installTranslator(trans);
-        ui->retranslateUi(this);
-        QSettings settings(ORGNAZATION, APP_NAME);
-        settings.setValue(LANGUAGE_PREF, "EN");
-        QImage image;
-        image.load(":/Images/Covers/ReceivingCover_EN_S.png");
-        ui->lblCoverForReceiving->setPixmap(QPixmap::fromImage(image));
+        if (arg1 == "English")
+        {
+            curLang = "EN";
+            qApp->removeTranslator(trans);
+            delete trans;
+            trans = new QTranslator();
+            trans->load(":/ElastosWalletSPV_us_EN.qm");
+            qApp->installTranslator(trans);
+            ui->retranslateUi(this);
+            QSettings settings(ORGNAZATION, APP_NAME);
+            settings.setValue(LANGUAGE_PREF, "EN");
+            QImage image;
+            image.load(":/Images/Covers/ReceivingCover_EN_S.png");
+            ui->lblCoverForReceiving->setPixmap(QPixmap::fromImage(image));
+        }
+        else if (arg1 == "简体中文")
+        {
+            curLang = "CN";
+            qApp->removeTranslator(trans);
+            delete trans;
+            trans = new QTranslator();
+            trans->load(":ElastosWalletSPV_zh_CN.qm");
+            qApp->installTranslator(trans);
+            ui->retranslateUi(this);
+            QSettings settings(ORGNAZATION, APP_NAME);
+            settings.setValue(LANGUAGE_PREF, "CN");
+            QImage image;
+            image.load(":/Images/Covers/ReceivingCover_CN_S.png");
+            ui->lblCoverForReceiving->setPixmap(QPixmap::fromImage(image));
+        }
+        else
+            return;
+
+        // update wallet information
+        updateQuickLookInformation();
+        updateNetworkInformation();
+        // set WalletRoot
+        ui->lblWalletRoot->setText(curWalletRoot);
     }
-    else if (arg1 == "简体中文")
-    {
-        curLang = "CN";
-        qApp->removeTranslator(trans);
-        delete trans;
-        trans = new QTranslator();
-        trans->load(":ElastosWalletSPV_zh_CN.qm");
-        qApp->installTranslator(trans);
-        ui->retranslateUi(this);
-        QSettings settings(ORGNAZATION, APP_NAME);
-        settings.setValue(LANGUAGE_PREF, "CN");
-        QImage image;
-        image.load(":/Images/Covers/ReceivingCover_CN_S.png");
-        ui->lblCoverForReceiving->setPixmap(QPixmap::fromImage(image));
-    }
-    else
-        return;
 }
 
 // check current wallet status
@@ -352,9 +362,7 @@ bool MainWindow::checkCurrentWalletStatus()
         // no currentWallet
         ui->actionSwitch_Wallet_Window->setEnabled(false);
         ui->actionRemove_Wallet->setEnabled(false);
-        ui->actionImport_Mnemonic_Words->setEnabled(false);
         ui->actionExport_Mnemonic_Words->setEnabled(false);
-        ui->actionImport_Keystore->setEnabled(false);
         ui->actionExport_Keystore->setEnabled(false);
         ui->actionChange_Wallet_Password->setEnabled(false);
         ui->actionTransfer->setEnabled(false);
@@ -367,9 +375,7 @@ bool MainWindow::checkCurrentWalletStatus()
         // has currentWallet
         ui->actionSwitch_Wallet_Window->setEnabled(true);
         ui->actionRemove_Wallet->setEnabled(true);
-        ui->actionImport_Mnemonic_Words->setEnabled(true);
         ui->actionExport_Mnemonic_Words->setEnabled(true);
-        ui->actionImport_Keystore->setEnabled(true);
         ui->actionExport_Keystore->setEnabled(true);
         ui->actionChange_Wallet_Password->setEnabled(true);
         ui->actionTransfer->setEnabled(true);
@@ -389,6 +395,7 @@ bool MainWindow::checkCurrentWalletStatus()
  *      status-bar-update
  *      transfer-billing-details-update
  *      record-table-update
+ *      network-information-update
  */
 /* main-update */
 void MainWindow::updateWalletInformation()
@@ -484,6 +491,10 @@ void MainWindow::updateSwitchSubWalletMenuInformation()
 /* quick-look-update */
 void MainWindow::updateQuickLookInformation()
 {
+    // update app version
+    if (manager != nullptr)
+        ui->lblAppVersionMessage->setText(manager->GetVersion().c_str());
+
     if (currentWallet != nullptr)
     {
         // update Quick Look information
@@ -516,6 +527,8 @@ void MainWindow::updateQuickLookInformation()
             {
                 curSubWalletChainID = ui->cbSubWalletChainID->currentText();
                 ISubWallet *subWallet = currentWallet->GetSubWallet(curSubWalletChainID.toStdString());
+                if (subWallet == nullptr)
+                    return;
                 if (curSubWalletChainID.toStdString() == CHAINID_ETHSC)
                     balance = QString::asprintf("%s", subWallet->GetBalance().c_str());
                 else
@@ -760,6 +773,19 @@ void MainWindow::updateRecordTableInformation()
         ui->lblGetRecordsErrorHint->clear();
     }
 }
+/* network-information-update */
+void MainWindow::updateNetworkInformation()
+{
+    curNetwork = network.c_str();
+    networkLastUpdateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+    // update network gui in preferences
+    ui->cbNetwork->setCurrentText(curNetwork);
+    QString networkStatus = (isNetworkUpdate ? tr("updated") : tr("update failed"));
+    QString networkStatusStyle = (isNetworkUpdate ? "color:green;" : "color:red;");
+    ui->lblNetworkStatus->setText(networkStatus);
+    ui->lblNetworkStatus->setStyleSheet(networkStatusStyle);
+    ui->lblNetworkLastUpdateTime->setText(networkLastUpdateTime);
+}
 /* Group End : update wallet information on GUI */
 
 // try get recent-transaction records
@@ -778,6 +804,8 @@ std::pair<int,std::string> MainWindow::getRecentTransactionRecords(QStringList &
 
         // get recent-transaction
         ISubWallet *subWallet = currentWallet->GetSubWallet(chainID.toStdString());
+        if (subWallet == nullptr)
+            return { ERRNO_APP, "No subwallet" };
         nlohmann::json txJosn;
         if (isCoinbase)
             txJosn = subWallet->GetAllCoinBaseTransaction(0, recentCount, txHash);
@@ -828,6 +856,8 @@ std::pair<int,std::string> MainWindow::getTransactionRecords(
 
         // get transaction
         ISubWallet *subWallet = currentWallet->GetSubWallet(chainID.toStdString());
+        if (subWallet == nullptr)
+            return { ERRNO_APP, "No subwallet" };
         nlohmann::json txJosn;
         if (isCoinbase)
             txJosn = subWallet->GetAllCoinBaseTransaction(0, max, txHash);
@@ -1399,15 +1429,12 @@ void MainWindow::on_cbNetwork_currentTextChanged(const QString &networkType)
     network = networkType.toStdString();
     networkConfigFileDir = ui->lblNetworkConfigFileDir->text();
     isNetworkUpdate = updateNetwork();
-    curNetwork = network.c_str();
-    networkLastUpdateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
-    // update network gui in preferences
-    ui->cbNetwork->setCurrentText(curNetwork);
-    QString networkStatus = (isNetworkUpdate ? tr("updated") : tr("update failed"));
-    QString networkStatusStyle = (isNetworkUpdate ? "color:green;" : "color:red;");
-    ui->lblNetworkStatus->setText(networkStatus);
-    ui->lblNetworkStatus->setStyleSheet(networkStatusStyle);
-    ui->lblNetworkLastUpdateTime->setText(networkLastUpdateTime);
+
+    // re-init wallet
+    walletInit();
+
+    // update network information
+    updateNetworkInformation();
 }
 
 void MainWindow::on_btnChooseConfigFile_clicked()

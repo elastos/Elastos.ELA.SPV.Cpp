@@ -1141,7 +1141,7 @@ Error Message:
         <location filename="mainwindow.ui" line="1627"/>
         <location filename="mainwindow.ui" line="1630"/>
         <source>Import Mnemonic Words</source>
-        <translation>导出助记词</translation>
+        <translation type="unfinished">导入助记词</translation>
     </message>
     <message>
         <location filename="mainwindow.ui" line="1635"/>
