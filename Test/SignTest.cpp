@@ -12,7 +12,7 @@
 #include <Common/Log.h>
 #include <Plugin/Transaction/Program.h>
 #include <Plugin/Transaction/Transaction.h>
-#include <WalletCore/BIP39.h>
+#include <WalletCore/Mnemonic.h>
 #include <WalletCore/HDKeychain.h>
 #include <WalletCore/Key.h>
 
@@ -28,7 +28,7 @@ TEST_CASE("Sign transaction test", "[SignTransaction]") {
 
 	SECTION("Sign and Verify") {
 		std::string mnemonic = "敌 宾 饰 详 贪 卷 剥 汇 层 富 怨 穷";
-		uint512 seed = BIP39::DeriveSeed(mnemonic, "");
+		uint512 seed = Mnemonic::DeriveSeed(mnemonic, "");
 
 		HDSeed hdseed(seed.bytes());
 		HDKeychain rootprv(hdseed.getExtendedKey(true));

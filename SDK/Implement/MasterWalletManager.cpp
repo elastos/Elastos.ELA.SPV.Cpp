@@ -186,7 +186,7 @@ namespace Elastos {
 			ArgInfo("wordCount: {}", wordCount);
 
 			Mnemonic::WordCount count = Mnemonic::WordCount(wordCount);
-			std::string mnemonic = MasterWallet::GenerateMnemonic(language, _rootPath, count);
+			std::string mnemonic = MasterWallet::GenerateMnemonic(language, count);
 
 			ArgInfo("r => *");
 			return mnemonic;
@@ -217,8 +217,7 @@ namespace Elastos {
 				return _masterWalletMap[masterWalletID];
 			}
 
-			Mnemonic m(_rootPath);
-			ErrorChecker::CheckLogic(!m.Validate(mnemonic), Error::Mnemonic, "Invalid mnemonic");
+			ErrorChecker::CheckLogic(!Mnemonic::Validate(mnemonic), Error::Mnemonic, "Invalid mnemonic");
 
 			time_t now = time(NULL);
 			MasterWallet *masterWallet = new MasterWallet(masterWalletID, mnemonic, phrasePassword, payPassword,
@@ -507,8 +506,7 @@ namespace Elastos {
 				return _masterWalletMap[masterWalletID];
 			}
 
-			Mnemonic m(_rootPath);
-			ErrorChecker::CheckLogic(!m.Validate(mnemonic), Error::Mnemonic, "Invalid mnemonic");
+			ErrorChecker::CheckLogic(!Mnemonic::Validate(mnemonic), Error::Mnemonic, "Invalid mnemonic");
 
 			MasterWallet *masterWallet = new MasterWallet(masterWalletID, mnemonic, phrasePassword, payPassword,
 														  singleAddress, _p2pEnable, ConfigPtr(new Config(*_config)),

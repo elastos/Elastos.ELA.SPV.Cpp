@@ -5,7 +5,7 @@
 #include "ElaNewWalletJson.h"
 #include "CoinInfo.h"
 #include "HDKeychain.h"
-#include "BIP39.h"
+#include "Mnemonic.h"
 #include "Base58.h"
 
 #include <Common/ErrorChecker.h>
@@ -154,7 +154,7 @@ namespace Elastos {
 
 			if (_xPrivKey.empty() && !_mnemonic.empty()) {
 				Log::info("Regerate xprv from old keystore");
-				HDSeed seed(BIP39::DeriveSeed(_mnemonic, passphrase).bytes());
+				HDSeed seed(Mnemonic::DeriveSeed(_mnemonic, passphrase).bytes());
 				HDKeychain rootkey(seed.getExtendedKey(true));
 
 				_ownerPubKey = rootkey.getChild("44'/0'/1'/0/0").pubkey().getHex();

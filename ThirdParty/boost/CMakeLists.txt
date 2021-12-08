@@ -10,21 +10,25 @@ else()
 endif()
 
 set(BUILD_COMMON_ARGS
-	-q
-	${BOOST_BUILD_VERBOSE}
-	-j 4
-	variant=release
-	link=static
+		-q
+		${BOOST_BUILD_VERBOSE}
+		-j 4
+		variant=release
+		link=static
+		threading=multi
+		strip=on
+		--prefix=${PROJECT_INT_DIST_DIR}
+		--layout=system
+		--with-filesystem
+		--with-system
+		--with-program_options
+		--with-thread
+)
+
+set(BUILD_UNIX_COMMON_ARGS
 	cflags=-fPIC
 	cxxflags=-fPIC
-	threading=multi
-	strip=on
-	--prefix=${PROJECT_INT_DIST_DIR}
-	--layout=system
-	--with-filesystem
-	--with-system
-	--with-program_options
-	--with-thread)
+	${BUILD_COMMON_ARGS})
 
 if(ANDROID)
 	set(ANDROID_TOOLCHAIN_RANLIB ${CMAKE_CXX_ANDROID_TOOLCHAIN_PREFIX}ranlib${CMAKE_CXX_ANDROID_TOOLCHAIN_SUFFIX})
@@ -45,7 +49,7 @@ if(ANDROID)
 		./b2
 		target-os=android
 		toolset=${CMAKE_ANDROID_NDK_TOOLCHAIN_VERSION}-${JAMARCH}
-		${BUILD_COMMON_ARGS}
+		${BUILD_UNIX_COMMON_ARGS}
 		install)
 elseif(IOS)
 	set(CONFIGURE_CMD
@@ -60,13 +64,13 @@ elseif(IOS)
 		./b2
 		target-os=iphone
 		toolset=clang-${IOS_PLATFORM}
-		${BUILD_COMMON_ARGS}
+		${BUILD_UNIX_COMMON_ARGS}
 		install)
 else()
 	set(CONFIGURE_CMD ./bootstrap.sh)
 	set(BUILD_CMD
 		./b2
-		${BUILD_COMMON_ARGS}
+		${BUILD_UNIX_COMMON_ARGS}
 		install)
 endif()
 

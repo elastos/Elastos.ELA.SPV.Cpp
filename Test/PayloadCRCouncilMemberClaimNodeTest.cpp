@@ -27,7 +27,6 @@
 #include <Plugin/Transaction/Payload/CRCouncilMemberClaimNode.h>
 #include <Common/Log.h>
 #include <WalletCore/HDKeychain.h>
-#include <WalletCore/BIP39.h>
 #include <WalletCore/Mnemonic.h>
 #include <WalletCore/Key.h>
 
@@ -35,8 +34,8 @@ static uint8_t version = CRCouncilMemberClaimNodeVersion;
 
 using namespace Elastos::ElaWallet;
 static void initPayload(CRCouncilMemberClaimNode &payload) {
-	std::string mnemonic = Mnemonic(boost::filesystem::path("Data")).Create("English", Mnemonic::WORDS_12);
-	uint512 seed = BIP39::DeriveSeed(mnemonic, "");
+	std::string mnemonic = Mnemonic::Create("English", Mnemonic::WORDS_12);
+	uint512 seed = Mnemonic::DeriveSeed(mnemonic, "");
 	HDSeed hdseed(seed.bytes());
 	HDKeychain rootkey(hdseed.getExtendedKey(true));
 	HDKeychain masterKey = rootkey.getChild("44'/0'/0'");

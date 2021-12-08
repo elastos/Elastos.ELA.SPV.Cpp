@@ -23,7 +23,6 @@
 #include "EthereumClient.h"
 #include "Common/Log.h"
 #include "Common/ErrorChecker.h"
-#include "WalletCore/WordLists/English.h"
 
 namespace Elastos {
 	namespace ElaWallet {

@@ -203,6 +203,7 @@ TEST_CASE("Convert to and from json", "[Transaction]") {
 	}
 }
 
+#if 0
 TEST_CASE("new tx with type and payload", "[IDTransaction]") {
 	std::vector<nlohmann::json> list;
 	list.push_back(R"(
@@ -250,3 +251,4 @@ TEST_CASE("new tx with type and payload", "[IDTransaction]") {
 	}
 
 }
+#endif

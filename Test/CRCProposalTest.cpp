@@ -11,15 +11,14 @@
 #include <WalletCore/Mnemonic.h>
 #include <Plugin/Transaction/Payload/CRCProposal.h>
 #include <boost/filesystem.hpp>
-#include <WalletCore/BIP39.h>
 #include <WalletCore/HDKeychain.h>
 #include <WalletCore/Key.h>
 
 using namespace Elastos::ElaWallet;
 
 static void initCRCProposal(CRCProposal &crcProposal, CRCProposal::Type type) {
-	std::string mnemonic = Mnemonic(boost::filesystem::path("Data")).Create("English", Mnemonic::WORDS_12);
-	uint512 seed = BIP39::DeriveSeed(mnemonic, "");
+	std::string mnemonic = Mnemonic::Create("English", Mnemonic::WORDS_12);
+	uint512 seed = Mnemonic::DeriveSeed(mnemonic, "");
 	HDSeed hdseed(seed.bytes());
 	HDKeychain rootkey(hdseed.getExtendedKey(true));
 	HDKeychain masterKey = rootkey.getChild("44'/0'/0'");
