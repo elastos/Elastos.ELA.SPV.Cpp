@@ -139,14 +139,16 @@ namespace Elastos {
 
 			virtual void Resync();
 
+			virtual void SetSyncMode(int mode);
+
 		protected: //implement Wallet::Listener
 			virtual void onBalanceChanged(const uint256 &asset, const BigInt &balance);
 
 			virtual void onTxAdded(const TransactionPtr &tx);
 
-			virtual void onTxUpdated(const std::vector<TransactionPtr> &txns);
+			virtual void onTxUpdated(const std::vector<uint256> &hashes, uint32_t blockHeight, time_t timestamp);
 
-			virtual void onTxDeleted(const TransactionPtr &tx, bool notifyUser, bool recommendRescan);
+			virtual void onTxDeleted(const uint256 &hash, bool notifyUser, bool recommendRescan);
 
 			virtual void onAssetRegistered(const AssetPtr &asset, uint64_t amount, const uint168 &controller);
 
@@ -189,10 +191,9 @@ namespace Elastos {
 				const std::string &memo,
 				const uint256 &asset) const;
 
-			nlohmann::json GetAllTransactionCommon(uint32_t start,
-												   uint32_t count,
-												   const std::string &txid,
-												   TxnType type) const;
+			nlohmann::json GetAllTransactionCommon(bool detail,
+												   const boost::function<size_t()> &getTxCnt,
+												   const boost::function<std::vector<TransactionPtr>()> &getTx) const;
 
 			virtual void publishTransaction(const TransactionPtr &tx);
 

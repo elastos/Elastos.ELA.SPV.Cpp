@@ -38,8 +38,6 @@ namespace Elastos {
 		public:
 			EthereumNetwork(BREthereumNetwork network);
 
-			EthereumNetwork(const std::string &netType);
-
 			~EthereumNetwork();
 
 			BREthereumNetwork getRaw() const;

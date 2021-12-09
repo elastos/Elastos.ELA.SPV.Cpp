@@ -167,6 +167,14 @@ namespace Elastos {
 			return _draftHash;
 		}
 
+		void CRCProposal::SetDraftData(const bytes_t &draftData) {
+			_draftData = draftData;
+		}
+
+		const bytes_t &CRCProposal::GetDraftData() const {
+			return _draftData;
+		}
+
 		void CRCProposal::SetBudgets(const std::vector<Budget> &budgets) {
 			_budgets = budgets;
 		}
@@ -284,6 +292,10 @@ namespace Elastos {
 			size += _categoryData.size();
 			size += stream.WriteVarUint(_ownerPublicKey.size());
 			size += _ownerPublicKey.size();
+			if (version >= CRCProposalVersion01) {
+				size += stream.WriteVarUint(_draftData.size());
+				size += _draftData.size();
+			}
 			size += _draftHash.size();
 
 			switch (_type) {
@@ -1124,6 +1136,613 @@ namespace Elastos {
 			return _digestSecretaryElectionCRCouncilMemberUnsigned;
 		}
 
+        void CRCProposal::SerializeReserveCustomIDUnsigned(ByteStream &stream, uint8_t version) const {
+            uint16_t type = _type;
+            stream.WriteUint16(type);
+            stream.WriteVarString(_categoryData);
+            stream.WriteVarBytes(_ownerPublicKey);
+            stream.WriteBytes(_draftHash);
+            if (version >= CRCProposalVersion01)
+                stream.WriteVarBytes(_draftData);
+            stream.WriteVarUint((uint64_t)_reservedCustomIDList.size());
+            for (const std::string &reservedCustomID : _reservedCustomIDList)
+                stream.WriteVarString(reservedCustomID);
+		}
+
+        bool CRCProposal::DeserializeReserveCustomIDUnsigned(const ByteStream &stream, uint8_t version) {
+            if (!stream.ReadVarString(_categoryData)) {
+                SPVLOG_ERROR("deserialize reserved custom id category data");
+                return false;
+            }
+
+            if (!stream.ReadVarBytes(_ownerPublicKey)) {
+                SPVLOG_ERROR("deserialize reserved custom id owner pubkey");
+                return false;
+            }
+
+            if (!stream.ReadBytes(_draftHash)) {
+                SPVLOG_ERROR("deserialize reserved custom id draft hash");
+                return false;
+            }
+
+            if (version >= CRCProposalVersion01) {
+                if (!stream.ReadVarBytes(_draftData)) {
+                    SPVLOG_ERROR("deserialize reserved custom id draft data");
+                    return false;
+                }
+            }
+
+            uint64_t size = 0;
+            if (!stream.ReadVarUint(size)) {
+                SPVLOG_ERROR("deserialize reserved custom id list size");
+                return false;
+            }
+            for (size_t i = 0; i < size; ++i) {
+                std::string reservedCustomID;
+                if (!stream.ReadVarString(reservedCustomID)) {
+                    SPVLOG_ERROR("deserialize reserved custom id list[{}]", i);
+                    return false;
+                }
+                _reservedCustomIDList.push_back(reservedCustomID);
+            }
+
+            return true;
+		}
+
+        void CRCProposal::SerializeReserveCustomIDCRCouncilMemberUnsigned(ByteStream &stream, uint8_t version) const {
+            SerializeReserveCustomIDUnsigned(stream, version);
+            stream.WriteVarBytes(_signature);
+            stream.WriteBytes(_crCouncilMemberDID.ProgramHash());
+		}
+
+        bool CRCProposal::DeserializeReserveCustomIDCRCouncilMemberUnsigned(const ByteStream &stream, uint8_t version) {
+            if (!DeserializeReserveCustomIDUnsigned(stream, version)) {
+                return false;
+            }
+
+            if (!stream.ReadVarBytes(_signature)) {
+                SPVLOG_ERROR("deserialize reserved custom id signature");
+                return false;
+            }
+
+            uint168 programHash;
+            if (!stream.ReadBytes(programHash)) {
+                SPVLOG_ERROR("deserialize cr council mem did");
+                return false;
+            }
+            _crCouncilMemberDID = Address(programHash);
+
+            return true;
+		}
+
+        void CRCProposal::SerializeReserveCustomID(ByteStream &stream, uint8_t version) const {
+            SerializeReserveCustomIDCRCouncilMemberUnsigned(stream, version);
+            stream.WriteVarBytes(_crCouncilMemberSignature);
+		}
+
+        bool CRCProposal::DeserializeReserveCustomID(const ByteStream &stream, uint8_t version) {
+            if (!DeserializeReserveCustomIDCRCouncilMemberUnsigned(stream, version)) {
+                return false;
+            }
+
+            if (!stream.ReadVarBytes(_crCouncilMemberSignature)) {
+                SPVLOG_ERROR("deserialize reserved custom id council member sign");
+                return false;
+            }
+
+            return true;
+		}
+
+        nlohmann::json CRCProposal::ToJsonReserveCustomIDOwnerUnsigned(uint8_t version) const {
+            nlohmann::json j;
+
+            j[JsonKeyType] = _type;
+            j[JsonKeyCategoryData] = _categoryData;
+            j[JsonKeyOwnerPublicKey] = _ownerPublicKey.getHex();
+            j[JsonKeyDraftHash] = _draftHash.GetHex();
+            if (version >= CRCProposalVersion01)
+                j[JsonKeyDraftData] = Base64::Encode(_draftData);
+            j[JsonKeyReservedCustomIDList] = _reservedCustomIDList;
+
+            return j;
+		}
+
+        void CRCProposal::FromJsonReserveCustomIDOwnerUnsigned(const nlohmann::json &j, uint8_t version) {
+            _type = CRCProposal::Type(j[JsonKeyType].get<uint16_t>());
+            _categoryData = j[JsonKeyCategoryData].get<std::string>();
+            _ownerPublicKey.setHex(j[JsonKeyOwnerPublicKey].get<std::string>());
+            _draftHash.SetHex(j[JsonKeyDraftHash].get<std::string>());
+            if (version >= CRCProposalVersion01) {
+                std::string draftData = j[JsonKeyDraftData].get<std::string>();
+                _draftData = Base64::Decode(draftData);
+                ErrorChecker::CheckParam(_draftData.size() > DRAFT_DATA_MAX_SIZE, Error::ProposalContentTooLarge, "proposal origin content too large");
+                uint256 draftHash(sha256_2(_draftData));
+                ErrorChecker::CheckParam(draftHash != _draftHash, Error::ProposalHashNotMatch, "proposal hash not match");
+            }
+            _reservedCustomIDList = j[JsonKeyReservedCustomIDList].get<std::vector<std::string>>();
+		}
+
+        nlohmann::json CRCProposal::ToJsonReserveCustomIDCRCouncilMemberUnsigned(uint8_t version) const {
+            nlohmann::json j = ToJsonReserveCustomIDOwnerUnsigned(version);
+            j[JsonKeySignature] = _signature.getHex();
+            j[JsonKeyCRCouncilMemberDID] = _crCouncilMemberDID.String();
+            return j;
+		}
+
+        void CRCProposal::FromJsonReserveCustomIDCRCouncilMemberUnsigned(const nlohmann::json &j, uint8_t version) {
+            FromJsonReserveCustomIDOwnerUnsigned(j, version);
+            _signature.setHex(j[JsonKeySignature].get<std::string>());
+            _crCouncilMemberDID = Address(j[JsonKeyCRCouncilMemberDID].get<std::string>());
+		}
+
+        bool CRCProposal::IsValidReserveCustomIDOwnerUnsigned(uint8_t version) const {
+            if (_type != reserveCustomID) {
+                SPVLOG_ERROR("invalid type: {}", _type);
+                return false;
+            }
+
+            if (_categoryData.size() > 4096) {
+                SPVLOG_ERROR("category data exceed 4096 bytes");
+                return false;
+            }
+
+            try {
+                Key key(_ownerPublicKey);
+            } catch (const std::exception &e) {
+                SPVLOG_ERROR("invalid reserve custom id pubkey");
+                return false;
+            }
+
+            return true;
+		}
+
+        bool CRCProposal::IsValidReserveCustomIDCRCouncilMemberUnsigned(uint8_t version) const {
+            if (!IsValidReserveCustomIDOwnerUnsigned(version))
+                return false;
+
+            try {
+                if (!Key(_ownerPublicKey).Verify(DigestReserveCustomIDOwnerUnsigned(version), _signature)) {
+                    SPVLOG_ERROR("reserve custom id verify owner signature fail");
+                    return false;
+                }
+            } catch (const std::exception &e) {
+                SPVLOG_ERROR("verify signature exception: {}", e.what());
+                return false;
+            }
+
+            if (!_crCouncilMemberDID.Valid()) {
+                SPVLOG_ERROR("invalid cr committee did");
+                return false;
+            }
+
+            return true;
+		}
+
+        const uint256 &CRCProposal::DigestReserveCustomIDOwnerUnsigned(uint8_t version) const {
+            if (_digestReserveCustomIDOwnerUnsigned == 0) {
+                ByteStream stream;
+                SerializeReserveCustomIDUnsigned(stream, version);
+                _digestReserveCustomIDOwnerUnsigned = sha256(stream.GetBytes());
+            }
+
+            return _digestReserveCustomIDOwnerUnsigned;
+		}
+
+        const uint256 &CRCProposal::DigestReserveCustomIDCRCouncilMemberUnsigned(uint8_t version) const {
+            if (_digestReserveCustomIDCRCouncilMemberUnsigned == 0) {
+                ByteStream stream;
+                SerializeReserveCustomIDCRCouncilMemberUnsigned(stream, version);
+                _digestReserveCustomIDCRCouncilMemberUnsigned = sha256(stream.GetBytes());
+            }
+
+            return _digestReserveCustomIDCRCouncilMemberUnsigned;
+		}
+
+        // ReceiveCustomID
+        void CRCProposal::SerializeReceiveCustomIDUnsigned(ByteStream &stream, uint8_t version) const {
+            uint16_t type = _type;
+            stream.WriteUint16(type);
+            stream.WriteVarString(_categoryData);
+            stream.WriteVarBytes(_ownerPublicKey);
+            stream.WriteBytes(_draftHash);
+            if (version >= CRCProposalVersion01)
+                stream.WriteVarBytes(_draftData);
+            stream.WriteVarUint((uint64_t)_receivedCustomIDList.size());
+            for (const std::string &receivedCustomID : _receivedCustomIDList)
+                stream.WriteVarString(receivedCustomID);
+            stream.WriteBytes(_receiverDID.ProgramHash());
+		}
+
+        bool CRCProposal::DeserializeReceiveCustomIDUnsigned(const ByteStream &stream, uint8_t version) {
+            if (!stream.ReadVarString(_categoryData)) {
+                SPVLOG_ERROR("deserialize receive custom category data");
+                return false;
+            }
+
+            if (!stream.ReadVarBytes(_ownerPublicKey)) {
+                SPVLOG_ERROR("deserialize receive custom owner pubkey");
+                return false;
+            }
+
+            if (!stream.ReadBytes(_draftHash)) {
+                SPVLOG_ERROR("deserialize receive custom draft hash");
+                return false;
+            }
+
+            if (version >= CRCProposalVersion01) {
+                if (!stream.ReadVarBytes(_draftData)) {
+                    SPVLOG_ERROR("deserialize receive custom draft data");
+                    return false;
+                }
+            }
+
+            uint64_t size = 0;
+            if (!stream.ReadVarUint(size)) {
+                SPVLOG_ERROR("deserialize receive custom id list size");
+                return false;
+            }
+            for (size_t i = 0; i < size; ++i) {
+                std::string receivedCustomID;
+                if (!stream.ReadVarString(receivedCustomID)) {
+                    SPVLOG_ERROR("deserialize receive custom id list[{}]", i);
+                    return false;
+                }
+                _receivedCustomIDList.push_back(receivedCustomID);
+            }
+
+            uint168 programHash;
+            if (!stream.ReadBytes(programHash)) {
+                SPVLOG_ERROR("deserialize receiver did");
+                return false;
+            }
+            _receiverDID = Address(programHash);
+
+            return true;
+		}
+
+        void CRCProposal::SerializeReceiveCustomIDCRCCouncilMemberUnsigned(ByteStream &stream, uint8_t version) const {
+            SerializeReceiveCustomIDUnsigned(stream, version);
+            stream.WriteVarBytes(_signature);
+            stream.WriteBytes(_crCouncilMemberDID.ProgramHash());
+		}
+
+        bool CRCProposal::DeserializeReceiveCustomIDCRCCouncilMemberUnsigned(const ByteStream &stream, uint8_t version) {
+            if (!DeserializeReceiveCustomIDUnsigned(stream, version)) {
+                return false;
+            }
+
+            if (!stream.ReadVarBytes(_signature)) {
+                SPVLOG_ERROR("deserialize reserved custom id signature");
+                return false;
+            }
+
+            uint168 programHash;
+            if (!stream.ReadBytes(programHash)) {
+                SPVLOG_ERROR("deserialize cr council mem did");
+                return false;
+            }
+            _crCouncilMemberDID = Address(programHash);
+
+            return true;
+		}
+
+        void CRCProposal::SerializeReceiveCustomID(ByteStream &stream, uint8_t version) const {
+            SerializeReceiveCustomIDCRCCouncilMemberUnsigned(stream, version);
+            stream.WriteVarBytes(_crCouncilMemberSignature);
+		}
+
+        bool CRCProposal::DeserializeReceiveCustomID(const ByteStream &stream, uint8_t version) {
+            if (!DeserializeReceiveCustomIDCRCCouncilMemberUnsigned(stream, version)) {
+                return false;
+            }
+
+            if (!stream.ReadVarBytes(_crCouncilMemberSignature)) {
+                SPVLOG_ERROR("deserialize receive custom id council member sign");
+                return false;
+            }
+
+            return true;
+		}
+
+        nlohmann::json CRCProposal::ToJsonReceiveCustomIDOwnerUnsigned(uint8_t version) const {
+            nlohmann::json j;
+
+            j[JsonKeyType] = _type;
+            j[JsonKeyCategoryData] = _categoryData;
+            j[JsonKeyOwnerPublicKey] = _ownerPublicKey.getHex();
+            j[JsonKeyDraftHash] = _draftHash.GetHex();
+            if (version >= CRCProposalVersion01)
+                j[JsonKeyDraftData] = Base64::Encode(_draftData);
+            j[JsonKeyReceivedCustomIDList] = _receivedCustomIDList;
+            j[JsonKeyReceiverDID] = _receiverDID.String();
+
+            return j;
+		}
+
+        void CRCProposal::FromJsonReceiveCustomIDOwnerUnsigned(const nlohmann::json &j, uint8_t version) {
+            _type = CRCProposal::Type(j[JsonKeyType].get<uint16_t>());
+            _categoryData = j[JsonKeyCategoryData].get<std::string>();
+            _ownerPublicKey.setHex(j[JsonKeyOwnerPublicKey].get<std::string>());
+            _draftHash.SetHex(j[JsonKeyDraftHash].get<std::string>());
+            if (version >= CRCProposalVersion01) {
+                std::string draftData = j[JsonKeyDraftData].get<std::string>();
+                _draftData = Base64::Decode(draftData);
+                ErrorChecker::CheckParam(_draftData.size() > DRAFT_DATA_MAX_SIZE, Error::ProposalContentTooLarge, "proposal origin content too large");
+                uint256 draftHash(sha256_2(_draftData));
+                ErrorChecker::CheckParam(draftHash != _draftHash, Error::ProposalHashNotMatch, "proposal hash not match");
+            }
+            _receivedCustomIDList = j[JsonKeyReservedCustomIDList].get<std::vector<std::string>>();
+            _receiverDID = Address(j[JsonKeyReceiverDID].get<std::string>());
+		}
+
+        nlohmann::json CRCProposal::ToJsonReceiveCustomIDCRCouncilMemberUnsigned(uint8_t version) const {
+            nlohmann::json j = ToJsonReceiveCustomIDOwnerUnsigned(version);
+            j[JsonKeySignature] = _signature.getHex();
+            j[JsonKeyCRCouncilMemberDID] = _crCouncilMemberDID.String();
+            return j;
+		}
+
+        void CRCProposal::FromJsonReceiveCustomIDCRCouncilMemberUnsigned(const nlohmann::json &j, uint8_t version) {
+            FromJsonReceiveCustomIDOwnerUnsigned(j, version);
+            _signature.setHex(j[JsonKeySignature].get<std::string>());
+            _crCouncilMemberDID = Address(j[JsonKeyCRCouncilMemberDID].get<std::string>());
+		}
+
+        bool CRCProposal::IsValidReceiveCustomIDOwnerUnsigned(uint8_t version) const {
+            if (_type != receiveCustomID) {
+                SPVLOG_ERROR("invalid type: {}", _type);
+                return false;
+            }
+
+            if (_categoryData.size() > 4096) {
+                SPVLOG_ERROR("category data exceed 4096 bytes");
+                return false;
+            }
+
+            try {
+                Key key(_ownerPublicKey);
+            } catch (const std::exception &e) {
+                SPVLOG_ERROR("invalid reserve custom id pubkey");
+                return false;
+            }
+
+            return true;
+		}
+
+        bool CRCProposal::IsValidReceiveCustomIDCRCouncilMemberUnsigned(uint8_t version) const {
+		    if (!IsValidReceiveCustomIDOwnerUnsigned(version))
+		        return false;
+
+            try {
+                if (!Key(_ownerPublicKey).Verify(DigestReceiveCustomIDOwnerUnsigned(version), _signature)) {
+                    SPVLOG_ERROR("receive custom id verify owner signature fail");
+                    return false;
+                }
+            } catch (const std::exception &e) {
+                SPVLOG_ERROR("verify signature exception: {}", e.what());
+                return false;
+            }
+
+            if (!_crCouncilMemberDID.Valid()) {
+                SPVLOG_ERROR("invalid cr committee did");
+                return false;
+            }
+
+            return true;
+		}
+
+        const uint256 &CRCProposal::DigestReceiveCustomIDOwnerUnsigned(uint8_t version) const {
+            if (_digestReceiveCustomIDOwnerUnsigned == 0) {
+                ByteStream stream;
+                SerializeReceiveCustomIDUnsigned(stream, version);
+                _digestReceiveCustomIDOwnerUnsigned = sha256(stream.GetBytes());
+            }
+
+            return _digestReceiveCustomIDOwnerUnsigned;
+		}
+
+        const uint256 &CRCProposal::DigestReceiveCustomIDCRCouncilMemberUnsigned(uint8_t version) const {
+            if (_digestReceiveCustomIDCRCouncilMemberUnsigned == 0) {
+                ByteStream stream;
+                SerializeReceiveCustomIDCRCCouncilMemberUnsigned(stream, version);
+                _digestReceiveCustomIDCRCouncilMemberUnsigned = sha256(stream.GetBytes());
+            }
+
+            return _digestReceiveCustomIDCRCouncilMemberUnsigned;
+		}
+
+        // ChangeCustomIDFee
+        void CRCProposal::SerializeChangeCustomIDFeeUnsigned(ByteStream &stream, uint8_t version) const {
+            uint16_t type = _type;
+            stream.WriteUint16(type);
+            stream.WriteVarString(_categoryData);
+            stream.WriteVarBytes(_ownerPublicKey);
+            stream.WriteBytes(_draftHash);
+            if (version >= CRCProposalVersion01)
+                stream.WriteVarBytes(_draftData);
+            stream.WriteUint64(_rateOfCustomIDFee);
+		}
+
+        bool CRCProposal::DeserializeChangeCustomIDFeeUnsigned(const ByteStream &stream, uint8_t version) {
+            if (!stream.ReadVarString(_categoryData)) {
+                SPVLOG_ERROR("deserialize change custom id category data");
+                return false;
+            }
+
+            if (!stream.ReadVarBytes(_ownerPublicKey)) {
+                SPVLOG_ERROR("deserialize change custom id owner pubkey");
+                return false;
+            }
+
+            if (!stream.ReadBytes(_draftHash)) {
+                SPVLOG_ERROR("deserialize change custom id draft hash");
+                return false;
+            }
+
+            if (version >= CRCProposalVersion01) {
+                if (!stream.ReadVarBytes(_draftData)) {
+                    SPVLOG_ERROR("deserialize change custom id draft data");
+                    return false;
+                }
+            }
+
+            if (!stream.ReadUint64(_rateOfCustomIDFee)) {
+                SPVLOG_ERROR("deserialize change custom id fee");
+                return false;
+            }
+
+            return true;
+		}
+
+        void CRCProposal::SerializeChangeCustomIDFeeCRCCouncilMemberUnsigned(ByteStream &stream, uint8_t version) const {
+            SerializeChangeCustomIDFeeUnsigned(stream, version);
+            stream.WriteVarBytes(_signature);
+            stream.WriteBytes(_crCouncilMemberDID.ProgramHash());
+		}
+
+        bool CRCProposal::DeserializeChangeCustomIDFeeCRCCouncilMemberUnsigned(const ByteStream &stream, uint8_t version) {
+            if (!DeserializeChangeCustomIDFeeUnsigned(stream, version)) {
+                return false;
+            }
+
+            if (!stream.ReadVarBytes(_signature)) {
+                SPVLOG_ERROR("deserialize change custom id fee signature");
+                return false;
+            }
+
+            uint168 programHash;
+            if (!stream.ReadBytes(programHash)) {
+                SPVLOG_ERROR("deserialize change custom id fee cr council mem did");
+                return false;
+            }
+            _crCouncilMemberDID = Address(programHash);
+
+            return true;
+		}
+
+        void CRCProposal::SerializeChangeCustomIDFee(ByteStream &stream, uint8_t version) const {
+            SerializeChangeCustomIDFeeCRCCouncilMemberUnsigned(stream, version);
+            stream.WriteVarBytes(_crCouncilMemberSignature);
+		}
+
+        bool CRCProposal::DeserializeChangeCustomIDFee(const ByteStream &stream, uint8_t version) {
+            if (!DeserializeChangeCustomIDFeeCRCCouncilMemberUnsigned(stream, version)) {
+                return false;
+            }
+
+            if (!stream.ReadVarBytes(_crCouncilMemberSignature)) {
+                SPVLOG_ERROR("deserialize change custom id fee council mem sign");
+                return false;
+            }
+
+            return true;
+		}
+
+        nlohmann::json CRCProposal::ToJsonChangeCustomIDFeeOwnerUnsigned(uint8_t version) const {
+            nlohmann::json j;
+
+            j[JsonKeyType] = _type;
+            j[JsonKeyCategoryData] = _categoryData;
+            j[JsonKeyOwnerPublicKey] = _ownerPublicKey.getHex();
+            j[JsonKeyDraftHash] = _draftHash.GetHex();
+            if (version >= CRCProposalVersion01)
+                j[JsonKeyDraftData] = Base64::Encode(_draftData);
+            j[JsonKeyRateOfCustomIDFee] = _rateOfCustomIDFee;
+
+            return j;
+		}
+
+        void CRCProposal::FromJsonChangeCustomIDFeeOwnerUnsigned(const nlohmann::json &j, uint8_t version) {
+            _type = CRCProposal::Type(j[JsonKeyType].get<uint16_t>());
+            _categoryData = j[JsonKeyCategoryData].get<std::string>();
+            _ownerPublicKey.setHex(j[JsonKeyOwnerPublicKey].get<std::string>());
+            _draftHash.SetHex(j[JsonKeyDraftHash].get<std::string>());
+            if (version >= CRCProposalVersion01) {
+                std::string draftData = j[JsonKeyDraftData].get<std::string>();
+                _draftData = Base64::Decode(draftData);
+                ErrorChecker::CheckParam(_draftData.size() > DRAFT_DATA_MAX_SIZE, Error::ProposalContentTooLarge, "proposal origin content too large");
+                uint256 draftHash(sha256_2(_draftData));
+                ErrorChecker::CheckParam(draftHash != _draftHash, Error::ProposalHashNotMatch, "proposal hash not match");
+            }
+            _rateOfCustomIDFee = j[JsonKeyRateOfCustomIDFee];
+		}
+
+        nlohmann::json CRCProposal::ToJsonChangeCustomIDFeeCRCouncilMemberUnsigned(uint8_t version) const {
+		    nlohmann::json j = ToJsonChangeCustomIDFeeOwnerUnsigned(version);
+            j[JsonKeySignature] = _signature.getHex();
+            j[JsonKeyCRCouncilMemberDID] = _crCouncilMemberDID.String();
+		    return j;
+		}
+
+        void CRCProposal::FromJsonChangeCustomIDFeeCRCouncilMemberUnsigned(const nlohmann::json &j, uint8_t version) {
+            FromJsonChangeCustomIDFeeOwnerUnsigned(j, version);
+            _signature.setHex(j[JsonKeySignature].get<std::string>());
+            _crCouncilMemberDID = Address(j[JsonKeyCRCouncilMemberDID].get<std::string>());
+		}
+
+        bool CRCProposal::IsValidChangeCustomIDFeeOwnerUnsigned(uint8_t version) const {
+            if (_type != changeCustomIDFee) {
+                SPVLOG_ERROR("invalid type: {}", _type);
+                return false;
+            }
+
+            if (_categoryData.size() > 4096) {
+                SPVLOG_ERROR("category data exceed 4096 bytes");
+                return false;
+            }
+
+            try {
+                Key key(_ownerPublicKey);
+            } catch (const std::exception &e) {
+                SPVLOG_ERROR("invalid reserve custom id pubkey");
+                return false;
+            }
+
+            return true;
+		}
+
+        bool CRCProposal::IsValidChangeCustomIDFeeCRCouncilMemberUnsigned(uint8_t version) const {
+            if (!IsValidChangeCustomIDFeeOwnerUnsigned(version))
+                return false;
+
+            try {
+                if (!Key(_ownerPublicKey).Verify(DigestChangeCustomIDFeeOwnerUnsigned(version), _signature)) {
+                    SPVLOG_ERROR("change custom id fee verify owner signature fail");
+                    return false;
+                }
+            } catch (const std::exception &e) {
+                SPVLOG_ERROR("verify signature exception: {}", e.what());
+                return false;
+            }
+
+            if (!_crCouncilMemberDID.Valid()) {
+                SPVLOG_ERROR("invalid cr committee did");
+                return false;
+            }
+
+            return true;
+		}
+
+        const uint256 &CRCProposal::DigestChangeCustomIDFeeOwnerUnsigned(uint8_t version) const {
+            if (_digestChangeCustomIDFeeOwnerUnsigned == 0) {
+                ByteStream stream;
+                SerializeChangeCustomIDFeeUnsigned(stream, version);
+                _digestChangeCustomIDFeeOwnerUnsigned = sha256(stream.GetBytes());
+            }
+
+            return _digestChangeCustomIDFeeOwnerUnsigned;
+		}
+
+        const uint256 &CRCProposal::DigestChangeCustomIDFeeCRCouncilMemberUnsigned(uint8_t version) const {
+            if (_digestChangeCustomIDFeeCRCouncilMemberUnsigned == 0) {
+                ByteStream stream;
+                SerializeChangeCustomIDFeeCRCCouncilMemberUnsigned(stream, version);
+                _digestChangeCustomIDFeeCRCouncilMemberUnsigned = sha256(stream.GetBytes());
+            }
+
+            return _digestChangeCustomIDFeeCRCouncilMemberUnsigned;
+		}
+
 		// top serialize or deserialize
 		void CRCProposal::Serialize(ByteStream &stream, uint8_t version) const {
 			switch (_type) {
@@ -1139,8 +1758,20 @@ namespace Elastos {
 					SerializeSecretaryElection(stream, version);
 					break;
 
-				case elip:
-				case normal:
+			    case reserveCustomID:
+                    SerializeReserveCustomID(stream, version);
+			        break;
+
+			    case receiveCustomID:
+                    SerializeReceiveCustomID(stream, version);
+			        break;
+
+			    case changeCustomIDFee:
+                    SerializeChangeCustomIDFee(stream, version);
+			        break;
+
+			    case normal:
+			    case elip:
 					SerializeNormalOrELIP(stream, version);
 					break;
 
@@ -1172,8 +1803,20 @@ namespace Elastos {
 					r = DeserializeSecretaryElection(stream, version);
 					break;
 
-				case elip:
-				case normal:
+                case reserveCustomID:
+                    r = DeserializeReserveCustomID(stream, version);
+                    break;
+
+                case receiveCustomID:
+                    r = DeserializeReceiveCustomID(stream, version);
+                    break;
+
+                case changeCustomIDFee:
+                    r = DeserializeChangeCustomIDFee(stream, version);
+                    break;
+
+                case normal:
+                case elip:
 					r = DeserializeNormalOrELIP(stream, version);
 					break;
 
@@ -1253,6 +1896,21 @@ namespace Elastos {
 					j[JsonKeyCRCouncilMemberSignature] = _crCouncilMemberSignature.getHex();
 					break;
 
+			    case reserveCustomID:
+			        j = ToJsonReserveCustomIDCRCouncilMemberUnsigned(version);
+			        j[JsonKeyCRCouncilMemberSignature] = _crCouncilMemberSignature.getHex();
+			        break;
+
+			    case receiveCustomID:
+			        j = ToJsonReceiveCustomIDCRCouncilMemberUnsigned(version);
+			        j[JsonKeyCRCouncilMemberSignature] = _crCouncilMemberSignature.getHex();
+			        break;
+
+			    case changeCustomIDFee:
+                    j = ToJsonChangeCustomIDFeeCRCouncilMemberUnsigned(version);
+                    j[JsonKeyCRCouncilMemberSignature] = _crCouncilMemberSignature.getHex();
+			        break;
+
 				default:
 					SPVLOG_ERROR("unknow type: {}", _type);
 					break;
@@ -1284,6 +1942,21 @@ namespace Elastos {
 					FromJsonTerminateProposalCRCouncilMemberUnsigned(j, version);
 					_crCouncilMemberSignature.setHex(j[JsonKeyCRCouncilMemberSignature].get<std::string>());
 					break;
+
+			    case reserveCustomID:
+			        FromJsonReserveCustomIDCRCouncilMemberUnsigned(j, version);
+                    _crCouncilMemberSignature.setHex(j[JsonKeyCRCouncilMemberSignature].get<std::string>());
+			        break;
+
+			    case receiveCustomID:
+			        FromJsonReceiveCustomIDCRCouncilMemberUnsigned(j, version);
+                    _crCouncilMemberSignature.setHex(j[JsonKeyCRCouncilMemberSignature].get<std::string>());
+			        break;
+
+			    case changeCustomIDFee:
+			        FromJsonChangeCustomIDFeeCRCouncilMemberUnsigned(j, version);
+                    _crCouncilMemberSignature.setHex(j[JsonKeyCRCouncilMemberSignature].get<std::string>());
+			        break;
 
 				default:
 					SPVLOG_ERROR("unknow type: {}", _type);
@@ -1366,6 +2039,18 @@ namespace Elastos {
 					isValid = IsValidTerminateProposalCRCouncilMemberUnsigned(version);
 					break;
 
+			    case reserveCustomID:
+			        isValid = IsValidReserveCustomIDCRCouncilMemberUnsigned(version);
+			        break;
+
+			    case receiveCustomID:
+			        isValid = IsValidReceiveCustomIDCRCouncilMemberUnsigned(version);
+			        break;
+
+			    case changeCustomIDFee:
+			        isValid = IsValidChangeCustomIDFeeCRCouncilMemberUnsigned(version);
+			        break;
+
 				default:
 					break;
 			}
@@ -1387,6 +2072,10 @@ namespace Elastos {
 			_budgets = payload._budgets;
 			_recipient = payload._recipient;
 			_targetProposalHash = payload._targetProposalHash;
+            _reservedCustomIDList = payload._reservedCustomIDList;
+            _receivedCustomIDList = payload._receivedCustomIDList;
+            _receiverDID = payload._receiverDID;
+            _rateOfCustomIDFee = payload._rateOfCustomIDFee;
 			_newRecipient = payload._newRecipient;
 			_newOwnerPublicKey = payload._newOwnerPublicKey;
 			_secretaryPublicKey = payload._secretaryPublicKey;
@@ -1400,7 +2089,7 @@ namespace Elastos {
 			return *this;
 		}
 
-		bool CRCProposal::operator==(const IPayload &payload) const {
+		bool CRCProposal::Equal(const IPayload &payload, uint8_t version) const {
 			bool equal = false;
 			try {
 				const CRCProposal &realPayload = dynamic_cast<const CRCProposal &>(payload);
@@ -1412,12 +2101,13 @@ namespace Elastos {
 								_categoryData == realPayload._categoryData &&
 								_ownerPublicKey == realPayload._ownerPublicKey &&
 								_draftHash == realPayload._draftHash &&
-								_draftData == realPayload._draftData &&
 								_budgets == realPayload._budgets &&
 								_recipient == realPayload._recipient &&
 								_signature == realPayload._signature &&
 								_crCouncilMemberDID == realPayload._crCouncilMemberDID &&
 								_crCouncilMemberSignature == realPayload._crCouncilMemberSignature;
+						if (version >= CRCProposalVersion01)
+							equal = equal && _draftData == realPayload._draftData;
 						break;
 
 					case secretaryGeneralElection:
@@ -1425,13 +2115,14 @@ namespace Elastos {
 								_categoryData == realPayload._categoryData &&
 								_ownerPublicKey == realPayload._ownerPublicKey &&
 								_draftHash == realPayload._draftHash &&
-								_draftData == realPayload._draftData &&
 								_secretaryPublicKey == realPayload._secretaryPublicKey &&
 								_secretaryDID == realPayload._secretaryDID &&
 								_signature == realPayload._signature &&
 								_secretarySignature == realPayload._secretarySignature &&
 								_crCouncilMemberDID == realPayload._crCouncilMemberDID &&
 								_crCouncilMemberSignature == realPayload._crCouncilMemberSignature;
+						if (version >= CRCProposalVersion01)
+							equal = equal && _draftData == realPayload._draftData;
 						break;
 
 					case changeProposalOwner:
@@ -1439,7 +2130,6 @@ namespace Elastos {
 								_categoryData == realPayload._categoryData &&
 								_ownerPublicKey == realPayload._ownerPublicKey &&
 								_draftHash == realPayload._draftHash &&
-								_draftData == realPayload._draftData &&
 								_targetProposalHash == realPayload._targetProposalHash &&
 								_newRecipient == realPayload._newRecipient &&
 								_newOwnerPublicKey == realPayload._newOwnerPublicKey &&
@@ -1447,6 +2137,8 @@ namespace Elastos {
 								_newOwnerSignature == realPayload._newOwnerSignature &&
 								_crCouncilMemberDID == realPayload._crCouncilMemberDID &&
 								_crCouncilMemberSignature == realPayload._crCouncilMemberSignature;
+						if (version >= CRCProposalVersion01)
+							equal = equal && _draftData == realPayload._draftData;
 						break;
 
 					case terminateProposal:
@@ -1454,12 +2146,56 @@ namespace Elastos {
 								_categoryData == realPayload._categoryData &&
 								_ownerPublicKey == realPayload._ownerPublicKey &&
 								_draftHash == realPayload._draftHash &&
-								_draftData == realPayload._draftData &&
 								_targetProposalHash == realPayload._targetProposalHash &&
 								_signature == realPayload._signature &&
 								_crCouncilMemberDID == realPayload._crCouncilMemberDID &&
 								_crCouncilMemberSignature == realPayload._crCouncilMemberSignature;
+						if (version >= CRCProposalVersion01)
+							equal = equal && _draftData == realPayload._draftData;
 						break;
+
+				    case reserveCustomID:
+				        equal = _type == realPayload._type &&
+				                _categoryData == realPayload._categoryData &&
+                                _ownerPublicKey == realPayload._ownerPublicKey &&
+                                _draftHash == realPayload._draftHash &&
+                                _reservedCustomIDList == realPayload._reservedCustomIDList &&
+                                _signature == realPayload._signature &&
+                                _crCouncilMemberDID == realPayload._crCouncilMemberDID &&
+                                _crCouncilMemberSignature == realPayload._crCouncilMemberSignature;
+
+                        if (version >= CRCProposalVersion01)
+                            equal = equal && _draftData == realPayload._draftData;
+				        break;
+
+				    case receiveCustomID:
+                        equal = _type == realPayload._type &&
+                                _categoryData == realPayload._categoryData &&
+                                _ownerPublicKey == realPayload._ownerPublicKey &&
+                                _draftHash == realPayload._draftHash &&
+                                _receivedCustomIDList == realPayload._receivedCustomIDList &&
+                                _receiverDID == realPayload._receiverDID &&
+                                _signature == realPayload._signature &&
+                                _crCouncilMemberDID == realPayload._crCouncilMemberDID &&
+                                _crCouncilMemberSignature == realPayload._crCouncilMemberSignature;
+
+                        if (version >= CRCProposalVersion01)
+                            equal = equal && _draftData == realPayload._draftData;
+				        break;
+
+				    case changeCustomIDFee:
+                        equal = _type == realPayload._type &&
+                                _categoryData == realPayload._categoryData &&
+                                _ownerPublicKey == realPayload._ownerPublicKey &&
+                                _draftHash == realPayload._draftHash &&
+                                _rateOfCustomIDFee == realPayload._rateOfCustomIDFee &&
+                                _signature == realPayload._signature &&
+                                _crCouncilMemberDID == realPayload._crCouncilMemberDID &&
+                                _crCouncilMemberSignature == realPayload._crCouncilMemberSignature;
+
+                        if (version >= CRCProposalVersion01)
+                            equal = equal && _draftData == realPayload._draftData;
+				        break;
 
 					default:
 						equal = false;

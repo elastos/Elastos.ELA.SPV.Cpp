@@ -21,6 +21,8 @@
 namespace Elastos {
 	namespace ElaWallet {
 
+#define MAX_INPUT_SIZE 3000
+
 		GroupedAsset::GroupedAsset() :
 			_parent(nullptr),
 			_asset(new Asset()) {
@@ -357,12 +359,10 @@ namespace Elastos {
 					if (firstInput == nullptr)
 						firstInput = *u;
 
-					if (txSize >= TX_MAX_SIZE) { // transaction size-in-bytes too large
+					if (tx->GetInputs().size() >= MAX_INPUT_SIZE) { // transaction size-in-bytes too large
 						_parent->GetLock().unlock();
-						BigInt maxAmount = totalInputAmount - feeAmount;
-						ErrorChecker::ThrowParamException(Error::CreateTransactionExceedSize,
-													 "Tx size too large, max available amount: " + maxAmount.getDec() +
-													 " sela");
+						ErrorChecker::ThrowParamException(Error::TooMuchInputs,
+													 "Tx too many inputs: " + std::to_string(tx->GetInputs().size()));
 					}
 				}
 				_parent->GetLock().unlock();
@@ -422,9 +422,9 @@ namespace Elastos {
 														  TransactionOutput::Type::VoteOutput, outputPayload)));
 			if (totalInputAmount > totalOutputAmount + feeAmount) {
 				// change
-				AddressPtr changeAddress = _parent->_subAccount->UnusedAddresses(1, 1)[0];
+				Address changeAddress = *firstInput->Output()->Addr();
 				BigInt changeAmount = totalInputAmount - totalOutputAmount - feeAmount;
-				OutputPtr changeOutput(new TransactionOutput(changeAmount, *changeAddress));
+				OutputPtr changeOutput(new TransactionOutput(changeAmount, changeAddress));
 				tx->AddOutput(changeOutput);
 			}
 
@@ -454,7 +454,7 @@ namespace Elastos {
 				utxo2Pick.insert(utxo2Pick.end(), _utxosCoinbase.begin(), _utxosCoinbase.end());
 
 				for (UTXOArray::iterator u = utxo2Pick.begin(); u != utxo2Pick.end(); ++u) {
-					if (txSize >= TX_MAX_SIZE || tx->GetInputs().size() >= 3000)
+					if (tx->GetInputs().size() >= MAX_INPUT_SIZE)
 						break;
 
 					if (_parent->IsUTXOSpending(*u)) {
@@ -476,9 +476,10 @@ namespace Elastos {
 
 					totalInputAmount += (*u)->Output()->Amount();
 
-					txSize = tx->EstimateSize();
-					if (_asset->GetName() == "ELA")
+					if (_asset->GetName() == "ELA") {
+						txSize = tx->EstimateSize();
 						feeAmount = CalculateFee(_parent->_feePerKb, txSize);
+					}
 				}
 				_parent->GetLock().unlock();
 			} // boost::mutex::scoped_lock
@@ -581,7 +582,7 @@ namespace Elastos {
 				utxo2Pick.insert(utxo2Pick.end(), _utxosCoinbase.begin(), _utxosCoinbase.end());
 
 				for (UTXOArray::iterator u = utxo2Pick.begin(); u != utxo2Pick.end(); ++u) {
-					if (!max && totalInputAmount >= totalOutputAmount + feeAmount && txSize >= 2000)
+					if (!max && totalInputAmount >= totalOutputAmount + feeAmount && txn->GetInputs().size() >= 1000)
 						break;
 
 					if (_parent->IsUTXOSpending(*u)) {
@@ -601,17 +602,14 @@ namespace Elastos {
 					}
 					txn->AddUniqueProgram(ProgramPtr(new Program(path, code, bytes_t())));
 
-					txSize = txn->EstimateSize();
-					if (txSize >= TX_MAX_SIZE) { // transaction size-in-bytes too large
+					if (txn->GetInputs().size() >= MAX_INPUT_SIZE) { // transaction too many inputs
 						_parent->GetLock().unlock();
 						if (!pickVoteFirst && !_utxosVote.empty()) {
 							return CreateTxForOutputs(type, payload, outputs, fromAddress, memo, max, !pickVoteFirst);
 						}
 
-						BigInt maxAmount = totalInputAmount - feeAmount;
 						ErrorChecker::ThrowParamException(Error::CreateTransactionExceedSize,
-													 "Tx size too large, max available amount: " + maxAmount.getDec() +
-													 " sela");
+													 "Tx too many inputs: " + std::to_string(txn->GetInputs().size()));
 						return nullptr;
 					}
 
@@ -642,7 +640,6 @@ namespace Elastos {
 						txn->AddUniqueProgram(ProgramPtr(new Program(path, code, bytes_t())));
 						totalInputAmount += (*u)->Output()->Amount();
 
-						txSize = txn->EstimateSize();
 						if (_asset->GetName() == "ELA") {
                             if (fee <= 0) {
                                 feeAmount.setUint64(CalculateFee(_parent->_feePerKb, txn->EstimateSize()));
@@ -737,11 +734,10 @@ namespace Elastos {
 					tx->AddUniqueProgram(ProgramPtr(new Program(path, code, bytes_t())));
 
 					txSize = tx->EstimateSize();
-					if (txSize > TX_MAX_SIZE) { // transaction size-in-bytes too large
+					if (tx->GetInputs().size() > MAX_INPUT_SIZE) { // transaction too many inputs
 						_parent->GetLock().unlock();
 						ErrorChecker::ThrowParamException(Error::CreateTransactionExceedSize,
-													 "Tx size too large, max available amount for fee: " +
-													 totalInputAmount.getDec() + " sela");
+													 "Tx too many inputs: " + std::to_string(tx->GetInputs().size()));
 					}
 
 					totalInputAmount += (*u)->Output()->Amount();

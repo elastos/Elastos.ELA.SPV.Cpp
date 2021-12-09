@@ -20,21 +20,35 @@
  * SOFTWARE.
  */
 
-#ifndef __ELASTOS_SPVSDK_TXHASHPROPOSAL_H__
-#define __ELASTOS_SPVSDK_TXHASHPROPOSAL_H__
+#ifndef __ELASTOS_SPVSDK_Settings_H__
+#define __ELASTOS_SPVSDK_Settings_H__
 
-#include "SimpleTable.h"
+#include "Sqlite.h"
+#include "TableBase.h"
 
 namespace Elastos {
 	namespace ElaWallet {
 
-		class TxHashProposal : public SimpleTable {
+		class Settings : public TableBase {
 		public:
-			TxHashProposal(Sqlite *sqlite, SqliteTransactionType type = IMMEDIATE);
+			Settings(Sqlite *sqlite, SqliteTransactionType type = IMMEDIATE);
 
-			~TxHashProposal();
+			~Settings();
 
-			virtual void InitializeTable();
+			bool PutSettingInner(const std::string &name, int value);
+
+			bool PutSetting(const std::string &name, int value);
+
+			int GetSetting(const std::string &name) const;
+
+		private:
+			const std::string _tableName = "Settings";
+			const std::string _name = "name";
+			const std::string _value = "value";
+			const std::string _tableCreation = "CREATE TABLE IF NOT EXISTS " +
+											   _tableName + "(" +
+											   _name + " TEXT PRIMARY KEY NOT NULL," +
+											   _value + " INTEGER DEFAULT 0);";
 		};
 
 	}

@@ -253,11 +253,14 @@ namespace Elastos {
 			}
 
 			std::string algorithm, data, chainID;
+			uint64_t fee = 0;
 
 			try {
 				algorithm = encodedTx["Algorithm"].get<std::string>();
 				data = encodedTx["Data"].get<std::string>();
 				chainID = encodedTx["ChainID"].get<std::string>();
+                if (encodedTx.contains("Fee"))
+                    fee = encodedTx["Fee"].get<uint64_t>();
 			} catch (const std::exception &e) {
 				ErrorChecker::ThrowParamException(Error::InvalidArgument, "Invalid input: " + std::string(e.what()));
 			}
@@ -284,6 +287,7 @@ namespace Elastos {
 			ByteStream stream(rawHex);
 			ErrorChecker::CheckParam(!tx->Deserialize(stream, true), Error::InvalidArgument,
 									 "Invalid input: deserialize fail");
+			tx->SetFee(fee);
 
 			SPVLOG_DEBUG("decoded tx: {}", tx->ToJson().dump(4));
 			return tx;
@@ -416,9 +420,8 @@ namespace Elastos {
 			return result;
 		}
 
-		nlohmann::json SubWallet::GetAllTransactionCommon(uint32_t start, uint32_t count, const std::string &txid,
-														  TxnType type) const {
-
+		nlohmann::json SubWallet::GetAllTransactionCommon(bool detail, const boost::function<size_t()> &getTxCnt,
+														  const boost::function<std::vector<TransactionPtr>()> &getTx) const {
 			nlohmann::json j;
 			uint32_t confirms = 0;
 			std::vector<nlohmann::json> jsonList;
@@ -430,60 +433,40 @@ namespace Elastos {
 			genesisAddresses[CHAINID_ESC] = _parent->GetChainConfig(CHAINID_ESC)->GenesisAddress();
 			genesisAddresses[CHAINID_TOKENCHAIN] = _parent->GetChainConfig(CHAINID_TOKENCHAIN)->GenesisAddress();
 
-			std::vector<TransactionPtr> txnPending = wallet->LoadTxn(TXN_PENDING);
-			for (std::vector<TransactionPtr>::iterator it = txnPending.begin(); it != txnPending.end();) {
-				if (((type & TXN_NORMAL) == TXN_NORMAL && (*it)->IsCoinBase()) ||
-					((type & TXN_COINBASE) == TXN_COINBASE && !(*it)->IsCoinBase())) {
-					it = txnPending.erase(it);
-				} else {
-					if (txid == (*it)->GetHash().GetHex())
-						txFound = *it;
-					++it;
-				}
-			}
-			size_t txnNormalCount = _walletManager->GetAllTransactionCount(type);
+			size_t txnMaxCount = getTxCnt();
 
-			j["MaxCount"] = txnNormalCount + txnPending.size();
+			j["MaxCount"] = txnMaxCount;
+			std::vector<TransactionPtr> txns = getTx();
 
-			if (!txid.empty()) {
-				j["Transactions"] = {};
-				if (txFound == nullptr) {
-					uint256 txHash(txid);
-					txFound = wallet->LoadTxn(txHash);
-				}
-				if (txFound) {
-					confirms = txFound->GetConfirms(wallet->LastBlockHeight());
-					jsonList.push_back(txFound->GetSummary(wallet, genesisAddresses, confirms, true));
-					j["Transactions"] = jsonList;
-				}
-			} else {
-				size_t realCnt, cur;
-				for (realCnt = 0, cur = start; cur < txnPending.size() && realCnt < count; ++realCnt, ++cur) {
-					confirms = txnPending[realCnt]->GetConfirms(wallet->LastBlockHeight());
-					jsonList.push_back(txnPending[realCnt]->GetSummary(wallet, genesisAddresses, confirms, false));
-				}
-				if (realCnt < count) {
-					size_t offset = cur - txnPending.size();
-					std::vector<TransactionPtr> txns = _walletManager->LoadTxnDesc(_info->GetChainID(), type,
-																				   offset, count - realCnt);
-					for (size_t i = 0; i < txns.size(); ++i) {
-						confirms = txns[i]->GetConfirms(wallet->LastBlockHeight());
-						jsonList.push_back(txns[i]->GetSummary(wallet, genesisAddresses, confirms, false));
-					}
-				}
-				j["Transactions"] = jsonList;
+			for (size_t i = 0; i < txns.size(); ++i) {
+				confirms = txns[i]->GetConfirms(wallet->LastBlockHeight());
+				jsonList.push_back(txns[i]->GetSummary(wallet, genesisAddresses, confirms, detail));
 			}
+			j["Transactions"] = jsonList;
 
 			return j;
 		}
 
 		nlohmann::json SubWallet::GetAllTransaction(uint32_t start, uint32_t count, const std::string &txid) const {
-			ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
+			const WalletPtr &wallet = _walletManager->GetWallet();
+			ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
 			ArgInfo("start: {}", start);
 			ArgInfo("count: {}", count);
 			ArgInfo("txid: {}", txid);
 
-			nlohmann::json j = GetAllTransactionCommon(start, count, txid, TXN_NORMAL);
+			nlohmann::json j = GetAllTransactionCommon(!txid.empty(),
+				[this, &wallet]() {
+					return wallet->GetCoinbaseTransactionCount(true);
+				}, [this, &wallet, &start, &count, &txid]() {
+					std::vector<TransactionPtr> txs;
+					if (!txid.empty()) {
+						TransactionPtr tx = wallet->TransactionForHash(uint256(txid));
+						txs.push_back(tx);
+					} else {
+						txs = wallet->GetCoinbaseTransactions(start, count, true);
+					}
+					return txs;
+				});
 
 			ArgInfo("r => {}", j.dump());
 			return j;
@@ -491,12 +474,25 @@ namespace Elastos {
 
 		nlohmann::json SubWallet::GetAllCoinBaseTransaction(uint32_t start, uint32_t count,
 															const std::string &txID) const {
-			ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
+			const WalletPtr &wallet = _walletManager->GetWallet();
+			ArgInfo("{} {}", wallet->GetWalletID(), GetFunName());
 			ArgInfo("start: {}", start);
 			ArgInfo("count: {}", count);
 			ArgInfo("txID: {}", txID);
 
-			nlohmann::json j = GetAllTransactionCommon(start, count, txID, TXN_COINBASE);
+			nlohmann::json j = GetAllTransactionCommon(!txID.empty(),
+				[this, &wallet]() {
+					return wallet->GetCoinbaseTransactionCount();
+				}, [this, &wallet, &start, &count, &txID]() {
+					std::vector<TransactionPtr> txs;
+					if (!txID.empty()) {
+						TransactionPtr tx = wallet->TransactionForHash(uint256(txID));
+						txs.push_back(tx);
+					} else {
+						txs = wallet->GetCoinbaseTransactions(start, count);
+					}
+					return txs;
+				});
 
 			ArgInfo("r => {}", j.dump());
 			return j;
@@ -525,23 +521,23 @@ namespace Elastos {
 			fireTransactionStatusChanged(txHash, "Added", nlohmann::json(), 0);
 		}
 
-		void SubWallet::onTxUpdated(const std::vector<TransactionPtr> &txns) {
+		void SubWallet::onTxUpdated(const std::vector<uint256> &hashes, uint32_t blockHeight, time_t timestamp) {
 			ArgInfo("{} {} size: {}, height: {}, timestamp: {}", _walletManager->GetWallet()->GetWalletID(),
-					GetFunName(), txns.size(), txns.front()->GetBlockHeight(), txns.front()->GetTimestamp());
+					GetFunName(), hashes.size(), blockHeight, timestamp);
 
 			uint32_t walletBlockHeight = _walletManager->GetWallet()->LastBlockHeight();
-			for (const TransactionPtr tx : txns) {
-				uint32_t confirm = tx->GetConfirms(walletBlockHeight);
+			for (const uint256 &hash : hashes) {
+				uint32_t confirm = walletBlockHeight >= blockHeight ? walletBlockHeight - blockHeight + 1 : 0;
 
-				fireTransactionStatusChanged(tx->GetHash(), "Updated", nlohmann::json(), confirm);
+				fireTransactionStatusChanged(hash, "Updated", nlohmann::json(), confirm);
 			}
 		}
 
-		void SubWallet::onTxDeleted(const TransactionPtr &tx, bool notifyUser, bool recommendRescan) {
+		void SubWallet::onTxDeleted(const uint256 &hash, bool notifyUser, bool recommendRescan) {
 			ArgInfo("{} {} hash: {}, notify: {}, rescan: {}", _walletManager->GetWallet()->GetWalletID(), GetFunName(),
-					tx->GetHash().GetHex(), notifyUser, recommendRescan);
+					hash.GetHex(), notifyUser, recommendRescan);
 
-			fireTransactionStatusChanged(tx->GetHash(), "Deleted", nlohmann::json(), 0);
+			fireTransactionStatusChanged(hash, "Deleted", nlohmann::json(), 0);
 		}
 
 		void SubWallet::onAssetRegistered(const AssetPtr &asset, uint64_t amount, const uint168 &controller) {
@@ -645,7 +641,7 @@ namespace Elastos {
 		}
 
 		time_t SubWallet::GetFirstTxnTimestamp() const {
-			return _walletManager->GetFirstTxnTimestamp();
+			return _walletManager->GetWallet()->GetEarliestTxTimestamp();
 		}
 
 		bool SubWallet::SetFixedPeer(const std::string &address, uint16_t port) {
@@ -671,6 +667,11 @@ namespace Elastos {
 			_walletManager->GetWallet()->ClearData();
 			_walletManager->GetPeerManager()->ClearData();
 			_walletManager->SyncStart();
+		}
+
+		void SubWallet::SetSyncMode(int mode) {
+			ArgInfo("{} {}", _walletManager->GetWallet()->GetWalletID(), GetFunName());
+			_walletManager->SetSyncMode(mode);
 		}
 
 		nlohmann::json SubWallet::GetBasicInfo() const {

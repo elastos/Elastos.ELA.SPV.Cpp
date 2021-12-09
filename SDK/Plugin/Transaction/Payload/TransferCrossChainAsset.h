@@ -15,6 +15,9 @@ namespace Elastos {
 
 		class TransferCrossChainAsset;
 
+#define TransferCrossChainVersion 0x00
+#define TransferCrossChainVersionV1 0x01
+
 		class TransferInfo {
 		public:
 			TransferInfo();
@@ -30,6 +33,8 @@ namespace Elastos {
 			virtual nlohmann::json ToJson(uint8_t version) const;
 
 			virtual void FromJson(const nlohmann::json &j, uint8_t version);
+
+			virtual bool operator==(const TransferInfo &payload) const;
 
 		private:
 			friend TransferCrossChainAsset;
@@ -68,6 +73,7 @@ namespace Elastos {
 
 			TransferCrossChainAsset &operator=(const TransferCrossChainAsset &payload);
 
+			virtual bool Equal(const IPayload &payload, uint8_t version) const;
 		private:
 			std::vector<TransferInfo> _info;
 		};

@@ -47,7 +47,7 @@ namespace Elastos {
 		typedef boost::shared_ptr<CoinInfo> CoinInfoPtr;
 		typedef boost::shared_ptr<EthereumClient> ClientPtr;
 
-		class EthSidechainSubWallet : public IEthSidechainSubWallet,
+		class EthSidechainSubWallet : public virtual IEthSidechainSubWallet,
 									  public EthereumEWM::Client,
 									  public Lockable {
 		public: // implement IEthSidechainSubWallet
@@ -202,6 +202,8 @@ namespace Elastos {
 			virtual void SyncStop();
 
 			virtual void Resync();
+
+			virtual void SetSyncMode(int mode);
 
 			virtual void StartP2P();
 

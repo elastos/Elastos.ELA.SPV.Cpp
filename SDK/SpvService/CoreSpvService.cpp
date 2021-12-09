@@ -33,18 +33,15 @@ namespace Elastos {
 				ErrorChecker::ThrowParamException(Error::InvalidChainID, "invalid chain ID");
 			}
 
-			std::vector<PeerInfo> peers;
-			if (chainID != CHAINID_IDCHAIN && netType != "MainNet")
-				peers = loadPeers();
-
 			if (_peerManager == nullptr) {
 				_peerManager = PeerManagerPtr(new PeerManager(
 						config->ChainParameters(),
 						nullptr,
 						earliestPeerTime,
 						config->DisconnectionTime(),
+						loadSyncMode(),
 						loadBlocks(chainID),
-						peers,
+						loadPeers(),
 						loadBlackPeers(),
 						createPeerManagerListener(),
 						chainID,
@@ -77,10 +74,10 @@ namespace Elastos {
 		void CoreSpvService::onTxAdded(const TransactionPtr &transaction) {
 		}
 
-		void CoreSpvService::onTxUpdated(const std::vector<TransactionPtr> &txns) {
+		void CoreSpvService::onTxUpdated(const std::vector<uint256> &hashes, uint32_t blockHeight, time_t timestamp) {
 		}
 
-		void CoreSpvService::onTxDeleted(const TransactionPtr &tx, bool notifyUser, bool recommendRescan) {
+		void CoreSpvService::onTxDeleted(const uint256 &hash, bool notifyUser, bool recommendRescan) {
 		}
 
 		void CoreSpvService::onAssetRegistered(const AssetPtr &asset, uint64_t amount, const uint168 &controller) {
@@ -118,23 +115,12 @@ namespace Elastos {
 		void CoreSpvService::connectStatusChanged(const std::string &status) {
 		}
 
-		void CoreSpvService::DeleteTxn(const uint256 &hash) {
-		}
-
-		std::vector<TransactionPtr> CoreSpvService::loadCoinbaseTxns(const std::string &chainID) {
-			return {};
-		}
-
-		std::vector<TransactionPtr> CoreSpvService::loadConfirmedTxns(const std::string &chainID) {
-			return {};
-		}
-
-		std::vector<TransactionPtr> CoreSpvService::loadPendingTxns(const std::string &chainID) {
-			return {};
-		}
-
 		std::vector<MerkleBlockPtr> CoreSpvService::loadBlocks(const std::string &chainID) {
 			return {};
+		}
+
+		int CoreSpvService::loadSyncMode() {
+			return -1;
 		}
 
 		std::vector<PeerInfo> CoreSpvService::loadPeers() {
@@ -380,19 +366,18 @@ namespace Elastos {
 			}
 		}
 
-		void WrappedExceptionWalletListener::onTxUpdated(const std::vector<TransactionPtr> &txns) {
-
+		void WrappedExceptionWalletListener::onTxUpdated(const std::vector<uint256> &hashes, uint32_t blockHeight, time_t timestamp) {
 			try {
-				_listener->onTxUpdated(txns);
+				_listener->onTxUpdated(hashes, blockHeight, timestamp);
 			} catch (const std::exception &e) {
 				Log::error("{} e: {}", GetFunName(), e.what());
 			}
 		}
 
 		void
-		WrappedExceptionWalletListener::onTxDeleted(const TransactionPtr &tx, bool notifyUser, bool recommendRescan) {
+		WrappedExceptionWalletListener::onTxDeleted(const uint256 &hash, bool notifyUser, bool recommendRescan) {
 			try {
-				_listener->onTxDeleted(tx, notifyUser, recommendRescan);
+				_listener->onTxDeleted(hash, notifyUser, recommendRescan);
 			} catch (const std::exception &e) {
 				Log::error("{} e: {}", GetFunName(), e.what());
 			}
@@ -435,10 +420,10 @@ namespace Elastos {
 			}));
 		}
 
-		void WrappedExecutorWalletListener::onTxUpdated(const std::vector<TransactionPtr> &txns) {
-			_executor->Execute(Runnable([this, txns]() -> void {
+		void WrappedExecutorWalletListener::onTxUpdated(const std::vector<uint256> &hashes, uint32_t blockHeight, time_t timestamp) {
+			_executor->Execute(Runnable([this, hashes, blockHeight, timestamp]() -> void {
 				try {
-					_listener->onTxUpdated(txns);
+					_listener->onTxUpdated(hashes, blockHeight, timestamp);
 				} catch (const std::exception &e) {
 					Log::error("{} e: {}", GetFunName(), e.what());
 				}
@@ -446,10 +431,10 @@ namespace Elastos {
 		}
 
 		void
-		WrappedExecutorWalletListener::onTxDeleted(const TransactionPtr &tx, bool notifyUser, bool recommendRescan) {
-			_executor->Execute(Runnable([this, tx, notifyUser, recommendRescan]() -> void {
+		WrappedExecutorWalletListener::onTxDeleted(const uint256 &hash, bool notifyUser, bool recommendRescan) {
+			_executor->Execute(Runnable([this, hash, notifyUser, recommendRescan]() -> void {
 				try {
-					_listener->onTxDeleted(tx, notifyUser, recommendRescan);
+					_listener->onTxDeleted(hash, notifyUser, recommendRescan);
 				} catch (const std::exception &e) {
 					Log::error("{} e: {}", GetFunName(), e.what());
 				}

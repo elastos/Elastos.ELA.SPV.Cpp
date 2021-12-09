@@ -116,8 +116,33 @@ namespace Elastos {
 			_info.Timestamp = timestamp;
 		}
 
-		time_t Peer::GetDownloadStartTime() const {
-			return _downloadStartTime;
+		int Peer::GetDownloadSpeed() const {
+			return _info.GetSpeed();
+		}
+
+		int Peer::CalculateDownloadSpeed() {
+			struct timeval tv;
+			gettimeofday(&tv, NULL);
+
+			uint64_t now = tv.tv_sec * 1000 + tv.tv_usec / 1000;
+			uint64_t tripTime = now - _downloadStartTime;
+			int speed = 0;
+
+			if (tripTime != 0) {
+				int averageSpeed = 0, speedSum = 0;
+				speed = _downloadBytes * 1000 / tripTime;
+				_recentSpeed.push_back(speed);
+				if (_recentSpeed.size() > 10)
+					_recentSpeed.erase(_recentSpeed.begin());
+
+				for (int &s : _recentSpeed)
+					speedSum += s;
+
+				averageSpeed = speedSum / _recentSpeed.size();
+				_info.SetSpeed(averageSpeed);
+			}
+
+			return _info.GetSpeed();
 		}
 
 		void Peer::ScheduleDownloadStartTime() {
@@ -440,6 +465,8 @@ namespace Elastos {
 						}
 					}
 				}
+			} else {
+				error = ENOLINK;
 			}
 
 			if (_socket == -1)
@@ -449,7 +476,7 @@ namespace Elastos {
 			_socket = -1;
 			_status = Peer::Disconnected;
 			if (socket >= 0) close(socket);
-			info("disconnected");
+			info("disconnected: {} ({})", FormatError(error), error);
 
 			while (!_pongCallbackList.empty()) {
 				Peer::PeerCallback pongCallback = PopPongCallback();
@@ -702,7 +729,9 @@ namespace Elastos {
 					count = select(_socket + 1, NULL, &fds, NULL, &tv);
 
 					if (count <= 0 || getsockopt(_socket, SOL_SOCKET, SO_ERROR, &err, &optLen) < 0 || err) {
-						if (count == 0) err = ETIMEDOUT;
+						if (count == 0) {
+							err = ETIMEDOUT;
+						}
 						if (count < 0 || !err) err = errno;
 						r = 0;
 					}
@@ -714,7 +743,7 @@ namespace Elastos {
 				fcntl(_socket, F_SETFL, arg); // restore socket non-blocking status
 			}
 
-			if (!r && err) this->error("connect error: {}", FormatError(err));
+			if (!r && err) this->error("connect error: {}({})", FormatError(err), err);
 			if (error && err) *error = err;
 			return r;
 		}

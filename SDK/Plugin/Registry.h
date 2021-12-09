@@ -20,8 +20,10 @@ namespace Elastos {
 #define CHAINID_IDCHAIN    "IDChain"
 #define CHAINID_TOKENCHAIN "TokenChain"
 #define CHAINID_ESC        "ETHSC"
+#define CHAINID_ETHDID     "ETHDID"
+#define CHAINID_ETHHECO    "ETHHECO"
 
-		const std::vector<std::string> supportChainIDList = {CHAINID_MAINCHAIN, CHAINID_IDCHAIN, CHAINID_TOKENCHAIN, CHAINID_ESC};
+		const std::vector<std::string> supportChainIDList = {CHAINID_MAINCHAIN, CHAINID_IDCHAIN, CHAINID_TOKENCHAIN, CHAINID_ESC, CHAINID_ETHDID, CHAINID_ETHHECO};
 
 		class Registry : public boost::noncopyable {
 		public:
