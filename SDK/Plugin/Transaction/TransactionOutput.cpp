@@ -230,6 +230,7 @@ namespace Elastos {
 					break;
 				case CrossChain:
 					payload = OutputPayloadPtr(new PayloadCrossChain());
+					break;
 
 				default:
 					payload = nullptr;
