@@ -54,7 +54,7 @@ namespace Elastos {
 			while (stream.ReadVarBytes(signature)) {
 				bool verified = false;
 				for (size_t i = 0; i < publicKeys.size(); ++i) {
-					key.SetPubKey(publicKeys[i]);
+					key.SetPubKey(CTElastos, publicKeys[i]);
 					if (key.Verify(md, signature)) {
 						verified = true;
 						break;
@@ -105,7 +105,7 @@ namespace Elastos {
 			nlohmann::json signers;
 			while (stream.ReadVarBytes(signature)) {
 				for (size_t i = 0; i < publicKeys.size(); ++i) {
-					key.SetPubKey(publicKeys[i]);
+					key.SetPubKey(CTElastos, publicKeys[i]);
 					if (key.Verify(md, signature)) {
 						signers.push_back(publicKeys[i].getHex());
 						break;

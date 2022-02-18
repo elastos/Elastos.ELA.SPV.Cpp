@@ -176,7 +176,7 @@ namespace Elastos {
 		}
 
 		bool Address::Compare(const bytes_t &a, const bytes_t &b) const {
-			secp256k1_point pnt;
+			secp256k1_point pnt(CTElastos);
 			BIGNUM *bn;
 
 			pnt.bytes(a);
