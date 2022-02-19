@@ -204,7 +204,7 @@ TEST_CASE("Wallet GetBalance test", "[GetBalance]") {
 
 	std::string xprv = ls.GetxPrivKey();
 	bytes_t bytes = AES::DecryptCCM(xprv, payPassword);
-	Key key = HDKeychain(bytes).getChild(keyPath);
+	Key key = HDKeychain(CTElastos, bytes).getChild(keyPath);
 	Address addr(PrefixStandard, key.PubKey());
 
 	std::vector<UTXOEntity> utxoEntities;

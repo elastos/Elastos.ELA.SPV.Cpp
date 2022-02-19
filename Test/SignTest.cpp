@@ -88,7 +88,7 @@ TEST_CASE("Sign transaction test", "[SignTransaction]") {
 		uint512 seed = Mnemonic::DeriveSeed(mnemonic, "");
 
 		HDSeed hdseed(seed.bytes());
-		HDKeychain rootprv(hdseed.getExtendedKey(true));
+		HDKeychain rootprv(CTElastos, hdseed.getExtendedKey(CTElastos, true));
 
 		Key key1 = rootprv.getChild("1'/0");
 		Key key2 = rootprv.getChild("2'/0");
