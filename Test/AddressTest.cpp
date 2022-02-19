@@ -22,7 +22,7 @@ TEST_CASE("Address test", "[Address]") {
 
 		uint512 seed = Mnemonic::DeriveSeed(phrase, phrasePasswd);
 
-		HDKeychain child = HDKeychain(HDSeed(seed.bytes()).getExtendedKey(true)).getChild("44'/0'/0'/0/0");
+		HDKeychain child = HDKeychain(CTElastos, HDSeed(seed.bytes()).getExtendedKey(CTElastos, true)).getChild("44'/0'/0'/0/0");
 
 		REQUIRE("Ed8ZSxSB98roeyuRZwwekrnRqcgnfiUDeQ" == Address(PrefixStandard, child.pubkey()).String());
 	}

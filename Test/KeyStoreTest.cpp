@@ -38,7 +38,7 @@ TEST_CASE("KeyStore test", "[KeyStore]") {
 
 			uint512 seed = Mnemonic::DeriveSeed(mnemonic, passphrase);
 			HDSeed hdseed(seed.bytes());
-			HDKeychain rootprv(hdseed.getExtendedKey(true));
+			HDKeychain rootprv(CTElastos, hdseed.getExtendedKey(CTElastos, true));
 
 			HDKeychain requestKey = rootprv.getChild("1'/0");
 			REQUIRE(walletData.RequestPubKey() == requestKey.pubkey().getHex());
@@ -49,7 +49,7 @@ TEST_CASE("KeyStore test", "[KeyStore]") {
 
 			bytes_t xpubkey;
 			Base58::CheckDecode(walletData.xPubKey(), xpubkey);
-			HDKeychain mpk(xpubkey);
+			HDKeychain mpk(CTElastos, xpubkey);
 			Address addr1(PrefixStandard, mpk.getChild("0/0").pubkey());
 			REQUIRE(addr1.String() == addr.String());
 
@@ -75,7 +75,7 @@ TEST_CASE("KeyStore test", "[KeyStore]") {
 
 			uint512 seed = Mnemonic::DeriveSeed(mnemonic, passphrase);
 			HDSeed hdseed(seed.bytes());
-			HDKeychain rootprv(hdseed.getExtendedKey(true));
+			HDKeychain rootprv(CTElastos, hdseed.getExtendedKey(CTElastos, true));
 
 			HDKeychain requestKey = rootprv.getChild("1'/0");
 			REQUIRE(walletData.RequestPubKey() == requestKey.pubkey().getHex());
@@ -86,7 +86,7 @@ TEST_CASE("KeyStore test", "[KeyStore]") {
 
 			bytes_t xpubkey;
 			Base58::CheckDecode(walletData.xPubKey(), xpubkey);
-			HDKeychain mpk(xpubkey);
+			HDKeychain mpk(CTElastos, xpubkey);
 			Address addr1(PrefixStandard, mpk.getChild("0/0").pubkey());
 			REQUIRE(addr1.String() == addr.String());
 
@@ -141,7 +141,7 @@ TEST_CASE("KeyStore test", "[KeyStore]") {
 
 			uint512 seed = Mnemonic::DeriveSeed(mnemonic, "");
 			HDSeed hdseed(seed.bytes());
-			HDKeychain rootprv(hdseed.getExtendedKey(true));
+			HDKeychain rootprv(CTElastos, hdseed.getExtendedKey(CTElastos, true));
 
 			HDKeychain requestKey = rootprv.getChild("1'/0");
 			REQUIRE(walletData.RequestPubKey() == requestKey.pubkey().getHex());
