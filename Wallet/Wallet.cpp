@@ -1924,7 +1924,7 @@ static int transfer(int argc, char *argv[]) {
 
 			std::cout << "amount: " << std::endl;
 			std::getline(std::cin, amount);
-			amount = convertAmount(argv[3]);
+			amount = convertAmount(amount);
 
 			ISubWallet *subWallet;
 			getSubWallet(subWallet, currentWallet, chainID);
