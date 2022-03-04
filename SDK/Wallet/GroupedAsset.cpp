@@ -605,7 +605,7 @@ namespace Elastos {
 					if (txn->GetInputs().size() >= MAX_INPUT_SIZE) { // transaction too many inputs
 						_parent->GetLock().unlock();
 						if (!pickVoteFirst && !_utxosVote.empty()) {
-							return CreateTxForOutputs(type, payload, outputs, fromAddress, memo, max, !pickVoteFirst);
+							return CreateTxForOutputs(type, payload, outputs, fromAddress, memo, max, fee, !pickVoteFirst);
 						}
 
 						ErrorChecker::ThrowParamException(Error::CreateTransactionExceedSize,
