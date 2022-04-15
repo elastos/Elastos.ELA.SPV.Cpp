@@ -66,6 +66,19 @@ elseif(IOS)
 		toolset=clang-${IOS_PLATFORM}
 		${BUILD_UNIX_COMMON_ARGS}
 		install)
+elseif(WIN32)
+	if(${CMAKE_SIZEOF_VOID_P} STREQUAL "8")
+		set(AddressModel 64)
+	else()
+		set(AddressModel 32)
+	endif()
+
+	set(CONFIGURE_CMD bootstrap.bat)
+	set(BUILD_CMD b2.exe
+			address-model=${AddressModel}
+			--build-type=minimal
+			${BUILD_COMMON_ARGS}
+			install)
 else()
 	set(CONFIGURE_CMD ./bootstrap.sh)
 	set(BUILD_CMD

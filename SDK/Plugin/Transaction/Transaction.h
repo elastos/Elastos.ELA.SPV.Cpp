@@ -1,7 +1,24 @@
-// Copyright (c) 2012-2018 The Elastos Open Source Project
-// Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+/*
+ * Copyright (c) 2022 Elastos Foundation LTD.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 #ifndef __ELASTOS_SDK_TRANSACTION_H__
 #define __ELASTOS_SDK_TRANSACTION_H__
 
@@ -71,6 +88,20 @@ namespace Elastos {
 				crcAssetsRectify         = 0x2b,
 				crCouncilMemberClaimNode = 0x31,
 
+                RevertToPOW              = 0x41,
+                RevertToDPOS             = 0x42,
+
+                ReturnSideChainDepositCoin = 0x51,
+
+                // DPoS2.0
+                DposV2ClaimReward             = 0x60,
+                DposV2ClaimRewardRealWithdraw = 0x61,
+                Stake                         = 0x62,
+                Voting                        = 0x63,
+                CancelVotes                   = 0x64,
+                Unstake                       = 0x65,
+                UnstakeRealWithdraw           = 0x66,
+
 				TypeMaxCount
 			};
 
@@ -92,17 +123,13 @@ namespace Elastos {
 
 			virtual ~Transaction();
 
-			void Serialize(ByteStream &stream, bool extend = false) const;
+			void Serialize(ByteStream &stream) const;
 
-			bool Deserialize(const ByteStream &stream, bool extend = false);
-
-			bool DeserializeOld(const ByteStream &stream, bool extend = false);
+			bool Deserialize(const ByteStream &stream);
 
 			virtual bool DeserializeType(const ByteStream &istream);
 
 			uint64_t CalculateFee(uint64_t feePerKb);
-
-			uint64_t GetTxFee(const boost::shared_ptr<Wallet> &wallet);
 
 			bool IsRegistered() const;
 
@@ -119,10 +146,6 @@ namespace Elastos {
 			void SetVersion(uint8_t version);
 
 			const std::vector<OutputPtr> &GetOutputs() const;
-
-			void FixIndex();
-
-			OutputPtr OutputOfIndex(uint16_t fixedIndex) const;
 
 			void SetOutputs(const std::vector<OutputPtr> &outputs);
 
@@ -176,8 +199,6 @@ namespace Elastos {
 
 			virtual void FromJson(const nlohmann::json &j);
 
-			static uint64_t GetMinOutputAmount();
-
 			const IPayload *GetPayload() const;
 
 			IPayload *GetPayload();
@@ -198,8 +219,6 @@ namespace Elastos {
 
 			const std::vector<ProgramPtr> &GetPrograms() const;
 
-			nlohmann::json GetSummary(const WalletPtr &wallet, const std::map<std::string, std::string> &genesisAddresses, uint32_t confirms, bool detail);
-
 			uint8_t	GetPayloadVersion() const;
 
 			void SetPayloadVersion(uint8_t version);
@@ -208,7 +227,7 @@ namespace Elastos {
 
 			void SetFee(uint64_t fee);
 
-			void SerializeUnsigned(ByteStream &ostream, bool extend = false) const;
+			void SerializeUnsigned(ByteStream &ostream) const;
 
 			uint256 GetShaData() const;
 
@@ -219,10 +238,6 @@ namespace Elastos {
 			uint32_t GetConfirms(uint32_t walletBlockHeight) const;
 
 			std::string GetConfirmStatus(uint32_t walletBlockHeight) const;
-
-			bool Decode(const TxEntity &e);
-
-			bool Encode(TxEntity &e);
 
 		public:
 			virtual PayloadPtr InitPayload(uint8_t type);

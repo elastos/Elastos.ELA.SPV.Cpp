@@ -22,6 +22,23 @@ set(CMAKE_VERBOSE_MAKEFILE OFF)
 include(ProjectDefaults)
 include(DistPackage)
 include(AddSubModule)
+include(CheckIncludeFile)
+include(CheckFunctionExists)
+
+check_include_file(unistd.h HAVE_UNISTD_H)
+if(HAVE_UNISTD_H)
+	add_definitions(-DHAVE_UNISTD_H=1)
+endif()
+
+check_function_exists(pthread_setname_np HAVE_PTHREAD_SETNAME_NP)
+if(HAVE_PTHREAD_SETNAME_NP)
+	add_definitions(-DHAVE_PTHREAD_SETNAME_NP=1)
+endif()
+
+check_function_exists(strlcpy HAVE_STRLCPY)
+if (HAVE_STRLCPY)
+	add_definitions(-DHAVE_STRLCPY=1)
+endif ()
 
 set(LOG_LEVEL
 	SPDLOG_LEVEL_TRACE
