@@ -1285,6 +1285,90 @@ static int _register(int argc, char *argv[]) {
 	return 0;
 }
 
+// update (cr | dpos)
+static int _update(int argc, char *argv[]) {
+    checkParam(2);
+    checkCurrentWallet();
+
+    std::string registerWhat = argv[1];
+
+    try {
+        IMainchainSubWallet *subWallet;
+        getSubWallet(subWallet, currentWallet, CHAINID_ELA);
+
+        nlohmann::json tx;
+        std::string password;
+
+        if (registerWhat == "cr") {
+            IIDChainSubWallet *idSubWallet;
+            getSubWallet(idSubWallet, currentWallet, CHAINID_ID);
+
+            std::string crPublicKey, nickName, url, did, cid;
+            uint64_t location;
+
+            crPublicKey = idSubWallet->GetAllPublicKeys(0, 1)["PublicKeys"][0];
+            did = idSubWallet->GetPublicKeyDID(crPublicKey);
+            cid = idSubWallet->GetPublicKeyCID(crPublicKey);
+
+            std::cout << "DID public key: " << crPublicKey << std::endl;
+            std::cout << "DID: " << did << std::endl;
+            std::cout << "CID: " << cid << std::endl;
+
+            std::cout << "Enter nick name: ";
+            std::getline(std::cin, nickName);
+
+            std::cout << "Enter url: ";
+            std::getline(std::cin, url);
+
+            std::cout << "Enter location code (example 86): ";
+            std::cin >> location;
+
+            nlohmann::json payload = subWallet->GenerateCRInfoPayload(crPublicKey, did, nickName, url, location);
+
+            std::string digest = payload["Digest"].get<std::string>();
+
+            password = getpass("Enter payment password: ");
+
+            std::string signature = idSubWallet->SignDigest(cid, digest, password);
+            payload["Signature"] = signature;
+
+            tx = subWallet->CreateUpdateCRTransaction("", payload, "");
+        } else if (registerWhat == "dpos") {
+            std::string ownerPubkey = subWallet->GetOwnerPublicKey();
+            std::string nickName, nodePubkey, url;
+            uint64_t location;
+
+            std::cout << "Owner public key: " << ownerPubkey << std::endl;
+            std::cout << "Enter node public key (empty will set to owner public key): ";
+            std::getline(std::cin, nodePubkey);
+            if (nodePubkey.empty())
+                nodePubkey = ownerPubkey;
+
+            std::cout << "Enter nick name: ";
+            std::getline(std::cin, nickName);
+
+            std::cout << "Enter url: ";
+            std::getline(std::cin, url);
+
+            std::cout << "Enter location code (example 86): ";
+            std::cin >> location;
+
+            password = getpass("Enter payment password: ");
+            nlohmann::json payload = subWallet->GenerateProducerPayload(ownerPubkey, nodePubkey, nickName, url, "", location, password);
+            tx = subWallet->CreateUpdateProducerTransaction("", payload, "");
+        } else {
+            invalidCmdError();
+            return ERRNO_APP;
+        }
+
+        signAndPublishTx(subWallet, tx, password);
+    } catch (const std::exception &e) {
+        exceptionError(e);
+        return ERRNO_APP;
+    }
+    return 0;
+}
+
 // unregister (cr | dpos)
 static int unregister(int argc, char *argv[]) {
 	checkParam(2);
@@ -2539,6 +2623,7 @@ struct command {
 	{"withdraw",   withdraw,       "amount address                                   Withdraw from sidechain to mainchain."},
 	{"export",     _export,        "(m[nemonic] | k[eystore])                        Export mnemonic or keystore."},
 	{"register",   _register,      "(cr | dpos)                                      Register CR or DPoS with specified wallet."},
+    {"update",     _update,        "(cr | dpos)                                      Update CR or DPoS with specified wallet."},
 	{"unregister", unregister,     "(cr | dpos)                                      Unregister CR or DPoS with specified wallet."},
 	{"info",       info,           "(cr | dpos | vote)                               Get CR or DPos info with specified wallet."},
 	{"basicinfo",  basic_info,     "[chainID]                                        Get basic info of master/sub Wallet"},
