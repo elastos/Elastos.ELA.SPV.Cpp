@@ -22,9 +22,9 @@ namespace Elastos {
 			"TargetTimeSpan": 86400,
 			"TargetTimePerBlock": 120,
 			"DNSSeeds": [
-				"node-regtest-102.eadd.co",
-				"node-regtest-103.eadd.co",
-				"node-regtest-104.eadd.co"
+				"15.206.236.124",
+				"3.111.241.201",
+				"65.0.164.47"
 			],
 			"CheckPoints": [
 				[0,"6418be20291bc857c9a01e5ba205445b85a0593d47cc0b576d55a55e464f31b3",1513936800,486801407],

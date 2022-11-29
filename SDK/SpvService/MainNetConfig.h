@@ -24,11 +24,10 @@ namespace Elastos {
 			"TargetTimeSpan": 86400,
 			"TargetTimePerBlock": 120,
 			"DNSSeeds": [
-				"node-mainnet-005.elastos.org",
-				"node-mainnet-010.elastos.org",
-				"node-mainnet-015.elastos.org",
-				"node-mainnet-020.elastos.org",
-				"node-mainnet-025.elastos.org"
+				"52.74.28.202",
+				"52.62.113.83",
+				"35.156.51.127",
+				"35.177.89.244"
 			],
 			"CheckPoints": [
 				[0,"05f458a5522851622cae2bb138498dec60a8f0b233802c97a1ca41f9f214708d",1513936800,486801407],
