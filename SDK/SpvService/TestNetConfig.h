@@ -23,9 +23,9 @@ namespace Elastos {
 			"TargetTimeSpan": 86400,
 			"TargetTimePerBlock": 120,
 			"DNSSeeds": [
-				"node-testnet-002.elastos.org",
-				"node-testnet-003.elastos.org",
-				"node-testnet-004.elastos.org"
+				"13.234.24.155:21338",
+				"15.206.198.252:21338",
+				"13.234.249.168:21338"
 			],
 			"CheckPoints": [
 				[0,"6418be20291bc857c9a01e5ba205445b85a0593d47cc0b576d55a55e464f31b3",1513936800,486801407],
@@ -79,11 +79,7 @@ namespace Elastos {
 			"StandardPort": 21608,
 			"TargetTimeSpan": 86400,
 			"TargetTimePerBlock": 120,
-			"DNSSeeds": [
-				"node-testnet-002.elastos.org",
-				"node-testnet-003.elastos.org",
-				"node-testnet-004.elastos.org"
-			],
+			"DNSSeeds": [],
 			"CheckPoints": [
 				[0,"56be936978c261b2e649d58dbfaf3f23d4a868274f5522cd2adb4308a955c4a3",1530360000,486801407],
 				[2016,"9b3069a05478988d4c9d2d4b941af048680dbe92353bc8f0cf282766aa935edb",1532276131,505977014],
@@ -141,15 +137,7 @@ namespace Elastos {
 			"StandardPort": 21618,
 			"TargetTimeSpan": 86400,
 			"TargetTimePerBlock": 120,
-			"DNSSeeds": [
-				"node-testnet-002.elastos.org",
-				"node-testnet-003.elastos.org",
-				"node-testnet-004.elastos.org",
-				"node-testnet-005.elastos.org",
-				"node-testnet-006.elastos.org",
-				"node-testnet-007.elastos.org",
-				"node-testnet-011.elastos.org"
-			],
+			"DNSSeeds": [],
 			"CheckPoints": [
 				[0,      "b569111dfb5e12d40be5cf09e42f7301128e9ac7ab3c6a26f24e77872b9a730e", 1551744000, 486801407]
 			]
