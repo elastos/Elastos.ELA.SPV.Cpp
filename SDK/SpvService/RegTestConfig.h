@@ -76,11 +76,7 @@ namespace Elastos {
 			"Services": 0,
 			"TargetTimeSpan": 86400,
 			"TargetTimePerBlock": 120,
-			"DNSSeeds": [
-				"node-regtest-102.eadd.co",
-				"node-regtest-103.eadd.co",
-				"node-regtest-104.eadd.co"
-			],
+			"DNSSeeds": [],
 			"CheckPoints": [
 				[0,"56be936978c261b2e649d58dbfaf3f23d4a868274f5522cd2adb4308a955c4a3",1530360000,486801407],
 				[2016,"fb29c3de03ab8dbdc9e50ee882efc9a8115697a7681593ec1c587dd8ddc0da70",1548438160,505759638],
@@ -129,14 +125,7 @@ namespace Elastos {
 			"StandardPort": 22618,
 			"TargetTimeSpan": 86400,
 			"TargetTimePerBlock": 120,
-			"DNSSeeds": [
-				"node-regtest-102.eadd.co",
-				"node-regtest-103.eadd.co",
-				"node-regtest-104.eadd.co",
-				"node-regtest-105.eadd.co",
-				"node-regtest-106.eadd.co",
-				"node-regtest-107.eadd.co"
-			],
+			"DNSSeeds": [],
 			"CheckPoints": [
 				[0,      "b569111dfb5e12d40be5cf09e42f7301128e9ac7ab3c6a26f24e77872b9a730e", 1551744000, 486801407]
 			]
