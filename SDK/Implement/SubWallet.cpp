@@ -359,6 +359,11 @@ namespace Elastos {
 			result["TxHash"] = txn->GetHash().GetHex();
 			result["Fee"] = txn->GetFee();
 
+			ByteStream stream;
+			txn->Serialize(stream, false);
+			const bytes_t &hex = stream.GetBytes();
+			SPVLOG_INFO("tx: {}", hex.getHex());
+
 			ArgInfo("r => {}", result.dump());
 			return result;
 		}
