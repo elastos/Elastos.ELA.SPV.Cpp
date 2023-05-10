@@ -69,40 +69,69 @@ namespace Elastos {
 			return size;
 		}
 
-		void WithdrawFromSideChain::Serialize(ByteStream &ostream, uint8_t version) const {
-			ostream.WriteUint32(_blockHeight);
-			ostream.WriteVarString(_genesisBlockAddress);
-			ostream.WriteVarUint((uint64_t)_sideChainTransactionHash.size());
+		void WithdrawFromSideChain::Serialize(ByteStream &stream, uint8_t version) const {
+		    switch (version) {
+		        case WithdrawFromSideChainVersion: {
+                    stream.WriteUint32(_blockHeight);
+                    stream.WriteVarString(_genesisBlockAddress);
+                    stream.WriteVarUint((uint64_t) _sideChainTransactionHash.size());
 
-			for (size_t i = 0; i < _sideChainTransactionHash.size(); ++i) {
-				ostream.WriteBytes(_sideChainTransactionHash[i]);
-			}
+                    for (size_t i = 0; i < _sideChainTransactionHash.size(); ++i) {
+                        stream.WriteBytes(_sideChainTransactionHash[i]);
+                    }
+                }
+                    break;
+
+		        case WithdrawFromSideChainVersionV1:
+		            break;
+
+		        case WithdrawFromSideChainVersionV2:
+                    stream.WriteVarBytes(_signers);
+                    break;
+		    }
 		}
 
-		bool WithdrawFromSideChain::Deserialize(const ByteStream &istream, uint8_t version) {
-			if (!istream.ReadUint32(_blockHeight)) {
-				Log::error("Payload with draw asset deserialize block height fail");
-				return false;
-			}
+		bool WithdrawFromSideChain::Deserialize(const ByteStream &stream, uint8_t version) {
+            switch (version) {
+                case WithdrawFromSideChainVersion: {
+                    if (!stream.ReadUint32(_blockHeight)) {
+                        Log::error("Payload with draw asset deserialize block height fail");
+                        return false;
+                    }
 
-			if (!istream.ReadVarString(_genesisBlockAddress)) {
-				Log::error("Payload with draw asset deserialize genesis block address fail");
-				return false;
-			}
+                    if (!stream.ReadVarString(_genesisBlockAddress)) {
+                        Log::error("Payload with draw asset deserialize genesis block address fail");
+                        return false;
+                    }
 
-			uint64_t len = 0;
-			if (!istream.ReadVarUint(len)) {
-				Log::error("Payload with draw asset deserialize side chain tx hash len fail");
-				return false;
-			}
+                    uint64_t len = 0;
+                    if (!stream.ReadVarUint(len)) {
+                        Log::error("Payload with draw asset deserialize side chain tx hash len fail");
+                        return false;
+                    }
 
-			_sideChainTransactionHash.resize(len);
-			for (uint64_t i = 0; i < len; ++i) {
-				if (!istream.ReadBytes(_sideChainTransactionHash[i])) {
-					Log::error("Payload with draw asset deserialize side chain tx hash[{}] fail", i);
-					return false;
-				}
-			}
+                    _sideChainTransactionHash.resize(len);
+                    for (uint64_t i = 0; i < len; ++i) {
+                        if (!stream.ReadBytes(_sideChainTransactionHash[i])) {
+                            Log::error("Payload with draw asset deserialize side chain tx hash[{}] fail", i);
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                    break;
+
+                case WithdrawFromSideChainVersionV1:
+                    break;
+
+                case WithdrawFromSideChainVersionV2: {
+                    if (!stream.ReadVarBytes(_signers)) {
+                        Log::error("deserialize signers err");
+                        return false;
+                    }
+                }
+                    break;
+		    }
 
 			return true;
 		}
@@ -110,24 +139,48 @@ namespace Elastos {
 		nlohmann::json WithdrawFromSideChain::ToJson(uint8_t version) const {
 			nlohmann::json j;
 
-			j["BlockHeight"] = _blockHeight;
-			j["GenesisBlockAddress"] = _genesisBlockAddress;
-			nlohmann::json hashes;
-			for (size_t i = 0; i < _sideChainTransactionHash.size(); ++i)
-				hashes.push_back(_sideChainTransactionHash[i].GetHex());
-			j["SideChainTransactionHash"] = hashes;
+			switch (version) {
+			    case WithdrawFromSideChainVersion: {
+                    j["BlockHeight"] = _blockHeight;
+                    j["GenesisBlockAddress"] = _genesisBlockAddress;
+                    nlohmann::json hashes;
+                    for (size_t i = 0; i < _sideChainTransactionHash.size(); ++i)
+                        hashes.push_back(_sideChainTransactionHash[i].GetHex());
+                    j["SideChainTransactionHash"] = hashes;
+                }
+                    break;
+                case WithdrawFromSideChainVersionV1:
+                    break;
+			    case WithdrawFromSideChainVersionV2: {
+                    j["Signers"] = _signers.getHex();
+                }
+                    break;
+			}
 
 			return j;
 		}
 
 		void WithdrawFromSideChain::FromJson(const nlohmann::json &j, uint8_t version) {
-			_blockHeight = j["BlockHeight"].get<uint32_t>();
-			_genesisBlockAddress = j["GenesisBlockAddress"].get<std::string>();
+            switch (version) {
+                case WithdrawFromSideChainVersion: {
+                    _blockHeight = j["BlockHeight"].get<uint32_t>();
+                    _genesisBlockAddress = j["GenesisBlockAddress"].get<std::string>();
 
-			_sideChainTransactionHash.clear();
-			nlohmann::json hashes = j["SideChainTransactionHash"];
-			for (nlohmann::json::iterator it = hashes.begin(); it != hashes.end(); ++it)
-				_sideChainTransactionHash.emplace_back((*it).get<std::string>());
+                    _sideChainTransactionHash.clear();
+                    nlohmann::json hashes = j["SideChainTransactionHash"];
+                    for (nlohmann::json::iterator it = hashes.begin(); it != hashes.end(); ++it)
+                        _sideChainTransactionHash.emplace_back((*it).get<std::string>());
+                }
+                    break;
+
+                case WithdrawFromSideChainVersionV1:
+                    break;
+
+                case WithdrawFromSideChainVersionV2: {
+                    _signers.setHex(j["Signers"].get<std::string>());
+                }
+                    break;
+            }
 		}
 
 		IPayload &WithdrawFromSideChain::operator=(const IPayload &payload) {
@@ -145,6 +198,7 @@ namespace Elastos {
 			_blockHeight = payload._blockHeight;
 			_genesisBlockAddress = payload._genesisBlockAddress;
 			_sideChainTransactionHash = payload._sideChainTransactionHash;
+			_signers = payload._signers;
 
 			return *this;
 		}
@@ -152,9 +206,16 @@ namespace Elastos {
 		bool WithdrawFromSideChain::Equal(const IPayload &payload, uint8_t version) const {
 			try {
 				const WithdrawFromSideChain &p = dynamic_cast<const WithdrawFromSideChain &>(payload);
-				return _blockHeight == p._blockHeight &&
-					   _genesisBlockAddress == p._genesisBlockAddress &&
-					   _sideChainTransactionHash == p._sideChainTransactionHash;
+                switch (version) {
+                    case WithdrawFromSideChainVersion:
+                        return _blockHeight == p._blockHeight &&
+                               _genesisBlockAddress == p._genesisBlockAddress &&
+                               _sideChainTransactionHash == p._sideChainTransactionHash;
+                    case WithdrawFromSideChainVersionV1:
+                        return true;
+                    case WithdrawFromSideChainVersionV2:
+                        return _signers == p._signers;
+                }
 			} catch (const std::bad_cast &e) {
 				Log::error("payload is not instance of WithdrawFromSideChain");
 			}

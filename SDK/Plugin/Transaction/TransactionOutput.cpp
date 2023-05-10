@@ -11,6 +11,10 @@
 #include <Plugin/Transaction/Payload/OutputPayload/PayloadDefault.h>
 #include <Plugin/Transaction/Payload/OutputPayload/PayloadVote.h>
 #include <Plugin/Transaction/Payload/OutputPayload/PayloadCrossChain.h>
+#include <Plugin/Transaction/Payload/OutputPayload/PayloadMapping.h>
+#include <Plugin/Transaction/Payload/OutputPayload/PayloadWithdraw.h>
+#include <Plugin/Transaction/Payload/OutputPayload/PayloadReturnSideChainDeposit.h>
+#include <Plugin/Transaction/Payload/OutputPayload/PayloadExchangeVotes.h>
 
 #include <iostream>
 #include <cstring>
@@ -228,11 +232,26 @@ namespace Elastos {
 				case VoteOutput:
 					payload = OutputPayloadPtr(new PayloadVote());
 					break;
+			    case Mapping:
+			        payload = OutputPayloadPtr(new PayloadMapping());
+			        break;
 				case CrossChain:
 					payload = OutputPayloadPtr(new PayloadCrossChain());
 					break;
+			    case WithdrawFromSideChain:
+			        payload = OutputPayloadPtr(new PayloadWithdraw());
+			        break;
+			    case ReturnSideChainDepositCoin:
+			        payload = OutputPayloadPtr(new PayloadReturnSideChainDeposit());
+			        break;
+			    case DposV2Vote:
+			        payload = OutputPayloadPtr(new PayloadVote());
+			        break;
+			    case Stake:
+			        payload = OutputPayloadPtr(new PayloadExchangeVotes());
+			        break;
 
-				default:
+                default:
 					payload = nullptr;
 					break;
 			}

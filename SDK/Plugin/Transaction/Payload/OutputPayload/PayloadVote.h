@@ -48,6 +48,7 @@ namespace Elastos {
 				CRC,
 				CRCProposal,
 				CRCImpeachment,
+				DPoSV2,
 				Max,
 			};
 

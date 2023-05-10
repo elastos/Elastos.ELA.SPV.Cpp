@@ -23,7 +23,11 @@ namespace Elastos {
 				Default    = 0x00,
 				VoteOutput = 0x01,
 				Mapping    = 0x02,
-				CrossChain = 0x03
+				CrossChain = 0x03,
+                WithdrawFromSideChain = 0x04,
+                ReturnSideChainDepositCoin = 0x05,
+                DposV2Vote = 0x06,
+                Stake = 0x07,
 			};
 
 		public:

@@ -10,6 +10,10 @@
 namespace Elastos {
 	namespace ElaWallet {
 
+#define WithdrawFromSideChainVersion 0
+#define WithdrawFromSideChainVersionV1 1
+#define WithdrawFromSideChainVersionV2 2
+
 		class WithdrawFromSideChain :
 				public IPayload {
 		public:
@@ -53,6 +57,8 @@ namespace Elastos {
 			uint32_t _blockHeight;
 			std::string _genesisBlockAddress;
 			std::vector<uint256> _sideChainTransactionHash;
+
+			bytes_t _signers;
 		};
 	}
 }
