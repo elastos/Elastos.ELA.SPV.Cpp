@@ -142,7 +142,7 @@ namespace Elastos {
 				if (_externalChain.empty()) {
 					if (_parent->GetSignType() == Account::MultiSign) {
 						for (size_t i = 0; i < _parent->MultiSignCosigner().size(); ++i)
-							pubkeys.push_back(_parent->MultiSignCosigner()[i]->getChild("0/0").pubkey());
+							pubkeys.push_back(_parent->MultiSignCosigner()[i]);
 						_externalChain.push_back(AddressPtr(new Address(PrefixMultiSign, pubkeys, _parent->GetM())));
 						_allAddrs.insert(_externalChain[0]);
 					} else {
@@ -163,8 +163,14 @@ namespace Elastos {
 			AddressArray &addrChain = internal ? _internalChain : _externalChain;
 			std::vector<HDKeychain> keychains;
 			if (_parent->GetSignType() == Account::MultiSign) {
-				for (const HDKeychainPtr &keychain : _parent->MultiSignCosigner())
-					keychains.push_back(keychain->getChild(chain));
+                if (_externalChain.empty()) {
+                    for (size_t i = 0; i < _parent->MultiSignCosigner().size(); ++i)
+                        pubkeys.push_back(_parent->MultiSignCosigner()[i]);
+                    _externalChain.push_back(AddressPtr(new Address(PrefixMultiSign, pubkeys, _parent->GetM())));
+                    _allAddrs.insert(_externalChain[0]);
+                }
+                addrs = _externalChain;
+                return addrs;
 			} else {
 				keychains.push_back(_parent->MasterPubKey()->getChild(chain));
 			}
@@ -272,6 +278,15 @@ namespace Elastos {
 							}
 						}
 					}
+
+                    if (!found) {
+                        key = rootKey->getChild("1'/0");
+                        for (size_t k = 0; !found && k < publicKeys.size(); ++k) {
+                            if (publicKeys[k] == key.PubKey()) {
+                                found = true;
+                            }
+                        }
+                    }
 				}
 
 				ErrorChecker::CheckLogic(!found, Error::PrivateKeyNotFound, "Private key not found");

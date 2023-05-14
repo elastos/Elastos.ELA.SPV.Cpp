@@ -91,9 +91,9 @@ namespace Elastos {
 
 			virtual nlohmann::json GetPubKeyInfo() const = 0;
 
-			virtual HDKeychainPtr MultiSignSigner() const = 0;
+//			virtual HDKeychainPtr MultiSignSigner() const = 0;
 
-			virtual HDKeychainArray MultiSignCosigner() const = 0;
+			virtual std::vector<bytes_t> MultiSignCosigner() const = 0;
 
 			virtual int CosignerIndex() const = 0;
 

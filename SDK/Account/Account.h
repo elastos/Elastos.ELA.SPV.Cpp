@@ -108,9 +108,9 @@ namespace Elastos {
 
 			nlohmann::json GetPubKeyInfo() const;
 
-			HDKeychainPtr MultiSignSigner() const;
+//			HDKeychainPtr MultiSignSigner() const;
 
-			HDKeychainArray MultiSignCosigner() const;
+			std::vector<bytes_t> MultiSignCosigner() const;
 
 			int CosignerIndex() const;
 
@@ -160,8 +160,8 @@ namespace Elastos {
 			LocalStorePtr _localstore;
 			mutable HDKeychainPtr _xpub;
 			mutable int _cosignerIndex;
-			mutable HDKeychainPtr _curMultiSigner; // multi sign current wallet signer
-			mutable HDKeychainArray _allMultiSigners; // including _multiSigner and sorted
+//			mutable bytes_t _curMultiSigner; // multi sign current wallet signer
+			mutable std::vector<bytes_t> _allMultiSigners; // including _multiSigner and sorted
 			mutable bytes_t _ownerPubKey, _requestPubKey;
 		};
 

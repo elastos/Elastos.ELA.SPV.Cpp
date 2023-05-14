@@ -44,14 +44,14 @@ namespace Elastos {
 
 			bytes_t bytes;
 
-			const std::vector<PublicKeyRing> &xpubRing = _localstore->GetPublicKeyRing();
-			for (int i = 0; i < _localstore->GetPublicKeyRing().size() - 1; ++i) {
-				for (int j = i + 1; j < _localstore->GetPublicKeyRing().size(); ++j) {
-					if (xpubRing[i].GetxPubKey() == xpubRing[j].GetxPubKey()) {
-						ErrorChecker::ThrowParamException(Error::PubKeyFormat, "Contain same xpub in PublicKeyRing");
-					}
-				}
-			}
+//			const std::vector<PublicKeyRing> &xpubRing = _localstore->GetPublicKeyRing();
+//			for (int i = 0; i < _localstore->GetPublicKeyRing().size() - 1; ++i) {
+//				for (int j = i + 1; j < _localstore->GetPublicKeyRing().size(); ++j) {
+//					if (xpubRing[i].GetxPubKey() == xpubRing[j].GetxPubKey()) {
+//						ErrorChecker::ThrowParamException(Error::PubKeyFormat, "Contain same xpub in PublicKeyRing");
+//					}
+//				}
+//			}
 
 			if (!(_localstore->GetN() > 1 && _localstore->Readonly())) {
 				ErrorChecker::CheckParam(_localstore->GetxPubKey().empty(), Error::PubKeyFormat,
@@ -60,23 +60,21 @@ namespace Elastos {
 										 Error::PubKeyFormat, "xpub decode error");
 				_xpub = HDKeychainPtr(new HDKeychain(CTElastos, bytes));
 
-				if (_localstore->GetxPubKeyHDPM().empty())
-					Log::warn("xpubHDPM is empty");
-				else
-					ErrorChecker::CheckParam(!Base58::CheckDecode(_localstore->GetxPubKeyHDPM(), bytes),
-											 Error::PubKeyFormat, "xpubHDPM decode error");
-				_curMultiSigner = HDKeychainPtr(new HDKeychain(CTElastos, bytes));
+//				if (_localstore->GetxPubKeyHDPM().empty())
+//					Log::warn("xpubHDPM is empty");
+//				else
+//					ErrorChecker::CheckParam(!Base58::CheckDecode(_localstore->GetxPubKeyHDPM(), bytes),
+//											 Error::PubKeyFormat, "xpubHDPM decode error");
+//				_curMultiSigner = HDKeychainPtr(new HDKeychain(CTElastos, bytes));
 			}
 
 			if (_localstore->GetN() > 1) {
 				if (_localstore->DerivationStrategy() == "BIP44") {
-					_curMultiSigner = _xpub;
+//					_curMultiSigner = _xpub;
 					for (size_t i = 0; i < _localstore->GetPublicKeyRing().size(); ++i) {
-						bytes_t xpubBytes;
-						ErrorChecker::CheckParam(!Base58::CheckDecode(_localstore->GetPublicKeyRing()[i].GetxPubKey(), xpubBytes),
-												 Error::PubKeyFormat, "xpub decode error");
-						HDKeychainPtr xpub(new HDKeychain(CTElastos, xpubBytes));
-						_allMultiSigners.push_back(xpub);
+						bytes_t pubkey;
+						pubkey.setHex(_localstore->GetPublicKeyRing()[i].GetRequestPubKey());
+						_allMultiSigners.push_back(pubkey);
 					}
 				} else if (_localstore->DerivationStrategy() == "BIP45") {
 					HDKeychainArray sortedSigners;
@@ -93,14 +91,14 @@ namespace Elastos {
 								  return a->pubkey().getHex() < b->pubkey().getHex();
 							  });
 
-					for (size_t i = 0; i < sortedSigners.size(); ++i) {
-						HDKeychainPtr tmp(new HDKeychain(sortedSigners[i]->getChild((uint32_t) i)));
-						if (_curMultiSigner && _cosignerIndex == -1 && *_curMultiSigner == *sortedSigners[i]) {
-							_curMultiSigner = tmp;
-							_cosignerIndex = (int)i;
-						}
-						_allMultiSigners.push_back(tmp);
-					}
+//					for (size_t i = 0; i < sortedSigners.size(); ++i) {
+//						HDKeychainPtr tmp(new HDKeychain(sortedSigners[i]->getChild((uint32_t) i)));
+//						if (_curMultiSigner && _cosignerIndex == -1 && *_curMultiSigner == *sortedSigners[i]) {
+//							_curMultiSigner = tmp;
+//							_cosignerIndex = (int)i;
+//						}
+//						_allMultiSigners.push_back(tmp);
+//					}
 				}
 			}
 		}
@@ -533,7 +531,7 @@ namespace Elastos {
 					return false;
 
 				for (size_t i = 0; i < _allMultiSigners.size(); ++i) {
-					if (*_allMultiSigners[i] != *account->MultiSignCosigner()[i])
+					if (_allMultiSigners[i] != account->MultiSignCosigner()[i])
 						return false;
 				}
 
@@ -566,24 +564,24 @@ namespace Elastos {
 				j["xPubKey"] = nlohmann::json();
 				j["xPubKeyHDPM"] = nlohmann::json();
 			} else {
-				j["xPubKey"] = _localstore->GetxPubKey();
+				j["xPubKey"] = _localstore->GetRequestPubKey();
 				j["xPubKeyHDPM"] = _localstore->GetxPubKeyHDPM();
 			}
 
 			for (size_t i = 0; i < _localstore->GetPublicKeyRing().size(); ++i)
-				jCosigners.push_back(_localstore->GetPublicKeyRing()[i].GetxPubKey());
+				jCosigners.push_back(_localstore->GetPublicKeyRing()[i].GetRequestPubKey());
 
 			j["publicKeyRing"] = jCosigners;
 
 			return j;
 		}
 
-		HDKeychainPtr Account::MultiSignSigner() const {
-			ErrorChecker::CheckLogic(!_xpub, Error::Key, "Read-only wallet do not contain current multisigner");
-			return _curMultiSigner;
-		}
+//		HDKeychainPtr Account::MultiSignSigner() const {
+//			ErrorChecker::CheckLogic(!_xpub, Error::Key, "Read-only wallet do not contain current multisigner");
+//			return _curMultiSigner;
+//		}
 
-		HDKeychainArray Account::MultiSignCosigner() const {
+		std::vector<bytes_t> Account::MultiSignCosigner() const {
 			return _allMultiSigners;
 		}
 

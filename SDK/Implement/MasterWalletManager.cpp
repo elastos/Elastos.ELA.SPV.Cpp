@@ -258,13 +258,13 @@ namespace Elastos {
 			for (nlohmann::json::const_iterator it = cosigners.begin(); it != cosigners.end(); ++it) {
 				ErrorChecker::CheckCondition(!(*it).is_string(), Error::Code::PubKeyFormat,
 											 "cosigners should be string");
-				std::string xpub = (*it).get<std::string>();
+				std::string pub = (*it).get<std::string>();
 				for (int i = 0; i < pubKeyRing.size(); ++i) {
-					if (pubKeyRing[i].GetxPubKey() == xpub) {
-						ErrorChecker::ThrowParamException(Error::PubKeyFormat, "Contain same xpub");
+					if (pubKeyRing[i].GetRequestPubKey() == pub) {
+						ErrorChecker::ThrowParamException(Error::PubKeyFormat, "Contain same pub");
 					}
 				}
-				pubKeyRing.emplace_back("", xpub);
+				pubKeyRing.emplace_back(pub, "");
 			}
 
 			if (_masterWalletMap.find(masterWalletID) != _masterWalletMap.end()) {

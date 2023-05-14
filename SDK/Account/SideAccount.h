@@ -86,9 +86,9 @@ namespace Elastos {
 
 			nlohmann::json GetPubKeyInfo() const { return nlohmann::json(); }
 
-			HDKeychainPtr MultiSignSigner() const { return nullptr; }
+//			HDKeychainPtr MultiSignSigner() const { return nullptr; }
 
-			HDKeychainArray MultiSignCosigner() const { return HDKeychainArray(); }
+            std::vector<bytes_t> MultiSignCosigner() const { return std::vector<bytes_t>(); }
 
 			int CosignerIndex() const { return 0; }
 
